@@ -1,0 +1,24 @@
+.modulos {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr); /* 12 columnas iguales */
+  gap: 1rem;
+  justify-content: center; /* centra el grid */
+  padding: 1rem;
+}
+
+/* Cada modulo ocupa 4 columnas de 12 (1/3 del ancho) */
+.modulos > * {
+  grid-column: span 4;
+  justify-self: center; /* centra cada módulo en su columna */
+}
+
+/* Responsive: en pantallas menores a 768px, cada módulo ocupa 12 columnas (1 fila) */
+@media (max-width: 768px) {
+  .modulos {
+    grid-template-columns: repeat(12, 1fr);
+  }
+
+  .modulos > * {
+    grid-column: span 12;
+  }
+}

@@ -1,0 +1,51 @@
+.menu-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8f9fa;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #dee2e6;
+  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.logo img {
+  height: 35px;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: block; /* elimina espacios en línea que generan gaps verticales */
+}
+
+.system-name {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: bold;
+  text-align: center;
+  color: var(--primary);
+}
+
+.menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;  /* esto ya crea separación entre botones */
+  flex: 0 0 auto;
+}
+
+
+.menu-actions button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+}
+
+.menu-actions button:hover {
+  background-color: var(--secondary);
+}

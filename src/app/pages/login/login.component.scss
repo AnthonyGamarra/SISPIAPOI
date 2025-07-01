@@ -1,0 +1,115 @@
+.login-wrapper {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background-image: url('/resources/bf-sispoi.png');
+  background-size: cover;
+  background-position: center;
+
+  .login-title {
+    color: var(--primary);
+  }
+
+  .login-logos {
+    flex: 6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+
+    .logo-essalud {
+      max-width: 25%;
+      margin: 1rem;
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+    }
+
+    .logo-sispoi {
+      max-width: 70%;
+      margin: 1rem;
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+    }
+
+  }
+
+  .login-container {
+    flex: 4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      padding: 2rem;
+      border-radius: 16px;
+      background-color: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+
+      h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .field {
+        margin-bottom: 1.5rem;
+
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+        }
+
+        input {
+          width: 100%;
+        }
+      }
+
+      button {
+        width: 100%;
+        background-color: var(--primary);
+        border-color: var(--primary);
+      }
+    }
+  }
+}
+
+// Estilo para inputs focus
+.p-inputtext:enabled:focus {
+  border-color: var(--primary) !important;
+}
+
+// 📱 Responsive para dispositivos pequeños
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+
+    .login-logos {
+      flex: unset;
+      padding: 1rem;
+
+      .logo-essalud {
+      max-width: 50%;
+      margin: 1rem;
+      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+      }
+
+      .logo-sispoi {
+        max-width: 70%;
+        margin: 1rem;
+        filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+      }
+    }
+
+    .login-container {
+      flex: unset;
+      justify-content: center;
+      padding: 2rem;
+
+      .login-card {
+        margin-top: 1rem;
+      }
+    }
+  }
+}

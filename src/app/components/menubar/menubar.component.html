@@ -1,0 +1,20 @@
+<div class="menu-bar-container p-d-flex p-ai-center p-jc-between">
+  <!-- Logo -->
+  <div class="logo p-d-flex p-ai-center">
+    <img src="resources/essalud-actualizado-seeklogo.png" height="40">
+  </div>
+
+  <!-- Nombre del sistema -->
+  <div class="system-name">
+    <h2>Sistema de Planificación Operativa Institucional</h2>
+  </div>
+
+  <!-- Menús desplegables -->
+  <div class="menu-actions p-d-flex p-ai-center">
+    <p-tieredMenu [model]="settingsMenuItems" #settingsMenu popup></p-tieredMenu>
+    <button pButton icon="pi pi-cog" class="p-button-text p-mr-2" (click)="settingsMenu.toggle($event)"></button>
+
+    <p-tieredMenu [model]="userMenuItems" #userMenu popup></p-tieredMenu>
+    <button pButton icon="pi pi-user" class="p-button-text" (click)="userMenu.toggle($event)"></button>
+  </div>
+</div>

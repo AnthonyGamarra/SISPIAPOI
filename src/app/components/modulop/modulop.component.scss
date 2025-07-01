@@ -1,0 +1,48 @@
+/* Contenedor que centra el botón en pantalla */
+.modulop-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 85vh; /* ocupa toda la altura de la ventana */
+}
+
+/* Estilo del botón cuadrado */
+.modulop-btn {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1rem;
+  color: var(--primary-color, #007ad9);
+  border: 2px solid #ccc;
+  background-color: #e6f0ff;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  user-select: none;
+}
+
+.modulop-btn:hover {
+  background-color: var(--secondary);
+  box-shadow: 0 0 8px rgba(0, 122, 217, 0.6);
+}
+
+/* Icono con tamaño grande */
+.modulop-btn i {
+  font-size: 3rem;
+  pointer-events: none; /* para que el click pase al botón */
+}
+
+.modulop-icon {
+  width: 70px;       /* Ajusta tamaño según necesidad */
+  height: 70px;
+  object-fit: contain;
+  pointer-events: none; /* Para que el click sea en el botón, no en la imagen */
+}
+
+.bold-text {
+  font-weight: bold;
+}

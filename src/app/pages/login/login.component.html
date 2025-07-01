@@ -1,0 +1,38 @@
+<div class="login-wrapper">
+  <div class="login-logos">
+    <img class="logo-essalud" src="resources/logo_essalud_white.svg" alt="Logo Essalud" />
+    <img class="logo-sispoi" src="resources/logo_sispoi.png" alt="Logo Sispoi" />
+  </div>
+
+  <div class="login-container">
+    <div class="login-card">
+      <form [formGroup]="form" (ngSubmit)="login()" novalidate>
+        <h2 class="login-title">Iniciar sesión</h2>
+        <p-input-group class="field mb-5">
+          <p-inputgroup-addon>
+            <i class="pi pi-user"></i>
+          </p-inputgroup-addon>
+          <p-floatlabel>
+            <label for="username_label">Usuario</label>
+            <input pInputText formControlName="username" id="username_label" />
+          </p-floatlabel>
+        </p-input-group>
+        <p-input-group class="field mb-5">
+          <p-inputgroup-addon>
+            <i class="pi pi-lock"></i>
+          </p-inputgroup-addon>
+          <p-floatlabel>
+            <label for="password_label">Contraseña</label>
+            <input pInputText formControlName="password" type="password" id="password_label" />
+          </p-floatlabel>
+        </p-input-group>
+        <button pButton type="submit" [disabled]="form.invalid || loading">
+          <ng-container *ngIf="loading">
+            <span class="pi pi-spin pi-spinner" style="margin-right:8px;"></span>
+          </ng-container>
+          <span *ngIf="!loading">Ingresar</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

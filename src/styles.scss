@@ -1,0 +1,56 @@
+@use "primeicons/primeicons.css";
+@use "primeflex/primeflex.scss";
+// regular style toast
+@use 'ngx-toastr/toastr';
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+$color-primary: #00529B;     // Azul fuerte y serio (Essalud azul institucional)
+$color-secondary: #7A9CC6;   // Azul grisáceo suave para secundarios y fondos
+$color-success: #4CAF50;     // Verde estándar y agradable para éxito
+$color-warning: #E53935;     // Rojo intenso para alertas o warnings
+
+// Opcional: variantes más claras/oscurecidas
+$color-primary-light: #4A7AC7;
+$color-secondary-light: #A9BCD9;
+$color-success-light: #81C784;
+$color-warning-light: #EF5350;
+
+:root {
+  --primary: #{$color-primary};
+  --secondary: #{$color-secondary};
+  --success: #{$color-success};
+  --warning: #{$color-warning};
+
+  --primary-light: #{$color-primary-light};
+  --secondary-light: #{$color-secondary-light};
+  --success-light: #{$color-success-light};
+  --warning-light: #{$color-warning-light};
+
+  --p-floatlabel-focus-color: #{$color-primary} !important;
+  --p-floatlabel-active-color: #{$color-primary} !important;
+  --p-floatlabel-invalid-color: #{$color-warning-light} !important;
+
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body:not(.login-page) .grecaptcha-badge {
+  visibility: hidden !important;
+}
