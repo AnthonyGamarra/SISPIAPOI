@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { LoginRequest, AuthTokens } from '../../models/auth/auth.model';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
+import { ToastrService } from 'ngx-toastr';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,7 @@ import { tap } from 'rxjs/operators';
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private toastr = inject(ToastrService);
 
   private readonly BASE_URL = 'http://10.0.2.144:8081';
 
@@ -26,11 +28,16 @@ export class AuthService {
     );
   }
 
-  logout() {
-    this.tokens.set(null);
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    this.router.navigate(['/login']);
+  logout(data: AuthTokens) {
+    return this.http.post(`${this.BASE_URL}/logout-token`, data, { responseType: 'text' }).pipe(
+      tap(() => {        
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        this.tokens.set(null);
+        this.toastr.success('Sesión cerrada correctamente. ¡Hasta pronto!', 'Cierre de sesión');
+        this.router.navigate(['/login']);
+      })
+    );
   }
 
   get accessToken(): string | null {

@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { TieredMenuModule } from 'primeng/tieredmenu';
 import { ButtonModule } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/services/auth.service'; // ajusta la ruta si es necesario
 
 @Component({
   selector: 'app-menubar',
@@ -16,6 +17,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./menubar.component.scss']
 })
 export class MenubarComponent {
+  private authService = inject(AuthService);
   userMenuItems: MenuItem[] = [];
   settingsMenuItems: MenuItem[] = [];
 
@@ -36,7 +38,9 @@ export class MenubarComponent {
   }
 
   onLogout() {
-    console.log('Cerrar sesión');
+    const accessToken = localStorage.getItem('access_token') ?? '';
+    const refreshToken = localStorage.getItem('refresh_token') ?? '';
+    this.authService.logout({ access_token: accessToken, refresh_token: refreshToken }).subscribe();
   }
 
   onSettings() {

@@ -1,0 +1,27 @@
+.tabla-filtros {
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem auto;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+/* PrimeNG genera elementos <th> y <td> dentro de <p-table> pero no directamente dentro de tabla */
+/* Por eso es mejor usar ::ng-deep para afectar estos elementos */
+:host ::ng-deep .tabla-filtros thead > tr > th,
+:host ::ng-deep .tabla-filtros tbody > tr > td {
+  padding: 0.75rem 1rem !important;
+  border: 1px solid #ccc !important;
+  text-align: center !important;
+}
+
+:host ::ng-deep .tabla-filtros thead {
+  background-color: #007ad9 !important;
+  color: white !important;
+}
+
+:host ::ng-deep .p-datatable-wrapper {
+  max-width: 600px;
+  margin: 1rem auto;
+}

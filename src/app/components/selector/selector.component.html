@@ -1,0 +1,33 @@
+<div class="selector-bar">
+  <div class="selector-group">
+    <label class="selector-label">Año:</label>  
+    <p-dropdown
+      [options]="optionsAno"
+      [(ngModel)]="selectedAno"
+      placeholder="Año"
+      class="selector-dropdown"
+    ></p-dropdown>
+  </div>
+
+  <div class="selector-group">
+    <label class="selector-label">Centro gestor:</label>
+    <p-dropdown
+      [options]="optionsCentro"
+      [(ngModel)]="selectedCentro"
+      placeholder="Centro 1"
+      class="selector-dropdown"
+    ></p-dropdown>
+  </div>
+   <div class="selector-group">
+    <label class="selector-label">Centro de costos:</label>
+    <p-dropdown
+      [options]="optionsCentroC"
+      [(ngModel)]="selectedCentroC"
+      placeholder="Centro C"
+      class="selector-dropdown"
+    ></p-dropdown>
+  </div>
+<button class="buscar-btn" (click)="onBuscar()">
+  <i class="pi pi-search"></i>
+</button>
+</div>
