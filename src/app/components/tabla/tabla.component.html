@@ -1,20 +1,30 @@
-<p-table
-  class="tabla-filtros"
-  [value]="data"
-  [responsiveLayout]="'scroll'"
->
-  <ng-template pTemplate="header">
-    <tr>
-      <th>Año seleccionado</th>
-      <th>Centro seleccionado</th>
-      <th>Centro gestor seleccionado</th>
-    </tr>
-  </ng-template>
-  <ng-template pTemplate="body" let-row>
-    <tr>
-      <td>{{ row.ano }}</td>
-      <td>{{ row.centro }}</td>
-      <td>{{ row.centroc }}</td>
-    </tr>
-  </ng-template>
-</p-table>
+<div *ngIf="mostrar">
+  <table border="1" style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>Objetivo</th>
+        <th>Acciones estratégicas (selecciona una)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let objetivo of objetivos">
+        <td>{{ objetivo.nombre }}</td>
+        <td>
+          <div *ngFor="let accion of objetivo.acciones">
+            <label>
+              <input
+                type="radio"
+                name="accionSeleccionada" 
+                [value]="accion.id"
+                [(ngModel)]="opcionSeleccionadaId"
+                (change)="onSeleccionar(accion.id)"
+              />
+              {{ accion.nombre }}
+            </label>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+

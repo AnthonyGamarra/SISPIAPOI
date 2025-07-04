@@ -1,11 +1,11 @@
 <app-menubar></app-menubar>
 <app-selector (buscar)="manejarBusqueda($event)"></app-selector>
 
-<div *ngIf="mostrarTabla">
-  <app-tabla
-    [ano]="filtros.ano!"
-    [centro]="filtros.centro!"
-    [centroc]="filtros.centroc!"
-  ></app-tabla>
+<div *ngIf="mostrarResultados">
+<app-tabla
+  [mostrar]="mostrarResultados"
+  (seleccionCambio)="manejarSeleccion($event)"
+></app-tabla>
+<app-form></app-form>
 </div>
 <app-footer></app-footer>

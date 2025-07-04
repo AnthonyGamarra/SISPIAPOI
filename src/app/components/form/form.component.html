@@ -1,0 +1,55 @@
+<div class="tabla-container">
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2">Denominación de la Actividad Operativa</th>
+        <th rowspan="2">Indicador / Unidad de Medida</th>
+        <th rowspan="2">Comportamiento Trimestral del Indicador</th>
+        <th colspan="5">Meta Trimestral</th>
+        <th colspan="3">Presupuesto (S/)</th>
+        <th rowspan="2">Ejecutado</th>
+        <th rowspan="2">Esperado</th>
+        <th rowspan="2">Acciones</th>
+      </tr>
+      <tr>
+        <th>I</th>
+        <th>II</th>
+        <th>III</th>
+        <th>IV</th>
+        <th>Total</th>
+        <th>Remuneraciones</th>
+        <th>Bienes</th>
+        <th>Servicios</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let fila of filas; let i = index">
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td><input type="number" /></td>
+        <td class="acciones">
+          <button class="guardar">💾</button>
+          <button class="estado">🟢</button>
+          <button class="eliminar" (click)="eliminarFila(i)">🗑️</button>
+        </td>
+      </tr>
+      <tr *ngIf="filas.length === 0">
+        <td colspan="14" style="text-align: center; color: gray;">(Sin datos)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="acciones-tabla">
+    <button class="agregar" (click)="agregarFila()">➕ Agregar fila</button>
+  </div>
+</div>
