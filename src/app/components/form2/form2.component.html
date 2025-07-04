@@ -1,0 +1,32 @@
+<div class="tabla-container">
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2">Denominación de la Actividad Operativa</th>
+        <th rowspan="2">Indicador / Unidad de Medida</th>
+        <th rowspan="2">Comportamiento Trimestral del Indicador</th>
+        <th rowspan="2">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let fila of filas; let i = index">
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+
+        <td class="acciones">
+          <button class="guardar">💾</button>
+          <button class="estado">🟢</button>
+          <button class="eliminar" (click)="eliminarFila(i)">🗑️</button>
+        </td>
+      </tr>
+      <tr *ngIf="filas.length === 0">
+        <td colspan="14" style="text-align: center; color: gray;">(Sin datos)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="acciones-tabla">
+    <button class="agregar" (click)="agregarFila()">➕ Agregar fila</button>
+  </div>
+</div>

@@ -1,6 +1,11 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DropdownModule } from 'primeng/dropdown';
+import { StrategicobjectiveService } from '../../core/services/logic/strategicobjective.service';
+import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
+import { StrategicObjective } from '../../models/logic/strategicObjective.model';
+import { StrategicAction } from '../../models/logic/strategicAction.model';
 
 interface Accion {
   id: number;
@@ -17,50 +22,49 @@ interface Objetivo {
   selector: 'app-tabla',
   templateUrl: './tabla.component.html',
   styleUrls: ['./tabla.component.scss'],
-  imports: [CommonModule, FormsModule ]
+  imports: [CommonModule, FormsModule, DropdownModule]
 })
-export class TablaComponent {
+export class TablaComponent implements OnInit, OnChanges {
   @Input() mostrar = false; // Para mostrar u ocultar la tabla
+  @Input() ano: string | null = null; // Nuevo input para el año
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
-  // Datos fijos para el ejemplo
-  objetivos: Objetivo[] = [
-    {
-      id: 1,
-      nombre: 'O.E.1 Proteger Financieramente las Prestaciones que se brindan a los Asegurados garantizando una gestión eficiente de los recursos',
-      acciones: [
-        { id: 11, nombre: 'A.E.1.1 Gestión oportuna y eficiente de los recursos para financiar los servicios institucionales' },
-        { id: 12, nombre: 'A.E.1.2 Manejo eficiente de los gastos institucionales' }
-      ]
-    },
-    {
-      id: 2,
-      nombre: 'O.E.2 Brindar a los asegurados acceso oportuno a prestaciones integrales y de calidad acorde a sus necesidades',
-      acciones: [
-        { id: 21, nombre: 'A.E.2.1 Mejora del modelo de atención integral diferenciado por ciclo de vida, con asegurados empoderados en sus derechos y deberes' },
-        { id: 22, nombre: 'A.E.2.2 Estándares de calidad alineados a las expectativas y necesidades de los asegurados' },
-        { id: 23, nombre: 'A.E.2.3 Articulación efectiva de la red inter e intrainstitucional al servicio del asegurado'}
-      ]
-    },
-    {
-      id: 3,
-      nombre: 'Objetivo 3',
-      acciones: [
-        { id: 24, nombre: 'Acción estratégica 1' },
-        { id: 25, nombre: 'Acción estratégica 2' }
-      ]
-    },
-      {
-      id: 4,
-      nombre: 'Objetivo 4',
-      acciones: [
-        { id: 26, nombre: 'Acción estratégica 1' },
-        { id: 27, nombre: 'Acción estratégica 2' }
-      ]
-    },
-  ];
-
+  objetivos: { id: number; nombre: string; acciones: { id: number; nombre: string }[] }[] = [];
   opcionSeleccionadaId: number | null = null;
+
+  constructor(
+    private strategicObjectiveService: StrategicobjectiveService,
+    private strategicActionService: StrategicActionService
+  ) {}
+
+  ngOnInit() {
+    this.cargarDatos();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['ano'] && !changes['ano'].firstChange) {
+      this.cargarDatos();
+    }
+  }
+
+  cargarDatos() {
+    this.strategicObjectiveService.getAll().subscribe((objectives: StrategicObjective[]) => {
+      this.strategicActionService.getAll().subscribe((actions: StrategicAction[]) => {
+        let filteredObjectives = objectives;
+        if (this.ano) {
+          const year = parseInt(this.ano, 10);
+          filteredObjectives = objectives.filter(obj => year >= obj.startYear && year <= obj.endYear);
+        }
+        this.objetivos = filteredObjectives.map(obj => ({
+          id: obj.idStrategicObjective,
+          nombre: obj.name,
+          acciones: actions
+            .filter(a => a.strategicObjective && a.strategicObjective.idStrategicObjective === obj.idStrategicObjective)
+            .map(a => ({ id: a.idStrategicAction, nombre: a.name }))
+        })).filter(obj => obj.acciones.length > 0);
+      });
+    });
+  }
 
   onSeleccionar(id: number) {
     this.opcionSeleccionadaId = id;

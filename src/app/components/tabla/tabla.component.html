@@ -1,30 +1,29 @@
-<div *ngIf="mostrar">
-  <table border="1" style="width: 100%; border-collapse: collapse;">
-    <thead>
-      <tr>
-        <th>Objetivo</th>
-        <th>Acciones estratégicas (selecciona una)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let objetivo of objetivos">
-        <td>{{ objetivo.nombre }}</td>
-        <td>
-          <div *ngFor="let accion of objetivo.acciones">
-            <label>
-              <input
-                type="radio"
-                name="accionSeleccionada" 
-                [value]="accion.id"
-                [(ngModel)]="opcionSeleccionadaId"
-                (change)="onSeleccionar(accion.id)"
-              />
-              {{ accion.nombre }}
-            </label>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<table border="1" style="width: 100%; border-collapse: collapse;">
+  <colgroup>
+    <col style="width: 40%;" /> 
+    <col style="width: 60%;" /> 
+  </colgroup>
+  <thead>
+    <tr>
+      <th>Objetivo</th>
+      <th>Acciones estratégicas (selecciona una)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let objetivo of objetivos">
+      <td>{{ objetivo.nombre }}</td>
+      <td>
+        <p-dropdown 
+          [options]="objetivo.acciones" 
+          optionLabel="nombre" 
+          optionValue="id"
+          [(ngModel)]="opcionSeleccionadaId"
+          (onChange)="onSeleccionar($event.value)"
+          placeholder="Selecciona una acción">
+        </p-dropdown>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 

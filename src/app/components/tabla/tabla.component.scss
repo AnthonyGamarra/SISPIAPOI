@@ -58,6 +58,13 @@ tbody {
     color: #333;
     text-align: center;
     border: 2px solid #ddd;
+
+    // Asegura que el dropdown ocupe todo el ancho de la celda
+    .p-dropdown {
+      width: 100% !important;
+      min-width: 120px;
+      box-sizing: border-box;
+    }
   }
 }
 

@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { LoginRequest, AuthTokens } from '../../models/auth/auth.model';
+import { LoginRequest, AuthTokens } from '../../../models/auth/auth.model';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
 import { ToastrService } from 'ngx-toastr';
@@ -24,6 +24,15 @@ export class AuthService {
         this.tokens.set(res);
         localStorage.setItem('access_token', res.access_token);
         localStorage.setItem('refresh_token', res.refresh_token);
+        // Decodificar el token y guardar las dependencias
+        try {
+          const payload = JSON.parse(atob(res.access_token.split('.')[1]));
+          if (payload.dependencies) {
+            localStorage.setItem('dependencies', JSON.stringify(payload.dependencies));
+          }
+        } catch (e) {
+          // Si falla la decodificación, no hacer nada
+        }
       })
     );
   }
