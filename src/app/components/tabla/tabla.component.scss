@@ -2,43 +2,50 @@
   display: block;
   margin-top: 1rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px; // Tamaño de fuente base
   max-width: 100%;
   overflow-x: auto;
 }
 
+/* Asegura que todos los elementos hijos hereden el tamaño de fuente */
+:host ::ng-deep table,
+:host ::ng-deep th,
+:host ::ng-deep td,
+:host ::ng-deep label,
+:host ::ng-deep input {
+  font-size: inherit;
+}
+
 table {
   width: 60%;
-  max-width: 70%;
-  margin-left: auto;
-  margin-right: auto; /* esto centra la tabla */
+  max-width: 95%;
+  margin: 0 auto; // Centra la tabla
   table-layout: fixed;
   word-wrap: break-word;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
   text-align: center;
+  border-collapse: collapse;
 }
 
 thead {
-  background-color: var(--primary);
+  background-color: var(--primary, #007acc);
   color: white;
 
   th {
     padding: 12px 20px;
-    text-align: center;  // Cambiado a centrado
+    text-align: center;
     font-weight: 600;
-    font-size: 1rem;
-    border: 2px solid #005fa3; /* borde más grueso para encabezados */
-
+    border: 2px solid #005fa3;
   }
 }
 
 tbody {
   tr {
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #c0c0c0;
     transition: background-color 0.2s ease;
-    border-bottom: 3px solid #c0c0c0;
 
     &:hover {
       background-color: #f5faff;
@@ -48,20 +55,18 @@ tbody {
   td {
     padding: 12px 20px;
     vertical-align: middle;
-    font-size: 0.95rem;
     color: #333;
-    text-align: center;  // Agregado centrado aquí también
+    text-align: center;
     border: 2px solid #ddd;
   }
 }
 
 input[type="radio"] {
   margin-right: 0.5rem;
-  accent-color: #007acc; // color azul para el radio button (Chrome, Edge, Firefox modernos)
+  accent-color: #007acc;
   cursor: pointer;
-  width: 18px;
-  text-align: center;
-  height: 18px;
+  width: 9px;
+  height: 9px;
   vertical-align: middle;
 }
 
@@ -70,4 +75,6 @@ label {
   user-select: none;
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
