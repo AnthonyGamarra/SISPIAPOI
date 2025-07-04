@@ -1,9 +1,9 @@
 <app-menubar></app-menubar>
 <app-selector (buscar)="manejarBusqueda($event)"></app-selector>
 
-<div *ngIf="mostrarTabla">
+<div *ngIf="mostrarResultados">
 <app-tabla
-  [mostrar]="mostrarTabla"
+  [mostrar]="mostrarResultados"
   (seleccionCambio)="manejarSeleccion($event)"
 ></app-tabla>
 </div>

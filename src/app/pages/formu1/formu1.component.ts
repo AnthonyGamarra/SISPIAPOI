@@ -12,11 +12,11 @@ import { TablaComponent } from '../../components/tabla/tabla.component';
   styleUrl: './formu1.component.scss'
 })
 export class Formu1Component {
-  mostrarTabla = false;
+  mostrarResultados = false;
   accionSeleccionada: any = null;
 
   manejarBusqueda(event: any) {
-    this.mostrarTabla = true;
+    this.mostrarResultados = true;
   }
 
   manejarSeleccion(accion: any) {
