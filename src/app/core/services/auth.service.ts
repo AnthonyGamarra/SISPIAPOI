@@ -13,7 +13,7 @@ export class AuthService {
   private router = inject(Router);
   private toastr = inject(ToastrService);
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081';
+  private readonly BASE_URL = 'http://10.0.29.240:8080';
 
   // Signals para estado de login
   tokens = signal<AuthTokens | null>(null);
@@ -29,7 +29,7 @@ export class AuthService {
   }
 
   logout(data: AuthTokens) {
-    return this.http.post(`${this.BASE_URL}/logout-token`, data, { responseType: 'text' }).pipe(
+    return this.http.post(`${this.BASE_URL}/logout-tokens`, data, { responseType: 'text' }).pipe(
       tap(() => {        
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
