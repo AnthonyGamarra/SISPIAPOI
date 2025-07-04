@@ -1,27 +1,73 @@
-.tabla-filtros {
-  width: 100%;
-  max-width: 600px;
-  margin: 1rem auto;
-  border-collapse: collapse;
-  font-family: Arial, sans-serif;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+:host {
+  display: block;
+  margin-top: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
-/* PrimeNG genera elementos <th> y <td> dentro de <p-table> pero no directamente dentro de tabla */
-/* Por eso es mejor usar ::ng-deep para afectar estos elementos */
-:host ::ng-deep .tabla-filtros thead > tr > th,
-:host ::ng-deep .tabla-filtros tbody > tr > td {
-  padding: 0.75rem 1rem !important;
-  border: 1px solid #ccc !important;
-  text-align: center !important;
+table {
+  width: 60%;
+  max-width: 70%;
+  margin-left: auto;
+  margin-right: auto; /* esto centra la tabla */
+  table-layout: fixed;
+  word-wrap: break-word;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
 }
 
-:host ::ng-deep .tabla-filtros thead {
-  background-color: #007ad9 !important;
-  color: white !important;
+thead {
+  background-color: var(--primary);
+  color: white;
+
+  th {
+    padding: 12px 20px;
+    text-align: center;  // Cambiado a centrado
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid #005fa3; /* borde más grueso para encabezados */
+
+  }
 }
 
-:host ::ng-deep .p-datatable-wrapper {
-  max-width: 600px;
-  margin: 1rem auto;
+tbody {
+  tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+    border-bottom: 3px solid #c0c0c0;
+
+    &:hover {
+      background-color: #f5faff;
+    }
+  }
+
+  td {
+    padding: 12px 20px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    color: #333;
+    text-align: center;  // Agregado centrado aquí también
+    border: 2px solid #ddd;
+  }
+}
+
+input[type="radio"] {
+  margin-right: 0.5rem;
+  accent-color: #007acc; // color azul para el radio button (Chrome, Edge, Firefox modernos)
+  cursor: pointer;
+  width: 18px;
+  text-align: center;
+  height: 18px;
+  vertical-align: middle;
+}
+
+label {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
 }

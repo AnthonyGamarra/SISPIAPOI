@@ -12,17 +12,15 @@ import { TablaComponent } from '../../components/tabla/tabla.component';
   styleUrl: './formu1.component.scss'
 })
 export class Formu1Component {
-
-  filtros = {
-    ano: null as string | null,
-    centro: null as string | null,
-    centroc: null as string | null
-  };
   mostrarTabla = false;
+  accionSeleccionada: any = null;
 
-  manejarBusqueda(event: { ano: string | null; centro: string | null; centroc: string | null }) {
-    this.filtros = event;
+  manejarBusqueda(event: any) {
     this.mostrarTabla = true;
   }
 
+  manejarSeleccion(accion: any) {
+    this.accionSeleccionada = accion;
+    console.log('Acción seleccionada:', accion);
+  }
 }
