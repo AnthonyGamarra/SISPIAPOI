@@ -15,12 +15,7 @@
 
 .selector-label {
   white-space: nowrap;
-  font-weight: 600;
   margin-bottom: 0.25rem;
-}
-
-.selector-dropdown {
-  width: 200px;
 }
 
 .buscar-btn {
@@ -38,7 +33,7 @@
   width: 40px;
   height: 40px;
   transition: background-color 0.3s ease;
-  margin-top: 20px; /* <-- aquí bajas el botón */
+  margin-top: 30px; /* <-- aquí bajas el botón */
 }
 
 .buscar-btn:hover {
