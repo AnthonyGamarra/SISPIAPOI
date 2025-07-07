@@ -1,21 +1,3 @@
-:host {
-  display: block;
-  margin-top: 1rem;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 13px; // Tamaño de fuente base
-  max-width: 100%;
-  overflow-x: auto;
-}
-
-/* Asegura que todos los elementos hijos hereden el tamaño de fuente */
-:host ::ng-deep table,
-:host ::ng-deep th,
-:host ::ng-deep td,
-:host ::ng-deep label,
-:host ::ng-deep input {
-  font-size: inherit;
-}
-
 table {
   width: 60%;
   max-width: 95%;
@@ -85,3 +67,4 @@ label {
   justify-content: center;
   gap: 0.5rem;
 }
+
