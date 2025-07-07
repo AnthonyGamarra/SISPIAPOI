@@ -5,8 +5,11 @@ footer {
   width: 100%;
   background-color: var(--primary);
   color: #fff;
-  text-align: center;
-  padding: 2px 0.5px;
+  padding: 0px 1px;
+  max-height: 30px;
   font-size: 0.85rem;
-  z-index: 1000; // Asegura que esté encima de otros elementos
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

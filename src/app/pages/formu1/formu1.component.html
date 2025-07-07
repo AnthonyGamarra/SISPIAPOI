@@ -3,9 +3,11 @@
 
 <div *ngIf="mostrarResultados">
 <app-tabla
+  class="tabla"
   [mostrar]="mostrarResultados"
+  [ano]="anoSeleccionado"
   (seleccionCambio)="manejarSeleccion($event)"
 ></app-tabla>
-<app-form></app-form>
+<app-form2></app-form2>
 </div>
 <app-footer></app-footer>

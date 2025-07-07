@@ -1,5 +1,5 @@
-<div class="selector-bar">
-  <div class="selector-group">
+<div class="selector-bar grid">
+  <div class="selector-group col-12 lg:col-3">
     <label class="selector-label">Año:</label>  
     <p-dropdown
       [options]="optionsAno"
@@ -8,8 +8,7 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-
-  <div class="selector-group">
+  <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Centro gestor:</label>
     <p-dropdown
       [options]="optionsCentro"
@@ -18,7 +17,7 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-   <div class="selector-group">
+   <div class="selector-group col-10 lg:col-4">
     <label class="selector-label">Centro de costos:</label>
     <p-dropdown
       [options]="optionsCentroC"
@@ -27,7 +26,7 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-<button class="buscar-btn" (click)="onBuscar()">
-  <i class="pi pi-search"></i>
-</button>
+  <button class="buscar-btn col-1 lg:col-1" (click)="onBuscar()">
+    <i class="pi pi-search"></i>
+  </button>
 </div>

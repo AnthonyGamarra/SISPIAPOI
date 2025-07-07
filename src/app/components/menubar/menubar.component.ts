@@ -3,7 +3,7 @@ import { TieredMenuModule } from 'primeng/tieredmenu';
 import { ButtonModule } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../core/services/auth.service'; // ajusta la ruta si es necesario
+import { AuthService } from '../../core/services/authentication/auth.service'; // ajusta la ruta si es necesario
 
 @Component({
   selector: 'app-menubar',

@@ -1,14 +1,13 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
-
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-form',
+  selector: 'app-form2',
   imports: [CommonModule],
-  templateUrl: './form.component.html',
-  styleUrl: './form.component.scss'
+  templateUrl: './form2.component.html',
+  styleUrl: './form2.component.scss'
 })
-export class FormComponent {
+export class Form2Component {
   filas: any[] = [];
 
   agregarFila() {

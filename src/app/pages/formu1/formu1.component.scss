@@ -4,3 +4,8 @@
   overflow-y: auto;
   padding-bottom: 5rem; /* Espacio para que no tape el footer */
 }
+
+.tabla {
+  position: relative; /* Necesario para que z-index funcione */
+  z-index: 3000 !important; /* Asegura que la tabla esté por encima de otros elementos */
+}
