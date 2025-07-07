@@ -4,17 +4,13 @@ import { FooterComponent } from '../../components/footer/footer.component';
 import {MenubarComponent} from '../../components/menubar/menubar.component';
 import {SelectorComponent} from '../../components/selector/selector.component';
 import { TablaComponent } from '../../components/tabla/tabla.component';
-// import { FormComponent } from '../../components/form/form.component';
+import { FormComponent } from '../../components/form/form.component';
 import {Form2Component} from '../../components/form2/form2.component';
 import { DatoscabeceraComponent } from '../../components/datoscabecera/datoscabecera.component';
 import { Form9Component } from '../../components/form9/form9.component';
 @Component({
   selector: 'app-formu1',
-<<<<<<< HEAD
-  imports: [CommonModule, FooterComponent, MenubarComponent,SelectorComponent, TablaComponent, Form2Component],
-=======
   imports: [CommonModule, FooterComponent, MenubarComponent,SelectorComponent, TablaComponent, FormComponent,Form2Component, DatoscabeceraComponent, Form9Component],
->>>>>>> 186a89c0bf4aa1610055dfd8d86bb610679c2780
   templateUrl: './formu1.component.html',
   styleUrl: './formu1.component.scss'
 })
