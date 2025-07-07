@@ -1,5 +1,22 @@
-<div class="selector-bar grid">
-  <div class="selector-group col-12 lg:col-3">
+<div class="selector-bar grid align-items-center">
+  <div class="selector-group col-12 lg:col-2">
+    <label class="selector-label">Dependencia:</label>  
+      <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+        [options]="dependencyOptions"
+        [(ngModel)]="selectedDependency"
+        [disabled]="true"
+        class="selector-dropdown"
+      ></p-dropdown>
+    <ng-template #multipleDeps>
+      <p-dropdown
+        [options]="dependencyOptions"
+        [(ngModel)]="selectedDependency"
+        placeholder="Seleccione"
+        class="selector-dropdown"
+      ></p-dropdown>
+    </ng-template>
+  </div>
+  <div class="selector-group col-12 lg:col-2">
     <label class="selector-label">Año:</label>  
     <p-dropdown
       [options]="optionsAno"
@@ -8,7 +25,7 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-  <div class="selector-group col-12 lg:col-4">
+  <div class="selector-group col-12 lg:col-3">
     <label class="selector-label">Centro gestor:</label>
     <p-dropdown
       [options]="optionsCentro"
@@ -17,7 +34,7 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-   <div class="selector-group col-10 lg:col-4">
+  <div class="selector-group col-10 lg:col-4">
     <label class="selector-label">Centro de costos:</label>
     <p-dropdown
       [options]="optionsCentroC"
@@ -26,7 +43,9 @@
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-  <button class="buscar-btn col-1 lg:col-1" (click)="onBuscar()">
-    <i class="pi pi-search"></i>
-  </button>
+  <div class="col-2 lg:col-1 flex align-items-center justify-content-center">
+    <button class="buscar-btn" (click)="onBuscar()">
+      <i class="pi pi-search"></i>
+    </button>
+  </div>
 </div>

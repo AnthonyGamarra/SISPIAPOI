@@ -1,11 +1,11 @@
 .selector-bar {
   background-color: var(--primary); /* azul */
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
   color: white;
   border-radius: 4px;
+  margin: 10px 0px;
 }
 
 .selector-group {
@@ -19,29 +19,27 @@
 }
 
 .buscar-btn {
-  background-color: white;
-  color: var(--primary);
-  border: none;
   border-radius: 4px;
-  padding: 0.1rem;
+  padding: 9.5px;
+  margin-top: 20px;
   cursor: pointer;
-  align-self: flex-start;
+  align-self: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  transition: background-color 0.3s ease;
-  margin-top: 30px; /* <-- aquí bajas el botón */
+  transition: background 0.2s;
+  background-color: white;
+  color: var(--primary);
+  border: 1px solid transparent;
 }
 
 .buscar-btn:hover {
-  background-color: #f0f0f0;
+  background-color: var(--primary);
+  color: white;
+  border: 1px solid white;
 }
 
 .buscar-btn .pi {
-  font-size: 1.2rem;
+  font-size: 1rem; // más grande
 }
-
-
