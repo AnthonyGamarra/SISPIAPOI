@@ -10,19 +10,19 @@
     </tr>
   </thead>
   <tbody>
-    <tr *ngFor="let objetivo of objetivos">
-      <td>{{ objetivo.nombre }}</td>
-      <td>
-        <p-dropdown 
-          [options]="objetivo.acciones" 
-          optionLabel="nombre" 
-          optionValue="id"
-          [(ngModel)]="opcionSeleccionadaId"
-          (onChange)="onSeleccionar($event.value)"
-          placeholder="Selecciona una acción">
-        </p-dropdown>
-      </td>
-    </tr>
+      <tr *ngFor="let objetivo of objetivos">
+        <td>{{ objetivo.nombre }}</td>
+        <td>
+          <p-dropdown 
+            [options]="objetivo.acciones" 
+            optionLabel="nombre" 
+            optionValue="id"
+            [(ngModel)]="opcionSeleccionadaId"
+            (onChange)="onSeleccionar($event.value)"
+            placeholder="Selecciona una acción">
+          </p-dropdown>
+        </td>
+      </tr>
   </tbody>
 </table>
 

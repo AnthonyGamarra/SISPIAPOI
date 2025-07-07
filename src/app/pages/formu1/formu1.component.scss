@@ -6,5 +6,6 @@
 }
 
 .tabla {
+  position: relative; /* Necesario para que z-index funcione */
   z-index: 3000 !important; /* Asegura que la tabla esté por encima de otros elementos */
 }
