@@ -1,0 +1,27 @@
+<p-accordion>
+  <p-accordionTab header="Información Personal">
+    <div class="p-fluid">
+      <div class="p-field">
+        <label for="name">Nombre</label>
+        <!-- <input id="name" type="text" pInputText [(ngModel)]="formData.name" /> -->
+      </div>
+      <div class="p-field">
+        <label for="email">Email</label>
+        <!-- <input id="email" type="email" pInputText [(ngModel)]="formData.email" /> -->
+      </div>
+    </div>
+  </p-accordionTab>
+
+  <p-accordionTab header="Información de Contacto">
+    <div class="p-fluid">
+      <div class="p-field">
+        <label for="phone">Teléfono</label>
+        <!-- <input id="phone" type="text" pInputText [(ngModel)]="formData.phone" /> -->
+      </div>
+    </div>
+  </p-accordionTab>
+
+  <p-accordionTab header="Confirmar">
+    <button pButton type="button" label="Enviar" (click)="onSubmit()"></button>
+  </p-accordionTab>
+</p-accordion>
