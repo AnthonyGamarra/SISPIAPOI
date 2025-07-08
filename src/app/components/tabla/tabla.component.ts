@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
-import { StrategicobjectiveService } from '../../core/services/logic/strategicobjective.service';
+import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
 import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
 import { StrategicObjective } from '../../models/logic/strategicObjective.model';
 import { StrategicAction } from '../../models/logic/strategicAction.model';
@@ -33,7 +33,7 @@ export class TablaComponent implements OnInit, OnChanges {
   opcionSeleccionadaId: number | null = null;
 
   constructor(
-    private strategicObjectiveService: StrategicobjectiveService,
+    private strategicObjectiveService: StrategicObjectiveService,
     private strategicActionService: StrategicActionService
   ) {}
 

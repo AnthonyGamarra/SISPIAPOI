@@ -6,7 +6,7 @@ import { StrategicObjective } from '../../../models/logic/strategicObjective.mod
 @Injectable({
   providedIn: 'root'
 })
-export class StrategicobjectiveService {
+export class StrategicObjectiveService {
   private readonly BASE_URL = 'http://10.0.29.240:8081/strategic-objective';
 
   constructor(private http: HttpClient) { }
