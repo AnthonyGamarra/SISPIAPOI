@@ -4,7 +4,7 @@ export interface StrategicAction {
   idStrategicAction: number;
   code: string;
   name: string;
-  active: boolean;
+  active?: boolean;
   strategicObjective: StrategicObjective;
 }
 

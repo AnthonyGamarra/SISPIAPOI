@@ -5,7 +5,7 @@ export interface BudgetItem {
   idBudgetItem: number;
   codPoFi: string;  
   name: string;
-  active: boolean;
+  active?: boolean;
   budgetType: BudgetType;
   budgetCategory: BudgetCategory;
 }

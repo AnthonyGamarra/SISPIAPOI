@@ -7,12 +7,12 @@ import { TablaComponent } from '../../components/tabla/tabla.component';
 import { FormComponent } from '../../components/form/form.component';
 import { DatoscabeceraComponent } from '../../components/datoscabecera/datoscabecera.component';
 @Component({
-  selector: 'app-formu1',
+  selector: 'app-formulation',
   imports: [CommonModule, FooterComponent, MenubarComponent,SelectorComponent, TablaComponent, FormComponent, DatoscabeceraComponent],
-  templateUrl: './formu1.component.html',
-  styleUrl: './formu1.component.scss'
+  templateUrl: './formulation.component.html',
+  styleUrl: './formulation.component.scss'
 })
-export class Formu1Component {
+export class FormulationComponent {
   mostrarResultados = false;
   accionSeleccionada: any = null;
   anoSeleccionado: string | null = null;

@@ -4,7 +4,7 @@ export interface Dependency {
   idDependency: number;
   name: string;
   description: string;
-  active: boolean;
+  active?: boolean;
   dependencyType: DependencyType;
 }
 

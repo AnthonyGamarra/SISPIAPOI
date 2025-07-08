@@ -2,7 +2,7 @@ export interface BudgetCategory {
   idBudgetCategory: number;
   codPoFi: string;  
   name: string;
-  active: boolean;
+  active?: boolean;
   parentCategory: BudgetCategory;
 }
 
