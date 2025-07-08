@@ -1,7 +1,7 @@
 import { Dependency } from "./dependency.model";
 
 export interface ManagementCenter {
-  idManagementCenter: number;
+  idManagementCenter?: number;
   name: string;
   description: string;
   managementCenterCode: string;

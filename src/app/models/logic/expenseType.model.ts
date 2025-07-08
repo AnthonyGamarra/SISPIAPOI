@@ -1,5 +1,5 @@
 export interface ExpenseType {
-  idExpenseType: number;
+  idExpenseType?: number;
   name: string;
   active?: boolean;
 }

@@ -8,7 +8,7 @@ import { Goal } from "./goal.model";
 import { Priority } from "./priority.model";
 
 export interface OperationalActivity {
-  idOperationalActivity: number;
+  idOperationalActivity?: number;
   sapCode: string;
   name: string;
   active?: boolean;
@@ -19,9 +19,9 @@ export interface OperationalActivity {
   costCenter: CostCenter;
   measurementType: MeasurementType;
   measurementUnit: string;
-  executedGoal?: number;
-  expectedGoal?: number;
-  goals?: Goal[];
+  executedGoal: number;
+  expectedGoal: number;
+  goals: Goal[];
   priority: Priority;
   goods: number;
   remuneration: number;

@@ -8,14 +8,8 @@ import { StrategicObjective } from '../../models/logic/strategicObjective.model'
 import { StrategicAction } from '../../models/logic/strategicAction.model';
 
 interface Accion {
-  id: number;
+  id?: number;
   nombre: string;
-}
-
-interface Objetivo {
-  id: number;
-  nombre: string;
-  acciones: Accion[];
 }
 
 @Component({
@@ -29,7 +23,7 @@ export class TablaComponent implements OnInit, OnChanges {
   @Input() ano: string | null = null; // Nuevo input para el año
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
-  objetivos: { id: number; nombre: string; acciones: { id: number; nombre: string }[] }[] = [];
+  objetivos: { id?: number; nombre: string; acciones: { id?: number; nombre: string }[] }[] = [];
   opcionSeleccionadaId: number | null = null;
 
   constructor(

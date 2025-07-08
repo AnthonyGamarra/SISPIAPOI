@@ -1,5 +1,5 @@
 export interface DependencyType {
-  idDependencyType: number;
+  idDependencyType?: number;
   name: string;
   description: string;
   active?: boolean;
