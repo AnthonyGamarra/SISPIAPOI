@@ -1,109 +1,154 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
-import { TagModule } from 'primeng/tag';
-import { DropdownModule } from 'primeng/dropdown'; 
+import { BudgetCategoryService } from '../../core/services/logic/budget-category.service';
+import { BudgetItemService } from '../../core/services/logic/budget-item.service';
+import { BudgetCategory } from '../../models/logic/budgetCategory.model';
+import { BudgetItem } from '../../models/logic/budgetItem.model';
 
-
-interface Product {
-  id: string;
-  code: string;
+interface Row {
+  id: number;
+  codPoFi: string;
   name: string;
-  inventoryStatus: string;
-  price: number;
+  tipoGasto: string;
+  meses: { [key: string]: number };
+  expanded: boolean;
+  editable: boolean;
+  children?: Row[];
+  parent?: Row; // <-- Referencia al padre
 }
-
 
 @Component({
   selector: 'app-form9',
-  imports: [CommonModule,FormsModule, TableModule, InputTextModule, ButtonModule, RippleModule, TagModule, DropdownModule],
   templateUrl: './form9.component.html',
-  styleUrl: './form9.component.scss'
+  styleUrls: ['./form9.component.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  providers: [BudgetCategoryService, BudgetItemService]
 })
-
-
 export class Form9Component implements OnInit {
-
-  products: Product[] = [];
-  statuses: { label: string, value: string }[] = [];
-
   meses: string[] = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'Enero', 'Febrero', 'Marzo', 'Abril',
+    'Mayo', 'Junio', 'Julio', 'Agosto',
+    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  filtroCodPofi: string = '';
-  filtroPosicion: string = '';
-  filtroTipoGasto: string = '';
-  filas: any[] = [
-    { codPofi: '', posicionPresupuestaria: '', tipoGasto: 'Gasto ineludible', montos: Array(12).fill(0) },
-    { codPofi: '', posicionPresupuestaria: '', tipoGasto: 'Otros tipos de gasto', montos: Array(12).fill(0) }
-  ];
+  tiposGasto: string[] = ['Operativo', 'Capital', 'Administrativo'];
+  data: Row[] = [];
 
-  ngOnInit(): void {
-    this.products = [
-      { id: '1000', code: 'P1000', name: 'Product 1', inventoryStatus: 'INSTOCK', price: 29.99 },
-      { id: '1001', code: 'P1001', name: 'Product 2', inventoryStatus: 'LOWSTOCK', price: 19.99 },
-      { id: '1002', code: 'P1002', name: 'Product 3', inventoryStatus: 'OUTOFSTOCK', price: 0 },
-    ];
+  constructor(
+    private budgetCategoryService: BudgetCategoryService,
+    private budgetItemService: BudgetItemService
+  ) {}
 
-    this.statuses = [
-      { label: 'In Stock', value: 'INSTOCK' },
-      { label: 'Low Stock', value: 'LOWSTOCK' },
-      { label: 'Out of Stock', value: 'OUTOFSTOCK' }
-    ];
+  ngOnInit() {
+    Promise.all([
+      this.budgetCategoryService.getAll().toPromise(),
+      this.budgetItemService.getAll().toPromise()
+    ]).then(([categories, items]) => {
+      if (categories && items) {
+        this.data = this.buildRows(categories, items);
+      } else {
+        this.data = [];
+      }
+    });
   }
 
-  getSeverity(status: string): string {
-    switch (status) {
-      case 'INSTOCK':
-        return 'success';
-      case 'LOWSTOCK':
-        return 'warning';
-      case 'OUTOFSTOCK':
-        return 'danger';
-      default:
-        return '';
+  buildRows(categories: BudgetCategory[], items: BudgetItem[]): Row[] {
+    // Map de categorías
+    const catMap = new Map<number, Row>();
+    for (const cat of categories) {
+      catMap.set(cat.idBudgetCategory, {
+        id: cat.idBudgetCategory,
+        codPoFi: cat.codPoFi || '',
+        name: cat.name,
+        tipoGasto: '',
+        meses: this.initMeses(),
+        expanded: false,
+        editable: false,
+        children: []
+      });
+    }
+    // Relacionar jerarquía de categorías
+    const roots: Row[] = [];
+    for (const cat of categories) {
+      const node = catMap.get(cat.idBudgetCategory)!;
+      if (cat.parentCategory && cat.parentCategory.idBudgetCategory) {
+        const parent = catMap.get(cat.parentCategory.idBudgetCategory);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(node);
+          node.parent = parent; // <-- Asignar referencia al padre
+        }
+      } else {
+        roots.push(node);
+      }
+    }
+    // Relacionar items como hijos editables de la categoría correspondiente
+    for (const item of items) {
+      const parent = catMap.get(item.budgetCategory.idBudgetCategory);
+      if (parent) {
+        const itemRow: Row = {
+          id: item.idBudgetItem,
+          codPoFi: item.codPoFi,
+          name: item.name,
+          tipoGasto: item.budgetType?.name || '',
+          meses: this.initMeses(), // Inicializa los meses en cero
+          expanded: false,
+          editable: true,
+          parent: parent // <-- Asignar referencia al padre
+        };
+        parent.children = parent.children || [];
+        parent.children.push(itemRow);
+      }
+    }
+    // Limpiar arrays vacíos
+    for (const row of catMap.values()) {
+      if (row.children && row.children.length === 0) {
+        delete row.children;
+      }
+    }
+    // Calcular sumas iniciales por categoría
+    for (const root of roots) {
+      this.updateParentValuesRecursive(root);
+    }
+    return roots;
+  }
+
+  initMeses(values: Partial<{ [key: string]: number }> = {}): { [key: string]: number } {
+    const mesesObj: { [key: string]: number } = {};
+    for (const mes of this.meses) {
+      mesesObj[mes] = values[mes] || 0;
+    }
+    return mesesObj;
+  }
+
+  toggleExpand(row: Row) {
+    row.expanded = !row.expanded;
+  }
+
+  updateParentValues(parent: Row) {
+    if (parent && parent.children) {
+      for (const mes of this.meses) {
+        parent.meses[mes] = parent.children.reduce((sum, child) => sum + (child.meses[mes] || 0), 0);
+      }
+      if (parent.parent) {
+        this.updateParentValues(parent.parent);
+      }
     }
   }
 
-  onRowEditInit(product: Product): void {
-    console.log('Edit Init', product);
-    // Aquí podrías guardar una copia del estado original si necesitas cancelar
-  }
-
-  onRowEditSave(product: Product): void {
-    console.log('Edit Save', product);
-    // Aquí podrías enviar cambios al backend
-  }
-
-  onRowEditCancel(product: Product, index: number): void {
-    console.log('Edit Cancel', product, index);
-    // Aquí podrías restaurar los datos originales si los guardaste en onRowEditInit
-  }
-
-  get filasFiltradas() {
-    return this.filas.filter(fila =>
-      (!this.filtroCodPofi || fila.codPofi.toLowerCase().includes(this.filtroCodPofi.toLowerCase())) &&
-      (!this.filtroPosicion || fila.posicionPresupuestaria.toLowerCase().includes(this.filtroPosicion.toLowerCase())) &&
-      (!this.filtroTipoGasto || fila.tipoGasto === this.filtroTipoGasto)
-    );
-  }
-
-  getTotal(fila: any): number {
-    return fila.montos.reduce((acc: number, val: number) => acc + (Number(val) || 0), 0);
-  }
-
-  agregarFila(): void {
-    this.filas.push({ codPofi: '', posicionPresupuestaria: '', tipoGasto: '', montos: Array(12).fill(0) });
-  }
-
-  eliminarFila(index: number): void {
-    if (this.filas.length > 1) {
-      this.filas.splice(index, 1);
+  updateParentValuesRecursive(row: Row) {
+    if (row.children && row.children.length > 0) {
+      for (const child of row.children) {
+        this.updateParentValuesRecursive(child);
+      }
+      for (const mes of this.meses) {
+        row.meses[mes] = row.children.reduce((sum, child) => sum + (child.meses[mes] || 0), 0);
+      }
     }
+  }
+
+  calcularTotal(row: Row): number {
+    return this.meses.reduce((sum, mes) => sum + (row.meses[mes] || 0), 0);
   }
 }
