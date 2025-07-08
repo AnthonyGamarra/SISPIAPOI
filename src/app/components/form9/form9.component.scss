@@ -1,289 +1,97 @@
-table {
-  width: 95%;
-  margin: 2rem auto;
-  border-collapse: collapse;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  background-color: #fff;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 0.85rem;
-
-  thead {
-    background-color: var(--primary);
-    color: white;
-
-    th {
-      background: var(--primary, #005fa3);
-      color: #fff;
-      font-weight: 600;
-      border: 1px solid #005fa3;
-      white-space: nowrap;
-      padding: 10px;
-    }
-  }
-
-  tbody {
-    td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      color: #333;
-      vertical-align: middle;
-
-      input[type='number'] {
-        width: 80px;
-        padding: 4px 6px;
-        box-sizing: border-box;
-        font-size: 0.85rem;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        text-align: right;
-
-        &:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 5px var(--primary);
-        }
-      }
-
-      select {
-        padding: 4px 6px;
-        font-size: 0.85rem;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        background-color: white;
-        cursor: pointer;
-
-        &:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 5px var(--primary);
-        }
-      }
-    }
-
-    .child-row {
-      background-color: #f9f9f9;
-
-      td:first-child {
-        padding-left: 30px;
-        font-style: italic;
-        color: #555;
-      }
-    }
-
-    .categoria-row {
-      background: #e3f2fd;
-      font-weight: bold;
-      border-top: 2px solid var(--primary);
-      border-bottom: 2px solid var(--primary);
-    }
-
-    .categoria-nombre,
-    .categoria-total {
-      color: var(--primary);
-      font-weight: bold;
-      font-size: 1.08em;
-    }
-
-    .item-row {
-      background: #f9f9f9;
-    }
-
-    .child-row {
-      background: #f1f8e9;
-    }
-
-    td:first-child {
-      text-align: left;
-    }
-  }
-
-  &.matrix-table {
-    table-layout: fixed;
-    width: 100%;
-    min-width: 1200px;
-    max-width: 100%;
-    margin: 2rem auto;
-  }
-
-  th,
-  td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-button {
-  cursor: pointer;
-  background-color: transparent;
-  border: none;
-  font-weight: bold;
-  font-size: 1rem;
-  width: 28px;
-  height: 28px;
-  line-height: 1;
-  color: var(--primary);
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(0, 95, 163, 0.1);
-    border-radius: 4px;
-  }
-}
-
-.toggle-btn {
-  padding: 0;
-  margin-right: 6px;
-  vertical-align: middle;
-  background: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  width: 28px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon-expanded svg,
-.icon-collapsed svg {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* Variables example */
 :root {
   --primary: #005fa3;
 }
 
 .matrix-table-wrapper {
   width: 100%;
-  overflow-x: auto;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding-bottom: 1rem;
+  max-width: 1550px;  /* ancho que ya tienes o el que quieras */
+  min-width: 1550px;
+  
+  max-height: 88vh;  /* no sobrepasa la altura de la pantalla */
+  overflow-y: auto;   /* scroll vertical si el contenido es muy alto */
+  overflow-x: auto;   /* scroll horizontal si es necesario */
+  
+  margin: 0 auto;
 }
 
 .matrix-table {
+  width: 100%;
   table-layout: fixed;
-  min-width: 1200px;
-  max-width: none;
-  width: max-content;
+  border-collapse: collapse;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background-color: #fff;
+  border-radius: 8px;
+  text-align: center;
   font-size: 0.78rem;
+}
+
+.matrix-table thead {
+  background-color: var(--primary);
+  color: white;
 }
 
 .matrix-table th,
 .matrix-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.matrix-table th:first-child,
-.matrix-table td:first-child {
-  white-space: normal;
-  word-break: break-word;
-  overflow: visible;
-  max-width: 350px;
-  min-width: 180px;
+.matrix-table thead th {
+  border: 1px solid #005fa3; /* borde azul oscuro para encabezados */
+  font-weight: 600;
 }
 
-.matrix-table th:nth-child(1),
-.matrix-table td:nth-child(1) {
-  min-width: 280px;
+/* Primera columna más ancha */
+.matrix-table thead th:first-child,
+.matrix-table tbody td:first-child {
+  width: 400px;
   max-width: 400px;
-  width: 320px;
-  background: #e3f2fd;
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  box-shadow: 2px 0 4px -2px #bbb;
+  min-width: 400px;
+  text-align: left;
 }
 
-.matrix-table th:nth-child(2),
-.matrix-table td:nth-child(2) {
-  min-width: 150px;
-  max-width: 200px;
-  width: 170px;
-  background: #f5faff;
-  position: sticky;
-  left: 260px;
-  z-index: 2;
-  box-shadow: 2px 0 4px -2px #eee;
+/* Segunda columna más ancha */
+.matrix-table thead th:nth-child(2),
+.matrix-table tbody td:nth-child(2) {
+  width: 160px;
+  max-width: 160px;
+  min-width: 160px;
+  text-align: center;
 }
 
-.matrix-table th:nth-child(3),
-.matrix-table td:nth-child(3) {
-  min-width: 100px;
-  max-width: 120px;
+/* Resto de columnas igual */
+.matrix-table thead th:not(:first-child):not(:nth-child(2)),
+.matrix-table tbody td:not(:first-child):not(:nth-child(2)) {
   width: 110px;
-  background: #f5faff;
-  position: sticky;
-  left: 390px;
-  z-index: 2;
+  max-width: 110px;
+  min-width: 110px;
+  text-align: center;
 }
 
-.matrix-table th:nth-child(4),
-.matrix-table td:nth-child(4) {
-  min-width: 100px;
-  max-width: 120px;
-  width: 110px;
-  background: #f5faff;
-  position: sticky;
-  left: 500px;
-  z-index: 2;
+button.toggle-btn {
+  padding: 0;
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  box-sizing: content-box;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--primary);
+  transition: background-color 0.2s ease;
 }
 
-.matrix-table th:nth-child(5),
-.matrix-table td:nth-child(5) {
-  min-width: 100px;
-  max-width: 120px;
-  width: 110px;
-  background: #f5faff;
-  position: sticky;
-  left: 610px;
-  z-index: 2;
+button.toggle-btn:hover {
+  background-color: rgba(0, 95, 163, 0.1);
+  border-radius: 4px;
 }
 
-.matrix-table th:first-child,
-.matrix-table th:nth-child(2),
-.matrix-table th:nth-child(3),
-.matrix-table th:nth-child(4),
-.matrix-table th:nth-child(5) {
-  background: var(--primary);
-  color: #fff;
-  font-weight: bold;
-  border-right: 2px solid #fff;
-  z-index: 3;
+.matrix-table tbody td:first-child {
+  font-size: 0.6rem; /* o el tamaño que quieras */
 }
 
-.child-row.grupo-0 {
-  background-color: #f1f8e9;
-}
-
-.child-row.grupo-1 {
-  background-color: #e8f5e9;
-}
-
-.child-row.grupo-2 {
-  background-color: #fff8e1;
-}
-
-.child-row.grupo-3 {
-  background-color: #e3f2fd;
-}
-
-.child-row.grupo-4 {
-  background-color: #fce4ec;
-}
-
-.child-row.grupo-5 {
-  background-color: #ede7f6;
-}
-
-.child-row.grupo-6 {
-  background-color: #f3e5f5;
-}
+/* cambios final */

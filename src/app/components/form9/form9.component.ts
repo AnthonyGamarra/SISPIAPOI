@@ -57,8 +57,9 @@ export class Form9Component implements OnInit {
     // Map de categorías
     const catMap = new Map<number, Row>();
     for (const cat of categories) {
-      catMap.set(cat.idBudgetCategory, {
-        id: cat.idBudgetCategory,
+      const id = cat.idBudgetCategory ?? 0;
+      catMap.set(id, {
+        id: id,
         codPoFi: cat.codPoFi || '',
         name: cat.name,
         tipoGasto: '',
@@ -71,9 +72,11 @@ export class Form9Component implements OnInit {
     // Relacionar jerarquía de categorías
     const roots: Row[] = [];
     for (const cat of categories) {
-      const node = catMap.get(cat.idBudgetCategory)!;
-      if (cat.parentCategory && cat.parentCategory.idBudgetCategory) {
-        const parent = catMap.get(cat.parentCategory.idBudgetCategory);
+      const id = cat.idBudgetCategory ?? 0;
+      const node = catMap.get(id)!;
+      if (cat.parentCategory && cat.parentCategory.idBudgetCategory !== undefined) {
+        const parentId = cat.parentCategory.idBudgetCategory ?? 0;
+        const parent = catMap.get(parentId);
         if (parent) {
           parent.children = parent.children || [];
           parent.children.push(node);
@@ -85,10 +88,11 @@ export class Form9Component implements OnInit {
     }
     // Relacionar items como hijos editables de la categoría correspondiente
     for (const item of items) {
-      const parent = catMap.get(item.budgetCategory.idBudgetCategory);
+      const parentId = item.budgetCategory.idBudgetCategory ?? 0;
+      const parent = catMap.get(parentId);
       if (parent) {
         const itemRow: Row = {
-          id: item.idBudgetItem,
+          id: item.idBudgetItem ?? 0,
           codPoFi: item.codPoFi,
           name: item.name,
           tipoGasto: item.budgetType?.name || '',
