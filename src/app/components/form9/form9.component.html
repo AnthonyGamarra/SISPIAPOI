@@ -1,27 +1,34 @@
-<p-accordion>
-  <p-accordionTab header="Información Personal">
-    <div class="p-fluid">
-      <div class="p-field">
-        <label for="name">Nombre</label>
-        <!-- <input id="name" type="text" pInputText [(ngModel)]="formData.name" /> -->
-      </div>
-      <div class="p-field">
-        <label for="email">Email</label>
-        <!-- <input id="email" type="email" pInputText [(ngModel)]="formData.email" /> -->
-      </div>
-    </div>
-  </p-accordionTab>
-
-  <p-accordionTab header="Información de Contacto">
-    <div class="p-fluid">
-      <div class="p-field">
-        <label for="phone">Teléfono</label>
-        <!-- <input id="phone" type="text" pInputText [(ngModel)]="formData.phone" /> -->
-      </div>
-    </div>
-  </p-accordionTab>
-
-  <p-accordionTab header="Confirmar">
-    <button pButton type="button" label="Enviar" (click)="onSubmit()"></button>
-  </p-accordionTab>
-</p-accordion>
+<table border="1" style="width: 100%; border-collapse: collapse; min-width: 70rem;">
+  <thead>
+    <tr>
+      <th style="width:10%">Cod. PoFi</th>
+      <th style="width:15%">Posición Presupuestaria</th>
+      <th style="width:12%">Tipo de gasto</th>
+      <th *ngFor="let mes of meses" style="width:5%">{{mes}}</th>
+      <th style="width:8%">Total</th>
+      <th style="width:5%">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let fila of filasFiltradas; let i = index">
+      <td><input type="text" [(ngModel)]="fila.codPofi" style="width: 100%" /></td>
+      <td><input type="text" [(ngModel)]="fila.posicionPresupuestaria" style="width: 100%" /></td>
+      <td>
+        <select [(ngModel)]="fila.tipoGasto" style="width: 100%">
+          <option value="Gasto ineludible">Gasto ineludible</option>
+          <option value="Otros tipos de gasto">Otros tipos de gasto</option>
+        </select>
+      </td>
+      <td *ngFor="let mes of meses; let mi = index">
+        <input type="number" [(ngModel)]="fila.montos[mi]" style="width: 100%" />
+      </td>
+      <td>{{getTotal(fila)}}</td>
+      <td>
+        <button type="button" (click)="eliminarFila(i)" [disabled]="filas.length === 1" title="Eliminar fila">🗑️</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<div style="margin-top: 1rem; text-align: right;">
+  <button type="button" (click)="agregarFila()">➕ Agregar fila</button>
+</div>
