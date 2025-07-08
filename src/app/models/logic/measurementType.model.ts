@@ -1,5 +1,5 @@
 export interface MeasurementType {
-  idMeasurementType: number;
+  idMeasurementType?: number;
   name: string;
   active?: boolean;
 }

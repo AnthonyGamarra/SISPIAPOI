@@ -1,5 +1,5 @@
 export interface FormulationState {
-  idFormulationState: number;
+  idFormulationState?: number;
   name: string;
   active?: boolean;
 }

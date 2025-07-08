@@ -1,7 +1,7 @@
 import { Dependency } from "./dependency.model";
 
 export interface FinancialFund {
-  idCostCenter: number;
+  idCostCenter?: number;
   name: string;
   active?: boolean;
   dependency: Dependency;

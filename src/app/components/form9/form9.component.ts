@@ -14,7 +14,7 @@ interface Product {
   code: string;
   name: string;
   inventoryStatus: string;
-  price: number;
+  price?: number;
 }
 
 

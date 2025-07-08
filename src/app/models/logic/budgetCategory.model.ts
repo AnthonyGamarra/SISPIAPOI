@@ -1,5 +1,5 @@
 export interface BudgetCategory {
-  idBudgetCategory: number;
+  idBudgetCategory?: number;
   codPoFi: string;  
   name: string;
   active?: boolean;

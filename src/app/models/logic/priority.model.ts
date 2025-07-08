@@ -1,5 +1,5 @@
 export interface Priority {
-  idPriority: number;
+  idPriority?: number;
   name: string;
   active?: boolean;
 }

@@ -1,51 +1,41 @@
 <div class="selector-bar grid align-items-center">
-  <div class="selector-group col-12 lg:col-2">
+  <div class="selector-group col-6">
     <label class="selector-label">Dependencia:</label>  
-      <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
-        [options]="dependencyOptions"
-        [(ngModel)]="selectedDependency"
-        [disabled]="true"
-        class="selector-dropdown"
-      ></p-dropdown>
+    <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+      [options]="dependencyOptions"
+      [(ngModel)]="selectedDependency"
+      [disabled]="true"
+      class="selector-dropdown"
+    ></p-dropdown>
     <ng-template #multipleDeps>
       <p-dropdown
         [options]="dependencyOptions"
         [(ngModel)]="selectedDependency"
+        (onChange)="verificarFormulacion()"
         placeholder="Seleccione"
         class="selector-dropdown"
       ></p-dropdown>
     </ng-template>
   </div>
-  <div class="selector-group col-12 lg:col-2">
+
+  <div class="selector-group col-4">
     <label class="selector-label">Año:</label>  
     <p-dropdown
       [options]="optionsAno"
       [(ngModel)]="selectedAno"
-      placeholder=""
+      (onChange)="verificarFormulacion()"
       class="selector-dropdown"
     ></p-dropdown>
   </div>
-  <div class="selector-group col-12 lg:col-3">
-    <label class="selector-label">Centro gestor:</label>
-    <p-dropdown
-      [options]="optionsCentro"
-      [(ngModel)]="selectedCentro"
-      placeholder=""
-      class="selector-dropdown"
-    ></p-dropdown>
-  </div>
-  <div class="selector-group col-10 lg:col-4">
-    <label class="selector-label">Centro de costos:</label>
-    <p-dropdown
-      [options]="optionsCentroC"
-      [(ngModel)]="selectedCentroC"
-      placeholder=""
-      class="selector-dropdown"
-    ></p-dropdown>
-  </div>
-  <div class="col-2 lg:col-1 flex align-items-center justify-content-center">
-    <button class="buscar-btn" (click)="onBuscar()">
-      <i class="pi pi-search"></i>
+
+  <div class="col-2 flex align-items-center justify-content-center">
+    <button class="buscar-btn"
+            (click)="onBuscar()"
+            [disabled]="checkingFormulation || !selectedAno || !selectedDependency">
+      <i class="pi pi-plus" *ngIf="!formulationExists"></i>
+      <i class="pi pi-eye" *ngIf="formulationExists"></i>
+      <span *ngIf="formulationExists">Mostrar formulación</span>
+      <span *ngIf="!formulationExists">Crear formulación</span>
     </button>
   </div>
 </div>

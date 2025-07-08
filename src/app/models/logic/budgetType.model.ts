@@ -1,5 +1,5 @@
 export interface BudgetType {
-  idBudgetType: number;
+  idBudgetType?: number;
   name: string;
   active?: boolean;
 }

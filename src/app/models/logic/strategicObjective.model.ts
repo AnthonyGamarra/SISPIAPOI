@@ -1,5 +1,5 @@
 export interface StrategicObjective {
-  idStrategicObjective: number;
+  idStrategicObjective?: number;
   code: string;
   name: string;
   active?: boolean;
