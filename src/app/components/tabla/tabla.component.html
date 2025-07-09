@@ -1,49 +1,34 @@
-<table border="1" style="width: 100%; border-collapse: collapse;" class="tabla-oe">
-  <colgroup>
-    <col style="width: 40%;" /> 
-    <col style="width: 60%;" /> 
-  </colgroup>
-  <thead>
-    <tr>
-      <th>Objetivo</th>
-      <th>Acciones estratégicas (selecciona una)</th>
-    </tr>
-  </thead>
-  <tbody>
-      <tr *ngFor="let objetivo of objetivos">
-        <td>{{ objetivo.nombre }}</td>
-        <td>
-          <p-dropdown 
-            [options]="objetivo.acciones" 
-            optionLabel="nombre" 
-            optionValue="id"
-            [(ngModel)]="opcionSeleccionadaId"
-            (onChange)="onSeleccionar($event.value)"
-            placeholder="Selecciona una acción">
-          </p-dropdown>
-        </td>
-      </tr>
-  </tbody>
-</table>
+<div class="p-mb-4">
+  <p-button
+    label="Agregar Actividad"
+    icon="pi pi-plus"
+    (click)="agregarActividad()"
+    severity="success">
+  </p-button>
+</div>
 
-
-<p-table [value]="products" dataKey="idOperationalActivity" editMode="row" [tableStyle]="{'min-width': '90rem'}">
+<p-table [value]="products" dataKey="idOperationalActivity" editMode="row" [tableStyle]="{'min-width': '120rem'}">
   <ng-template pTemplate="header">
     <tr>
-      <th>SAP Code</th>
-      <th>Name</th>
-      <th>Measurement Unit</th>
-      <th>Strategic Action</th>
-      <th>Financial Fund</th>
-      <th>Management Center</th>
-      <th>Cost Center</th>
-      <th>Measurement Type</th>
-      <th>Priority</th>
-      <th>Expected Goal</th>
-      <th>Executed Goal</th>
-      <th>Goods</th>
-      <th>Remuneration</th>
-      <th>Services</th>
+      <th>Código SAP</th>
+      <th>Nombre de actividad</th>
+      <th>Unidad de medida</th>
+      <th>Objetivo estratégico</th>
+      <th>Acción estratégica</th>
+      <th>Fondo financiero</th>
+      <th>Centro gestor</th>
+      <th>Centro de costos</th>
+      <th>Tipo de medida</th>
+      <th>Prioridad</th>
+      <th>Meta esperada</th>
+      <th>Meta ejecutada</th>
+      <th>Bienes</th>
+      <th>Remuneraciones</th>
+      <th>Servicios</th>
+      <th>Trimestre I</th>
+      <th>Trimestre II</th>
+      <th>Trimestre III</th>
+      <th>Trimestre IV</th>
       <th>Acciones</th>
     </tr>
   </ng-template>
@@ -53,7 +38,7 @@
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
-            <input pInputText [(ngModel)]="product.sapCode" type="text" />
+            <input pInputText [(ngModel)]="product.sapCode" type="text" [disabled]="true" />
           </ng-template>
           <ng-template pTemplate="output">{{ product.sapCode }}</ng-template>
         </p-cellEditor>
@@ -77,15 +62,34 @@
         </p-cellEditor>
       </td>
 
-      <!-- Strategic Action -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
             <p-dropdown
-              [options]="strategicActions"
+              [options]="strategicObjectives"
+              optionLabel="name"
+              optionValue="idStrategicObjective"
+              [(ngModel)]="product.strategicAction.strategicObjective.idStrategicObjective"
+              (onChange)="onStrategicObjectiveChange($event, product)"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getStrategicObjectiveName(product.strategicAction?.strategicObjective?.idStrategicObjective) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="filteredStrategicActions"
               optionLabel="name"
               optionValue="idStrategicAction"
               [(ngModel)]="product.strategicAction.idStrategicAction"
+              [disabled]="!product.strategicAction?.strategicObjective?.idStrategicObjective"
+              (onChange)="onSeleccionar($event.value, product)"
               [style]="{ width: '100%' }">
             </p-dropdown>
           </ng-template>
@@ -95,7 +99,6 @@
         </p-cellEditor>
       </td>
 
-      <!-- Financial Fund -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
@@ -113,7 +116,6 @@
         </p-cellEditor>
       </td>
 
-      <!-- Management Center -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
@@ -131,7 +133,6 @@
         </p-cellEditor>
       </td>
 
-      <!-- Cost Center -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
@@ -149,7 +150,6 @@
         </p-cellEditor>
       </td>
 
-      <!-- Measurement Type -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
@@ -167,7 +167,6 @@
         </p-cellEditor>
       </td>
 
-      <!-- Priority -->
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
@@ -231,6 +230,42 @@
       </td>
 
       <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.goals[0].value" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.goals[0]?.value }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.goals[1].value" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.goals[1]?.value }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.goals[2].value" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.goals[2]?.value }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.goals[3].value" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.goals[3]?.value }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
         <div class="flex items-center justify-center gap-2">
           <button
             *ngIf="!editing"
@@ -270,10 +305,20 @@
             rounded
             severity="danger">
           </button>
+
+          <button
+            *ngIf="!editing"
+            pButton
+            pRipple
+            type="button"
+            icon="pi pi-trash"
+            (click)="eliminarActividad(ri, product)"
+            text
+            rounded
+            severity="danger">
+          </button>
         </div>
       </td>
     </tr>
   </ng-template>
 </p-table>
-
-

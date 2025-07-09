@@ -57,12 +57,11 @@ export class TablaComponent implements OnChanges {
   @Input() idFormulation: number | null = null;
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
-  objetivos: { id?: number; nombre: string; acciones: { id?: number; nombre: string }[] }[] = [];
-  opcionSeleccionadaId: number | null = null;
-
   products: OperationalActivity[] = [];
 
+  strategicObjectives: StrategicObjective[] = [];
   strategicActions: StrategicAction[] = [];
+  filteredStrategicActions: StrategicAction[] = [];
   financialFunds: FinancialFund[] = [];
   managementCenters: ManagementCenter[] = [];
   costCenters: CostCenter[] = [];
@@ -78,16 +77,13 @@ export class TablaComponent implements OnChanges {
   private operationalActivityService = inject(OperationalActivityService);
   private goalService = inject(GoalService);
   private toastr = inject(ToastrService);
-
-  constructor(private strategicObjectiveService: StrategicObjectiveService) {}
+  private strategicObjectiveService = inject(StrategicObjectiveService);
 
   ngOnChanges(changes: SimpleChanges) {
     const cambioAno = changes['ano'] && !changes['ano'].firstChange;
     const cambioMostrar = changes['mostrar'];
 
     if (cambioAno || (cambioMostrar && !this.mostrar)) {
-      this.opcionSeleccionadaId = null;
-      this.objetivos = [];
       this.products = [];
     }
 
@@ -108,6 +104,7 @@ export class TablaComponent implements OnChanges {
     this.costCenterService.getAll().subscribe(data => this.costCenters = data);
     this.measurementTypeService.getAll().subscribe(data => this.measurementTypes = data);
     this.priorityService.getAll().subscribe(data => this.priorities = data);
+    this.strategicObjectiveService.getAll().subscribe(data => this.strategicObjectives = data);
   }
 
   loadOperationalActivities(): void {
@@ -115,7 +112,25 @@ export class TablaComponent implements OnChanges {
 
     this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
       next: (data) => {
-        this.products = data;
+        this.products = data.map(activity => {
+          // Ensure goals array has 4 elements for rendering purposes
+          if (!activity.goals || activity.goals.length === 0) {
+            activity.goals = [
+              { goalOrder: 1, value: 0, operationalActivity: {} } as Goal,
+              { goalOrder: 2, value: 0, operationalActivity: {} } as Goal,
+              { goalOrder: 3, value: 0, operationalActivity: {} } as Goal,
+              { goalOrder: 4, value: 0, operationalActivity: {} } as Goal
+            ];
+          } else {
+            // Fill missing goals if less than 4 exist, and sort existing
+            activity.goals.sort((a, b) => a.goalOrder - b.goalOrder);
+            while (activity.goals.length < 4) {
+              const nextOrder = activity.goals.length + 1;
+              activity.goals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as Goal);
+            }
+          }
+          return activity;
+        });
       },
       error: () => {
         this.toastr.error('Error al cargar actividades operativas.', 'Error');
@@ -125,10 +140,10 @@ export class TablaComponent implements OnChanges {
 
   agregarActividad(): void {
     const nuevaActividad: OperationalActivity = {
-      sapCode: '',
+      sapCode: '', // Se enviará vacío y se generará después
       name: '',
       measurementUnit: '',
-      strategicAction: {} as StrategicAction,
+      strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction,
       financialFund: {} as FinancialFund,
       managementCenter: {} as ManagementCenter,
       costCenter: {} as CostCenter,
@@ -141,18 +156,32 @@ export class TablaComponent implements OnChanges {
       services: 0,
       formulation: {} as Formulation,
       goals: [
-        { goalOrder: 1, value: 0, operationalActivity: {} },
-        { goalOrder: 2, value: 0, operationalActivity: {} },
-        { goalOrder: 3, value: 0, operationalActivity: {} },
-        { goalOrder: 4, value: 0, operationalActivity: {} }
+        { goalOrder: 1, value: 0, operationalActivity: {} } as Goal,
+        { goalOrder: 2, value: 0, operationalActivity: {} } as Goal,
+        { goalOrder: 3, value: 0, operationalActivity: {} } as Goal,
+        { goalOrder: 4, value: 0, operationalActivity: {} } as Goal
       ]
     };
     this.products = [...this.products, nuevaActividad];
   }
 
-  eliminarActividad(index: number): void {
-    this.products.splice(index, 1);
-    this.products = [...this.products];
+  eliminarActividad(index: number, product: OperationalActivity): void {
+    if (product.idOperationalActivity) {
+      this.operationalActivityService.deleteById(product.idOperationalActivity).subscribe({
+        next: () => {
+          this.toastr.success('Actividad operativa eliminada.', 'Éxito');
+          this.products.splice(index, 1);
+          this.products = [...this.products];
+        },
+        error: () => {
+          this.toastr.error('Error al eliminar la actividad operativa.', 'Error');
+        }
+      });
+    } else {
+      this.products.splice(index, 1);
+      this.products = [...this.products];
+      this.toastr.info('Actividad no guardada eliminada.', 'Información');
+    }
   }
 
   onRowEditSave(product: OperationalActivity) {
@@ -169,44 +198,140 @@ export class TablaComponent implements OnChanges {
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
+      sapCode: '' // Asegurarse de enviar vacío en la creación
     };
 
-    this.operationalActivityService.create(actividad).subscribe({
-      next: (actividadCreada: OperationalActivity) => {
-        const id = actividadCreada.idOperationalActivity;
-
-        if (id && !isNaN(id)) {
+    if (product.idOperationalActivity) {
+      // Logic for updating existing activity
+      this.operationalActivityService.update(actividad).subscribe({
+        next: () => {
           if (product.goals) {
             for (const g of product.goals) {
               const goal: Goal = {
+                idGoal: g.idGoal,
                 goalOrder: g.goalOrder,
                 value: g.value,
-                operationalActivity: { idOperationalActivity: id }
+                operationalActivity: { idOperationalActivity: product.idOperationalActivity }
               };
-              this.goalService.create(goal).subscribe({
-                next: () => {},
-                error: () => {
-                  this.toastr.error('Error al crear una meta.', 'Error');
-                }
-              });
+              if (g.idGoal) {
+                this.goalService.update(g.idGoal, goal).subscribe({
+                  next: () => {},
+                  error: () => {
+                    this.toastr.error('Error al actualizar una meta.', 'Error');
+                  }
+                });
+              } else {
+                this.goalService.create(goal).subscribe({
+                  next: () => {},
+                  error: () => {
+                    this.toastr.error('Error al crear una meta.', 'Error');
+                  }
+                });
+              }
             }
           }
-
-          this.toastr.success('Actividad operativa creada.', 'Éxito');
+          this.toastr.success('Actividad operativa actualizada.', 'Éxito');
           this.loadOperationalActivities();
-        } else {
-          this.toastr.error('El ID devuelto no es válido.', 'Error');
+        },
+        error: () => {
+          this.toastr.error('Error al actualizar la actividad operativa.', 'Error');
         }
-      },
-      error: () => {
-        this.toastr.error('Error al crear la actividad operativa.', 'Error');
-      }
-    });
+      });
+    } else {
+      // Logic for creating new activity
+      this.operationalActivityService.create(actividad).subscribe({
+        next: (actividadCreada: OperationalActivity) => {
+          const id = actividadCreada.idOperationalActivity;
+
+          if (id && !isNaN(id)) {
+            // Generate SAP Code
+            const selectedStrategicAction = this.strategicActions.find(
+              sa => sa.idStrategicAction === product.strategicAction.idStrategicAction
+            );
+            const strategicObjectiveCode = this.strategicObjectives.find(
+              so => so.idStrategicObjective === selectedStrategicAction?.strategicObjective?.idStrategicObjective
+            )?.code || ''; // Asumiendo que StrategicObjective tiene propiedad 'code'
+            const strategicActionCode = selectedStrategicAction?.code || ''; // Asumiendo que StrategicAction tiene propiedad 'code'
+
+            const selectedCostCenter = this.costCenters.find(
+              cc => cc.idCostCenter === product.costCenter.idCostCenter
+            );
+            const costCenterCode = selectedCostCenter?.costCenterCode || ''; // Propiedad 'costCenterCode' del modelo CostCenter
+
+            const formattedObjectiveCode = String(strategicObjectiveCode).padStart(1, '0');
+            const formattedActionCode = String(strategicActionCode).padStart(2, '0');
+            const formattedCostCenterCode = String(costCenterCode).padStart(10, '0');
+            const formattedActivityId = String(id).padStart(3, '0');
+
+            const newSapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
+
+            const activityWithSapCode: OperationalActivity = {
+              ...actividadCreada,
+              sapCode: newSapCode
+            };
+
+            // Update activity with generated SAP Code
+            this.operationalActivityService.update(activityWithSapCode).subscribe({
+              next: () => {
+                // Save Goals after activity is created and SAP code is updated
+                if (product.goals) {
+                  for (const g of product.goals) {
+                    const goal: Goal = {
+                      goalOrder: g.goalOrder,
+                      value: g.value,
+                      operationalActivity: { idOperationalActivity: id }
+                    };
+                    this.goalService.create(goal).subscribe({
+                      next: () => {},
+                      error: () => {
+                        this.toastr.error('Error al crear una meta.', 'Error');
+                      }
+                    });
+                  }
+                }
+                this.toastr.success('Actividad operativa creada y código SAP generado.', 'Éxito');
+                this.loadOperationalActivities(); // Reload to show new SAP code and goals
+              },
+              error: () => {
+                this.toastr.error('Error al actualizar la actividad con el código SAP.', 'Error');
+              }
+            });
+
+          } else {
+            this.toastr.error('El ID devuelto no es válido.', 'Error');
+          }
+        },
+        error: () => {
+          this.toastr.error('Error al crear la actividad operativa.', 'Error');
+        }
+      });
+    }
   }
 
-  onRowEditInit(product: OperationalActivity) {}
+  onRowEditInit(product: OperationalActivity) {
+    // Cuando se edita una fila, asegurar que el objetivo estratégico se muestre correctamente.
+    if (product.strategicAction?.strategicObjective?.idStrategicObjective) {
+      product.strategicAction.strategicObjective = this.strategicObjectives.find(
+        obj => obj.idStrategicObjective === product.strategicAction?.strategicObjective?.idStrategicObjective
+      ) || {idStrategicObjective: product.strategicAction.strategicObjective.idStrategicObjective} as StrategicObjective;
+      this.filterStrategicActions(product);
+    }
+  }
 
-  onRowEditCancel(product: OperationalActivity, index: number) {}
+  onRowEditCancel(product: OperationalActivity, index: number) {
+    if (!product.idOperationalActivity) {
+      // If it's a new unsaved activity, remove it from the list
+      this.products.splice(index, 1);
+      this.products = [...this.products];
+    } else {
+      // If it's an existing activity, reload to revert changes
+      this.loadOperationalActivities();
+    }
+  }
+
+  getStrategicObjectiveName(id?: number): string {
+    return this.strategicObjectives.find(o => o.idStrategicObjective === id)?.name || '';
+  }
 
   getStrategicActionName(id?: number): string {
     return this.strategicActions.find(a => a.idStrategicAction === id)?.name || '';
@@ -236,30 +361,34 @@ export class TablaComponent implements OnChanges {
     const year = parseInt(this.ano!, 10);
 
     this.strategicObjectiveService.getAll().subscribe((objectives: StrategicObjective[]) => {
-      this.strategicActionService.getAll().subscribe((actions: StrategicAction[]) => {
-        const filteredObjectives = objectives.filter(
-          obj => year >= obj.startYear && year <= obj.endYear
-        );
-
-        this.objetivos = filteredObjectives.map(obj => ({
-          id: obj.idStrategicObjective,
-          nombre: obj.name,
-          acciones: actions
-            .filter(a => a.strategicObjective?.idStrategicObjective === obj.idStrategicObjective)
-            .map(a => ({ id: a.idStrategicAction, nombre: a.name }))
-        })).filter(obj => obj.acciones.length > 0);
-      });
+      this.strategicObjectives = objectives.filter(
+        obj => year >= obj.startYear && year <= obj.endYear
+      );
     });
   }
 
-  onSeleccionar(id: number) {
-    this.opcionSeleccionadaId = id;
-    const accionSeleccionada = this.objetivos
-      .flatMap(o => o.acciones)
-      .find(a => a.id === id);
+  onStrategicObjectiveChange(event: any, product: OperationalActivity) {
+    const selectedObjectiveId = event.value;
+    product.strategicAction.strategicObjective = this.strategicObjectives.find(obj => obj.idStrategicObjective === selectedObjectiveId) || {} as StrategicObjective;
+    product.strategicAction.idStrategicAction = undefined; // Limpiar acción estratégica seleccionada
+    this.filterStrategicActions(product);
+  }
 
-    if (accionSeleccionada) {
-      this.seleccionCambio.emit(accionSeleccionada);
+  filterStrategicActions(product: OperationalActivity): void {
+    if (product.strategicAction?.strategicObjective?.idStrategicObjective) {
+      this.filteredStrategicActions = this.strategicActions.filter(
+        action => action.strategicObjective?.idStrategicObjective === product.strategicAction?.strategicObjective?.idStrategicObjective
+      );
+    } else {
+      this.filteredStrategicActions = [];
+    }
+  }
+
+  onSeleccionar(id: number, product: OperationalActivity) {
+    product.strategicAction.idStrategicAction = id;
+    const selectedAction = this.strategicActions.find(a => a.idStrategicAction === id);
+    if (selectedAction) {
+      product.strategicAction = { ...selectedAction, strategicObjective: selectedAction.strategicObjective || product.strategicAction.strategicObjective };
     }
   }
 }
