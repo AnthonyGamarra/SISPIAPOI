@@ -1,11 +1,21 @@
-<p-table [value]="products" dataKey="idOperationalActivity" editMode="row" [tableStyle]="{'min-width': '50rem'}">
+<p-table [value]="products" dataKey="idOperationalActivity" editMode="row" [tableStyle]="{'min-width': '90rem'}">
   <ng-template pTemplate="header">
     <tr>
-      <th style="width:22%">Código SAP</th>
-      <th style="width:22%">Nombre</th>
-      <th style="width:22%">Estado</th>
-      <th style="width:22%">Meta Esperada</th>
-      <th style="width:12%"></th>
+      <th>SAP Code</th>
+      <th>Name</th>
+      <th>Measurement Unit</th>
+      <th>Strategic Action</th>
+      <th>Financial Fund</th>
+      <th>Management Center</th>
+      <th>Cost Center</th>
+      <th>Measurement Type</th>
+      <th>Priority</th>
+      <th>Expected Goal</th>
+      <th>Executed Goal</th>
+      <th>Goods</th>
+      <th>Remuneration</th>
+      <th>Services</th>
+      <th>Acciones</th>
     </tr>
   </ng-template>
 
@@ -16,9 +26,7 @@
           <ng-template pTemplate="input">
             <input pInputText [(ngModel)]="product.sapCode" type="text" />
           </ng-template>
-          <ng-template pTemplate="output">
-            {{ product.sapCode }}
-          </ng-template>
+          <ng-template pTemplate="output">{{ product.sapCode }}</ng-template>
         </p-cellEditor>
       </td>
 
@@ -27,25 +35,123 @@
           <ng-template pTemplate="input">
             <input pInputText [(ngModel)]="product.name" type="text" />
           </ng-template>
-          <ng-template pTemplate="output">
-            {{ product.name }}
-          </ng-template>
+          <ng-template pTemplate="output">{{ product.name }}</ng-template>
         </p-cellEditor>
       </td>
 
       <td>
         <p-cellEditor>
           <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.measurementUnit" type="text" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.measurementUnit }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Strategic Action -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
             <p-dropdown
-              [options]="statuses"
-              optionLabel="label"
-              optionValue="value"
-              [(ngModel)]="product.inventoryStatus"
-              [style]="{ width: '100%' }"
-            ></p-dropdown>
+              [options]="strategicActions"
+              optionLabel="name"
+              optionValue="idStrategicAction"
+              [(ngModel)]="product.strategicAction.idStrategicAction"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
           </ng-template>
           <ng-template pTemplate="output">
-            <p-tag [value]="product.inventoryStatus" [severity]="getSeverity(product.inventoryStatus)"></p-tag>
+            {{ getStrategicActionName(product.strategicAction?.idStrategicAction) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Financial Fund -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="financialFunds"
+              optionLabel="name"
+              optionValue="idFinancialFund"
+              [(ngModel)]="product.financialFund.idFinancialFund"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Management Center -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="managementCenters"
+              optionLabel="name"
+              optionValue="idManagementCenter"
+              [(ngModel)]="product.managementCenter.idManagementCenter"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Cost Center -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="costCenters"
+              optionLabel="name"
+              optionValue="idCostCenter"
+              [(ngModel)]="product.costCenter.idCostCenter"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getCostCenterName(product.costCenter?.idCostCenter) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Measurement Type -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="measurementTypes"
+              optionLabel="name"
+              optionValue="idMeasurementType"
+              [(ngModel)]="product.measurementType.idMeasurementType"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getMeasurementTypeName(product.measurementType?.idMeasurementType) }}
+          </ng-template>
+        </p-cellEditor>
+      </td>
+
+      <!-- Priority -->
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <p-dropdown
+              [options]="priorities"
+              optionLabel="name"
+              optionValue="idPriority"
+              [(ngModel)]="product.priority.idPriority"
+              [style]="{ width: '100%' }">
+            </p-dropdown>
+          </ng-template>
+          <ng-template pTemplate="output">
+            {{ getPriorityName(product.priority?.idPriority) }}
           </ng-template>
         </p-cellEditor>
       </td>
@@ -55,9 +161,43 @@
           <ng-template pTemplate="input">
             <input pInputText [(ngModel)]="product.expectedGoal" type="number" />
           </ng-template>
-          <ng-template pTemplate="output">
-            {{ product.expectedGoal }}
+          <ng-template pTemplate="output">{{ product.expectedGoal }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.executedGoal" type="number" />
           </ng-template>
+          <ng-template pTemplate="output">{{ product.executedGoal }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.goods" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.goods }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.remuneration" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.remuneration }}</ng-template>
+        </p-cellEditor>
+      </td>
+
+      <td>
+        <p-cellEditor>
+          <ng-template pTemplate="input">
+            <input pInputText [(ngModel)]="product.services" type="number" />
+          </ng-template>
+          <ng-template pTemplate="output">{{ product.services }}</ng-template>
         </p-cellEditor>
       </td>
 
@@ -73,8 +213,9 @@
             (click)="onRowEditInit(product)"
             text
             rounded
-            severity="secondary"
-          ></button>
+            severity="secondary">
+          </button>
+
           <button
             *ngIf="editing"
             pButton
@@ -85,8 +226,9 @@
             (click)="onRowEditSave(product)"
             text
             rounded
-            severity="secondary"
-          ></button>
+            severity="success">
+          </button>
+
           <button
             *ngIf="editing"
             pButton
@@ -97,8 +239,8 @@
             (click)="onRowEditCancel(product, ri)"
             text
             rounded
-            severity="secondary"
-          ></button>
+            severity="danger">
+          </button>
         </div>
       </td>
     </tr>

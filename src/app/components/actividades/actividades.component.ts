@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -44,38 +44,60 @@ import { Formulation } from '../../models/logic/formulation.model';
     DropdownModule
   ]
 })
-export class ActividadesComponent {
+export class ActividadesComponent implements OnInit {
   products: OperationalActivity[] = [];
 
-  statuses = [
-    { label: 'In Stock', value: 'INSTOCK' },
-    { label: 'Low Stock', value: 'LOWSTOCK' },
-    { label: 'Out of Stock', value: 'OUTOFSTOCK' }
-  ];
+  strategicActions: StrategicAction[] = [];
+  financialFunds: FinancialFund[] = [];
+  managementCenters: ManagementCenter[] = [];
+  costCenters: CostCenter[] = [];
+  measurementTypes: MeasurementType[] = [];
+  priorities: Priority[] = [];
 
-  constructor(
-    private operationalActivityService: OperationalActivityService,
-    private goalService: GoalService,
-    private strategicAction: StrategicAction,
-    private formulation: Formulation,
-    private managementCenter: ManagementCenter,
-    private costCenter: CostCenter,
-    private measurementType: MeasurementType,
-    private priority: Priority,
-    private toastr: ToastrService
-  ) {}
+  private strategicActionService = inject(StrategicActionService);
+  private financialFundService = inject(FinancialFundService);
+  private managementCenterService = inject(ManagementCenterService);
+  private costCenterService = inject(CostCenterService);
+  private measurementTypeService = inject(MeasurementTypeService);
+  private priorityService = inject(PriorityService);
+  private operationalActivityService = inject(OperationalActivityService);
+  private goalService = inject(GoalService);
+  private toastr = inject(ToastrService);
 
-  getSeverity(status: string): string {
-    switch (status) {
-      case 'INSTOCK':
-        return 'success';
-      case 'LOWSTOCK':
-        return 'warning';
-      case 'OUTOFSTOCK':
-        return 'danger';
-      default:
-        return '';
-    }
+  ngOnInit(): void {
+    this.loadCombos();
+    this.initTable(); // puedes reemplazar esto con un getAll real
+  }
+
+  loadCombos(): void {
+    this.strategicActionService.getAll().subscribe(data => this.strategicActions = data);
+    this.financialFundService.getAll().subscribe(data => this.financialFunds = data);
+    this.managementCenterService.getAll().subscribe(data => this.managementCenters = data);
+    this.costCenterService.getAll().subscribe(data => this.costCenters = data);
+    this.measurementTypeService.getAll().subscribe(data => this.measurementTypes = data);
+    this.priorityService.getAll().subscribe(data => this.priorities = data);
+  }
+
+  initTable(): void {
+    this.products = [
+      {
+        sapCode: '',
+        name: '',
+        measurementUnit: '',
+        costCenter: {} as CostCenter,
+        financialFund: {} as FinancialFund,
+        formulation: { idFormulation: 1 } as Formulation,
+        managementCenter: {} as ManagementCenter,
+        measurementType: {} as MeasurementType,
+        priority: {} as Priority,
+        strategicAction: {} as StrategicAction,
+        expectedGoal: 0,
+        executedGoal: 0,
+        goods: 0,
+        remuneration: 0,
+        services: 0
+      }
+    ];
   }
 
   onRowEditInit(product: OperationalActivity) {
@@ -85,14 +107,14 @@ export class ActividadesComponent {
   onRowEditSave(product: OperationalActivity) {
     const actividad: OperationalActivity = {
       ...product,
-      strategicAction: { idStrategicAction: product.strategicAction.idStrategicAction },
-      formulation: { idFormulation: product.formulation.idFormulation },
-      financialFund: { idFinancialFund: product.financialFund.idFinancialFund },
-      managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter },
-      costCenter: { idCostCenter: product.costCenter.idCostCenter },
-      measurementType: { idMeasurementType: product.measurementType.idMeasurementType },
-      priority: { idPriority: product.priority.idPriority },
-      goals: undefined // No goals yet
+      strategicAction: { idStrategicAction: product.strategicAction.idStrategicAction } as StrategicAction,
+      formulation: { idFormulation: product.formulation.idFormulation } as Formulation,
+      financialFund: { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund,
+      managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter,
+      costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
+      measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
+      priority: { idPriority: product.priority.idPriority } as Priority,
+      goals: undefined
     };
 
     this.operationalActivityService.create(actividad).subscribe({
@@ -115,7 +137,7 @@ export class ActividadesComponent {
   crearGoals(idActividad: number): void {
     const goal: Goal = {
       goalOrder: 1,
-      value: 123,
+      value: 100,
       operationalActivity: { idOperationalActivity: idActividad }
     };
 
@@ -132,4 +154,29 @@ export class ActividadesComponent {
   onRowEditCancel(product: OperationalActivity, index: number) {
     console.log('Cancel', product);
   }
+
+  getStrategicActionName(id?: number): string {
+    return this.strategicActions.find(a => a.idStrategicAction === id)?.name || '';
+  }
+
+  getFinancialFundName(id?: number): string {
+    return this.financialFunds.find(f => f.idFinancialFund === id)?.name || '';
+  }
+
+  getManagementCenterName(id?: number): string {
+    return this.managementCenters.find(m => m.idManagementCenter === id)?.name || '';
+  }
+
+  getCostCenterName(id?: number): string {
+    return this.costCenters.find(c => c.idCostCenter === id)?.name || '';
+  }
+
+  getMeasurementTypeName(id?: number): string {
+    return this.measurementTypes.find(m => m.idMeasurementType === id)?.name || '';
+  }
+
+  getPriorityName(id?: number): string {
+    return this.priorities.find(p => p.idPriority === id)?.name || '';
+  }
+
 }

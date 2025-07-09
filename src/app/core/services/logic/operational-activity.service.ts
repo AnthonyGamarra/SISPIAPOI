@@ -24,8 +24,12 @@ export class OperationalActivityService {
 
     // Crear nueva
     // operational-activity.service.ts
-    create(data: OperationalActivity): Observable<HttpResponse<any>> {
-      return this.http.post(`${this.BASE_URL}`, data, { observe: 'response' });
+    create(activity: OperationalActivity): Observable<HttpResponse<any>> {
+      return this.http.post<any>(
+        `${this.BASE_URL}`,
+        activity,
+        { observe: 'response' } // 👈 importante
+      );
     }
 
 
