@@ -118,20 +118,26 @@ export class ActividadesComponent implements OnInit {
     };
 
     this.operationalActivityService.create(actividad).subscribe({
-      next: (response) => {
-        const locationHeader = response.headers.get('Location');
-        const id = locationHeader?.split('/').pop();
+  next: (response) => {
+    const locationHeader = response.headers.get('Location'); // <- clave
 
-        if (id) {
-          this.crearGoals(Number(id));
-        } else {
-          this.toastr.error('No se pudo obtener el ID de la actividad operativa.', 'Error');
-        }
-      },
-      error: () => {
-        this.toastr.error('Error al crear la actividad operativa.', 'Error');
+    if (locationHeader) {
+      const id = Number(locationHeader.split('/').pop());
+
+      if (!isNaN(id)) {
+        this.crearGoals(id);
+      } else {
+        this.toastr.error('El ID extraído no es válido.', 'Error');
       }
-    });
+    } else {
+      this.toastr.error('No se recibió la cabecera Location.', 'Error');
+    }
+  },
+  error: () => {
+    this.toastr.error('Error al crear la actividad operativa.', 'Error');
+  }
+});
+
   }
 
   crearGoals(idActividad: number): void {

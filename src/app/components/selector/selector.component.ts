@@ -27,7 +27,7 @@ import { FormulationState } from '../../models/logic/formulationState.model';
   styleUrls: ['./selector.component.scss']
 })
 export class SelectorComponent implements OnInit {
-  @Output() buscar = new EventEmitter<{ ano: string | null; dependencia: string | null }>();
+  @Output() buscar = new EventEmitter<{ ano: string | null; dependencia: string | null; idFormulation: number | null }>();
   @Output() cambioAno = new EventEmitter<string | null>();
 
   private toastr = inject(ToastrService);
@@ -37,6 +37,7 @@ export class SelectorComponent implements OnInit {
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
   selectedAno: string | null = null;
+  idFormulation: number | null = null;
 
   isSingleDependency = false;
   formulationExists = false;
@@ -75,7 +76,7 @@ export class SelectorComponent implements OnInit {
   }
 
   verificarFormulacion() {
-    this.cambioAno.emit(this.selectedAno); // <--- nuevo
+    this.cambioAno.emit(this.selectedAno); // Solo esto está bien
 
     if (!this.selectedAno || !this.selectedDependency) {
       this.formulationExists = false;
@@ -90,6 +91,11 @@ export class SelectorComponent implements OnInit {
     this.formulationService.searchByDependencyAndYear(depId, year).subscribe({
       next: (formulations) => {
         this.formulationExists = formulations.length > 0;
+
+        if (this.formulationExists) {
+          this.idFormulation = formulations[0]?.idFormulation ?? null;
+        }
+
         this.checkingFormulation = false;
       },
       error: () => {
@@ -98,6 +104,7 @@ export class SelectorComponent implements OnInit {
       }
     });
   }
+
 
   onBuscar() {
     if (!this.selectedAno || !this.selectedDependency) {
@@ -108,11 +115,13 @@ export class SelectorComponent implements OnInit {
     if (this.formulationExists) {
       this.buscar.emit({
         ano: this.selectedAno,
-        dependencia: this.selectedDependency
+        dependencia: this.selectedDependency,
+        idFormulation: this.idFormulation
       });
       return;
     }
 
+    // Crear nueva formulación
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
@@ -121,15 +130,17 @@ export class SelectorComponent implements OnInit {
     };
 
     this.formulationService.create(nuevaFormulacion).subscribe({
-      next: () => {
+      next: (nueva) => {
         this.formulationExists = true;
-        this.showSuccessAnimation = true;
+        this.idFormulation = nueva.idFormulation ?? null;
 
+        this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
           this.buscar.emit({
             ano: this.selectedAno,
-            dependencia: this.selectedDependency
+            dependencia: this.selectedDependency,
+            idFormulation: this.idFormulation
           });
         }, 2500);
       },
@@ -137,5 +148,7 @@ export class SelectorComponent implements OnInit {
         this.toastr.error('Error al crear la formulación.', 'Error');
       }
     });
+
   }
+
 }

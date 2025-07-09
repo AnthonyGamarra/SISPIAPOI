@@ -4,7 +4,6 @@ import { FooterComponent } from '../../components/footer/footer.component';
 import { MenubarComponent } from '../../components/menubar/menubar.component';
 import { SelectorComponent } from '../../components/selector/selector.component';
 import { TablaComponent } from '../../components/tabla/tabla.component';
-import { ActividadesComponent } from '../../components/actividades/actividades.component';
 
 @Component({
   selector: 'app-formulation',
@@ -14,8 +13,7 @@ import { ActividadesComponent } from '../../components/actividades/actividades.c
     FooterComponent,
     MenubarComponent,
     SelectorComponent,
-    TablaComponent,
-    ActividadesComponent,
+    TablaComponent
   ],
   templateUrl: './formulation.component.html',
   styleUrl: './formulation.component.scss'
@@ -23,6 +21,7 @@ import { ActividadesComponent } from '../../components/actividades/actividades.c
 export class FormulationComponent {
   anoSeleccionado: string | null = null;
   mostrarTabla = false;
+  idFormulation: number | null = null;
 
   // Se llama apenas se cambia el año desde el selector
   limpiarTabla() {
@@ -31,10 +30,11 @@ export class FormulationComponent {
   }
 
   // Se llama cuando se presiona "Mostrar" o "Crear"
-  manejarBusqueda(event: { ano: string | null; dependencia: string | null }) {
+  manejarBusqueda(event: { ano: string | null; dependencia: string | null; idFormulation: number | null }) {
     if (!event.ano) return;
 
     this.anoSeleccionado = event.ano;
+    this.idFormulation = event.idFormulation
 
     // Mostrar la tabla después de un ciclo de vida
     setTimeout(() => {

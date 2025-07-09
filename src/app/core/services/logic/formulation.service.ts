@@ -23,8 +23,8 @@ export class FormulationService {
     }
 
     // Crear nueva formulación
-    create(data: Formulation): Observable<void> {
-      return this.http.post<void>(`${this.BASE_URL}`, data);
+    create(data: Formulation): Observable<Formulation> {
+      return this.http.post<Formulation>(`${this.BASE_URL}`, data);
     }
 
     // Actualizar formulación existente

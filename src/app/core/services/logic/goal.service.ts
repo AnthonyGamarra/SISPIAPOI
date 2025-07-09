@@ -12,7 +12,7 @@ export class GoalService {
 
   constructor(private http: HttpClient) { }
 
-  getAll(): Observable<Goal[]> {
+    getAll(): Observable<Goal[]> {
       return this.http.get<Goal[]>(this.BASE_URL);
     }
   
