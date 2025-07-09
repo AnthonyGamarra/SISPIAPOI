@@ -8,7 +8,7 @@ import { Goal } from '../../../models/logic/goal.model';
 })
 export class GoalService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/goal';
+  private readonly BASE_URL = 'http://172.21.0.1:8081/goal';
 
   constructor(private http: HttpClient) { }
 

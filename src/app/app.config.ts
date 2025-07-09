@@ -8,6 +8,8 @@ import { ToastrModule } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { importProvidersFrom } from '@angular/core';
 import { RecaptchaV3Module, RECAPTCHA_V3_SITE_KEY } from 'ng-recaptcha';
+import { provideLottieOptions } from 'ngx-lottie';
+import { playerFactory } from './core/animations/lottie-player-factory';
 import Aura from '@primeng/themes/aura';
 
 import { routes } from './app.routes';
@@ -28,6 +30,7 @@ export const appConfig: ApplicationConfig = {
             }
         }
     }),
+    provideLottieOptions({ player: playerFactory }),
     provideAnimations(), // necesario para Toastr
     importProvidersFrom(
       ToastrModule.forRoot({

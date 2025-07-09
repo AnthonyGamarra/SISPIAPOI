@@ -1,41 +1,49 @@
 <div class="selector-bar grid align-items-center">
-  <div class="selector-group col-6">
-    <label class="selector-label">Dependencia:</label>  
-    <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+  <div class="selector-group col-12 lg:col-7">
+    <label class="selector-label">Dependencia:</label>
+    <p-select *ngIf="isSingleDependency; else multipleDeps"
       [options]="dependencyOptions"
       [(ngModel)]="selectedDependency"
       [disabled]="true"
       class="selector-dropdown"
-    ></p-dropdown>
+    ></p-select>
     <ng-template #multipleDeps>
-      <p-dropdown
+      <p-select
         [options]="dependencyOptions"
         [(ngModel)]="selectedDependency"
         (onChange)="verificarFormulacion()"
         placeholder="Seleccione"
         class="selector-dropdown"
-      ></p-dropdown>
+      ></p-select>
     </ng-template>
   </div>
 
-  <div class="selector-group col-4">
-    <label class="selector-label">Año:</label>  
-    <p-dropdown
+  <div class="selector-group col-8 lg:col-4">
+    <label class="selector-label">Año:</label>
+    <p-select
       [options]="optionsAno"
       [(ngModel)]="selectedAno"
       (onChange)="verificarFormulacion()"
+      placeholder="Seleccione"
       class="selector-dropdown"
-    ></p-dropdown>
+    ></p-select>
   </div>
 
-  <div class="col-2 flex align-items-center justify-content-center">
-    <button class="buscar-btn"
-            (click)="onBuscar()"
-            [disabled]="checkingFormulation || !selectedAno || !selectedDependency">
-      <i class="pi pi-plus" *ngIf="!formulationExists"></i>
-      <i class="pi pi-eye" *ngIf="formulationExists"></i>
-      <span *ngIf="formulationExists">Mostrar formulación</span>
-      <span *ngIf="!formulationExists">Crear formulación</span>
-    </button>
+  <div class="col-4 lg:col-1 flex align-items-center justify-content-center">
+    <button
+      type="button"
+      pButton
+      class="selector"
+      [label]="formulationExists ? 'Mostrar formulación' : 'Crear formulación'"
+      [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
+      [disabled]="checkingFormulation || !selectedAno || !selectedDependency"
+      (click)="onBuscar()"
+    ></button>
   </div>
+</div>
+
+<!-- 🎉 Animación de éxito -->
+<div class="success-animation" *ngIf="showSuccessAnimation">
+  <ng-lottie [options]="options"></ng-lottie>
+  <div class="message">Formulación iniciada correctamente</div>
 </div>
