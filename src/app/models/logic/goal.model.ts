@@ -3,7 +3,7 @@ import { OperationalActivity } from "./operationalActivity.model";
 export interface Goal {
   idGoal?: number;
   active?: boolean;
-  operationalActivity: OperationalActivity;
+  operationalActivity: Partial<OperationalActivity>;
   goalOrder: number;
-  value: number; 
+  value: number;
 }

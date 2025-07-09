@@ -1,83 +1,145 @@
 <div class="table-container">
-  <p-table [value]="filas" [responsiveLayout]="'scroll'">
-  <ng-template pTemplate="header">
-    <tr class="head">
-      <th rowspan="2">Denominación de la Actividad Operativa</th>
-      <th rowspan="2">Indicador / Unidad de Medida</th>
-      <th rowspan="2">Comportamiento Trimestral del Indicador</th>
-      <th colspan="5" class="text-center">Meta Trimestral</th>
-      <th colspan="3" class="text-center">Presupuesto (S/)</th>
-      <th rowspan="2">Ejecutado</th>
-      <th rowspan="2">Esperado</th>
-      <th rowspan="2">Acciones</th>
-    </tr>
-    <tr class="head">
-      <th>I</th>
-      <th>II</th>
-      <th>III</th>
-      <th>IV</th>
-      <th>Total</th>
-      <th>Remuneraciones</th>
-      <th>Bienes</th>
-      <th>Servicios</th>
-    </tr>
-  </ng-template>
+<p-table [value]="actividades" scrollable scrollHeight="500px" scrollDirection="both">
 
-  <ng-template pTemplate="body" let-fila let-i="rowIndex">
-    <tr>
-      <td>
-        <input pInputText type="text" [(ngModel)]="fila.denominacion" />
-      </td>
-      <td>
-        <input pInputText type="text" [(ngModel)]="fila.indicador" />
-      </td>
-      <td>
-        <input pInputText type="text" [(ngModel)]="fila.comportamiento" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.metaI" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.metaII" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.metaIII" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.metaIV" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.metaTotal" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.remuneraciones" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.bienes" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.servicios" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.ejecutado" />
-      </td>
-      <td>
-        <input pInputText type="number" [(ngModel)]="fila.esperado" />
-      </td>
-      <td class="acciones flex align-items-center gap-2">
-        <button pButton icon="pi pi-save" class="p-button-rounded p-button-success p-button-text" (click)="guardarFila(i)"></button>
-        <button pButton icon="pi pi-check-circle" class="p-button-rounded p-button-info p-button-text" (click)="cambiarEstado(i)"></button>
-        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text" (click)="eliminarFila(i)"></button>
-      </td>
-    </tr>
-  </ng-template>
+    <ng-template pTemplate="header">
+      <tr class="head">
+        <th>Cod. SAP</th>
+        <th>Denominación</th>
+        <th>Unidad / Indicador</th>
+        <th>Comportamiento</th>
+        <th>I</th>
+        <th>II</th>
+        <th>III</th>
+        <th>IV</th>
+        <th>Total</th>
+        <th>Remuneraciones</th>
+        <th>Bienes</th>
+        <th>Servicios</th>
+        <th>Centro de Costo</th>
+        <th>Centro Gestor</th>
+        <th>Fondo</th>
+        <th>Tipo Medida</th>
+        <th>Prioridad</th>
+        <th>Acción Estratégica</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
 
-  <ng-template pTemplate="emptymessage">
-    <tr>
-      <td colspan="14" class="text-center text-500">(Sin datos)</td>
-    </tr>
-  </ng-template>
+    <ng-template pTemplate="body" let-row let-i="rowIndex">
+      <tr>
+        <!-- sapCode -->
+        <td>
+          <input pInputText [value]="row.sapCode" disabled style="width: 100%" />
+        </td>
+
+        <td>
+          <input pInputText [(ngModel)]="row.denominacion" [disabled]="row.idOperationalActivity" />
+        </td>
+
+        <td>
+          <input pInputText [(ngModel)]="row.indicador" [disabled]="row.idOperationalActivity" />
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="measurementTypes"
+            [(ngModel)]="row.measurementType"
+            optionLabel="name"
+            placeholder="Comportamiento"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td><input pInputText type="number" [(ngModel)]="row.metaI" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.metaII" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.metaIII" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.metaIV" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.metaTotal" [disabled]="row.idOperationalActivity" /></td>
+
+        <td><input pInputText type="number" [(ngModel)]="row.remuneraciones" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.bienes" [disabled]="row.idOperationalActivity" /></td>
+        <td><input pInputText type="number" [(ngModel)]="row.servicios" [disabled]="row.idOperationalActivity" /></td>
+
+        <td>
+          <p-dropdown
+            [options]="costCenters"
+            [(ngModel)]="row.costCenter"
+            optionLabel="costCenterCode"
+            placeholder="Centro de Costo"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="managementCenters"
+            [(ngModel)]="row.managementCenter"
+            optionLabel="name"
+            placeholder="Centro Gestor"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="financialFunds"
+            [(ngModel)]="row.financialFund"
+            optionLabel="name"
+            placeholder="Fondo"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="measurementTypes"
+            [(ngModel)]="row.measurementType"
+            optionLabel="name"
+            placeholder="Medida"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="priorities"
+            [(ngModel)]="row.priority"
+            optionLabel="name"
+            placeholder="Prioridad"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td>
+          <p-dropdown
+            [options]="strategicActions"
+            [(ngModel)]="row.strategicAction"
+            optionLabel="name"
+            placeholder="Acción"
+            [disabled]="row.idOperationalActivity">
+          </p-dropdown>
+        </td>
+
+        <td class="acciones flex gap-2">
+          <button *ngIf="!row.idOperationalActivity"
+                  pButton icon="pi pi-save" class="p-button-sm p-button-success"
+                  (click)="guardarFila(i)">
+          </button>
+          <button *ngIf="!row.idOperationalActivity"
+                  pButton icon="pi pi-trash" class="p-button-sm p-button-danger"
+                  (click)="eliminarFila(i)">
+          </button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="19" class="text-center text-muted">Sin actividades operativas</td>
+      </tr>
+    </ng-template>
   </p-table>
+
   <div class="acciones-tabla mt-3 flex justify-content-end">
     <button pButton label="➕ Agregar fila" icon="pi pi-plus" class="p-button-outlined" (click)="agregarFila()"></button>
   </div>

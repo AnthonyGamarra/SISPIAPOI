@@ -21,7 +21,7 @@ export interface OperationalActivity {
   measurementUnit: string;
   executedGoal: number;
   expectedGoal: number;
-  goals: Goal[];
+  goals?: Goal[];
   priority: Priority;
   goods: number;
   remuneration: number;

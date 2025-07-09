@@ -28,6 +28,7 @@ import { FormulationState } from '../../models/logic/formulationState.model';
 })
 export class SelectorComponent implements OnInit {
   @Output() buscar = new EventEmitter<{ ano: string | null; dependencia: string | null }>();
+  @Output() cambioAno = new EventEmitter<string | null>();
 
   private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
@@ -74,6 +75,8 @@ export class SelectorComponent implements OnInit {
   }
 
   verificarFormulacion() {
+    this.cambioAno.emit(this.selectedAno); // <--- nuevo
+
     if (!this.selectedAno || !this.selectedDependency) {
       this.formulationExists = false;
       return;

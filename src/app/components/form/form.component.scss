@@ -8,3 +8,10 @@
   background-color: var(--primary);
   color: white;
 }
+
+:host ::ng-deep .p-dropdown-panel {
+  z-index: 9999 !important;
+}
+.p-dropdown {
+  width: 100%;
+}

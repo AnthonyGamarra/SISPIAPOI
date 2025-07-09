@@ -7,7 +7,7 @@ import { StrategicObjective } from '../../../models/logic/strategicObjective.mod
   providedIn: 'root'
 })
 export class StrategicObjectiveService {
-  private readonly BASE_URL = 'http://172.21.0.1:8081/strategic-objective';
+  private readonly BASE_URL = 'http://10.0.29.240:8081/strategic-objective';
 
   constructor(private http: HttpClient) { }
 

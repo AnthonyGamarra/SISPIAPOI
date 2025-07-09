@@ -1,7 +1,17 @@
 <app-menubar></app-menubar>
-<app-selector (buscar)="manejarBusqueda($event)"></app-selector>
+
+<app-selector
+  (buscar)="manejarBusqueda($event)"
+  (cambioAno)="limpiarTabla()">
+</app-selector>
+
 <app-tabla
   [ano]="anoSeleccionado"
-></app-tabla>
-<app-form></app-form>
+  [mostrar]="mostrarTabla"
+  (seleccionCambio)="onSeleccionAccion($event)">
+</app-tabla>
+
+
+<app-actividades></app-actividades>
+
 <app-footer></app-footer>

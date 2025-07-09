@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
@@ -8,7 +8,7 @@ import { OperationalActivity } from '../../../models/logic/operationalActivity.m
 })
 export class OperationalActivityService {
 
-  private readonly BASE_URL = 'http://172.21.0.1:8081/operational-activity';
+  private readonly BASE_URL = 'http://10.0.29.240:8081/operational-activity';
   
     constructor(private http: HttpClient) { }
   
@@ -23,9 +23,11 @@ export class OperationalActivityService {
     }
 
     // Crear nueva
-    create(data: OperationalActivity): Observable<void> {
-      return this.http.post<void>(`${this.BASE_URL}`, data);
+    // operational-activity.service.ts
+    create(data: OperationalActivity): Observable<HttpResponse<any>> {
+      return this.http.post(`${this.BASE_URL}`, data, { observe: 'response' });
     }
+
 
     // Actualizar existente
     update(data: OperationalActivity): Observable<OperationalActivity> {
