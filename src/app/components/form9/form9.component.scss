@@ -4,10 +4,10 @@
 
 .matrix-table-wrapper {
   width: 100%;
-  max-width: 1550px;  /* ancho que ya tienes o el que quieras */
-  min-width: 1550px;
+  max-width: 2000px;  /* ancho que ya tienes o el que quieras */
+  min-width: 2000px;
   
-  max-height: 88vh;  /* no sobrepasa la altura de la pantalla */
+  max-height: 200vh;  /* no sobrepasa la altura de la pantalla */
   overflow-y: auto;   /* scroll vertical si el contenido es muy alto */
   overflow-x: auto;   /* scroll horizontal si es necesario */
   
@@ -15,7 +15,7 @@
 }
 
 .matrix-table {
-  width: 100%;
+  width: 160%;
   table-layout: fixed;
   border-collapse: collapse;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
