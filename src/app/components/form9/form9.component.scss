@@ -48,9 +48,9 @@
 /* Primera columna más ancha */
 .matrix-table thead th:first-child,
 .matrix-table tbody td:first-child {
-  width: 400px;
-  max-width: 400px;
-  min-width: 400px;
+  width: 360px;
+  max-width: 360px;
+  min-width: 360px;
   text-align: left;
 }
 
@@ -62,10 +62,16 @@
   min-width: 160px;
   text-align: center;
 }
-
+.matrix-table thead th:nth-child(3),
+.matrix-table tbody td:nth-child(3) {
+  width: 150px;  /* o el ancho que quieras */
+  max-width: 150px;
+  min-width: 150px;
+  text-align: center;
+}
 /* Resto de columnas igual */
-.matrix-table thead th:not(:first-child):not(:nth-child(2)),
-.matrix-table tbody td:not(:first-child):not(:nth-child(2)) {
+.matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)),
+.matrix-table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)) {
   width: 110px;
   max-width: 110px;
   min-width: 110px;
