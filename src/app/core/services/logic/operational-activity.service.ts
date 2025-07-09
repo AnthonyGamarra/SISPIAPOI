@@ -8,7 +8,7 @@ import { OperationalActivity } from '../../../models/logic/operationalActivity.m
 })
 export class OperationalActivityService {
 
-  private readonly BASE_URL = 'http://172.21.0.1:8081/operational-activity';
+  private readonly BASE_URL = 'http://10.0.29.240:8081/operational-activity';
   
     constructor(private http: HttpClient) { }
   

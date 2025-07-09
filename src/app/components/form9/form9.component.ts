@@ -3,8 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BudgetCategoryService } from '../../core/services/logic/budget-category.service';
 import { BudgetItemService } from '../../core/services/logic/budget-item.service';
+import { ExpenseTypeService } from '../../core/services/logic/expense-type.service';
+import { ExpenseType } from '../../models/logic/expenseType.model';
 import { BudgetCategory } from '../../models/logic/budgetCategory.model';
 import { BudgetItem } from '../../models/logic/budgetItem.model';
+import { ButtonModule } from 'primeng/button';
+
 
 interface Row {
   id: number;
@@ -15,7 +19,8 @@ interface Row {
   expanded: boolean;
   editable: boolean;
   children?: Row[];
-  parent?: Row; // <-- Referencia al padre
+  parent?: Row;
+  isOriginal?: boolean;  // <-- flag para fila original
 }
 
 @Component({
@@ -23,8 +28,8 @@ interface Row {
   templateUrl: './form9.component.html',
   styleUrls: ['./form9.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  providers: [BudgetCategoryService, BudgetItemService]
+  imports: [CommonModule, FormsModule,ButtonModule],
+  providers: [BudgetCategoryService, BudgetItemService, ExpenseTypeService]
 })
 export class Form9Component implements OnInit {
   meses: string[] = [
@@ -32,19 +37,22 @@ export class Form9Component implements OnInit {
     'Mayo', 'Junio', 'Julio', 'Agosto',
     'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  tiposGasto: string[] = ['Operativo', 'Capital', 'Administrativo'];
+  tiposGasto: ExpenseType[] = [];
   data: Row[] = [];
 
   constructor(
     private budgetCategoryService: BudgetCategoryService,
-    private budgetItemService: BudgetItemService
+    private budgetItemService: BudgetItemService,
+    private expenseTypeService: ExpenseTypeService
   ) {}
 
   ngOnInit() {
     Promise.all([
       this.budgetCategoryService.getAll().toPromise(),
-      this.budgetItemService.getAll().toPromise()
-    ]).then(([categories, items]) => {
+      this.budgetItemService.getAll().toPromise(),
+      this.expenseTypeService.getAll().toPromise()
+    ]).then(([categories, items, expenseTypes]) => {
+      this.tiposGasto = expenseTypes || [];
       if (categories && items) {
         this.data = this.buildRows(categories, items);
       } else {
@@ -80,7 +88,7 @@ export class Form9Component implements OnInit {
         if (parent) {
           parent.children = parent.children || [];
           parent.children.push(node);
-          node.parent = parent; // <-- Asignar referencia al padre
+          node.parent = parent;
         }
       } else {
         roots.push(node);
@@ -96,10 +104,11 @@ export class Form9Component implements OnInit {
           codPoFi: item.codPoFi,
           name: item.name,
           tipoGasto: item.budgetType?.name || '',
-          meses: this.initMeses(), // Inicializa los meses en cero
+          meses: this.initMeses(),
           expanded: false,
           editable: true,
-          parent: parent // <-- Asignar referencia al padre
+          parent: parent,
+          isOriginal: true // <-- marca original
         };
         parent.children = parent.children || [];
         parent.children.push(itemRow);
@@ -154,5 +163,46 @@ export class Form9Component implements OnInit {
 
   calcularTotal(row: Row): number {
     return this.meses.reduce((sum, mes) => sum + (row.meses[mes] || 0), 0);
+  }
+
+  duplicarItem(row: Row) {
+    if (!row.parent) return;
+
+    const parent = row.parent;
+    parent.children = parent.children ?? [];
+
+    const index = parent.children.indexOf(row);
+    if (index === -1) return;
+
+    const nuevoItem: Row = {
+      id: Date.now(),
+      codPoFi: row.codPoFi,
+      name: row.name,
+      tipoGasto: row.tipoGasto,
+      meses: { ...row.meses },
+      expanded: false,
+      editable: true,
+      parent: parent,
+      isOriginal: false
+    };
+
+    parent.children.splice(index + 1, 0, nuevoItem);
+    this.updateParentValues(parent);
+  }
+
+  eliminarItem(row: Row) {
+    if (row.isOriginal) {
+      alert('No se puede eliminar la fila original.');
+      return;
+    }
+
+    const parent = row.parent;
+    if (!parent || !parent.children) return;
+
+    const index = parent.children.indexOf(row);
+    if (index !== -1) {
+      parent.children.splice(index, 1);
+      this.updateParentValues(parent);
+    }
   }
 }

@@ -8,7 +8,7 @@ import { StrategicAction } from '../../../models/logic/strategicAction.model';
 })
 export class StrategicActionService {
 
-  private readonly BASE_URL = 'http://172.21.0.1:8081/strategic-action';
+  private readonly BASE_URL = 'http://10.0.29.240:8081/strategic-action';
   
     constructor(private http: HttpClient) { }
   
