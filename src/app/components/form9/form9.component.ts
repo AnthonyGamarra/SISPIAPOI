@@ -8,6 +8,7 @@ import { ExpenseType } from '../../models/logic/expenseType.model';
 import { BudgetCategory } from '../../models/logic/budgetCategory.model';
 import { BudgetItem } from '../../models/logic/budgetItem.model';
 import { ButtonModule } from 'primeng/button';
+import { Form9DataService } from '../../core/services/logic/form9-data.service';
 
 
 interface Row {
@@ -43,7 +44,8 @@ export class Form9Component implements OnInit {
   constructor(
     private budgetCategoryService: BudgetCategoryService,
     private budgetItemService: BudgetItemService,
-    private expenseTypeService: ExpenseTypeService
+    private expenseTypeService: ExpenseTypeService,
+    private form9DataService: Form9DataService // inyectar servicio
   ) {}
 
   ngOnInit() {
@@ -55,8 +57,10 @@ export class Form9Component implements OnInit {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
         this.data = this.buildRows(categories, items);
+        this.form9DataService.setData(this.data); // guardar datos iniciales
       } else {
         this.data = [];
+        this.form9DataService.setData([]);
       }
     });
   }
@@ -188,6 +192,7 @@ export class Form9Component implements OnInit {
 
     parent.children.splice(index + 1, 0, nuevoItem);
     this.updateParentValues(parent);
+    this.updateForm9DataService(); // actualizar datos
   }
 
   eliminarItem(row: Row) {
@@ -203,6 +208,7 @@ export class Form9Component implements OnInit {
     if (index !== -1) {
       parent.children.splice(index, 1);
       this.updateParentValues(parent);
+      this.updateForm9DataService(); // actualizar datos
     }
   }
   onInputValueChange(row: Row, mes: string) {
@@ -212,6 +218,7 @@ export class Form9Component implements OnInit {
     if (row.parent) {
       this.updateParentValues(row.parent);
     }
+    this.updateForm9DataService(); // actualizar datos
   }
   replicarEnero(row: Row) {
     const valor = row.meses['Enero'] || 0;
@@ -221,5 +228,11 @@ export class Form9Component implements OnInit {
     if (row.parent) {
       this.updateParentValues(row.parent);
     }
+    this.updateForm9DataService(); // actualizar datos
+  }
+
+  // Llamar esto cada vez que los datos cambien
+  updateForm9DataService() {
+    this.form9DataService.setData(this.data);
   }
 }
