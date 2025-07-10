@@ -36,8 +36,9 @@ export class Guardadof9Component {
             id: row.id,
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
-            order: row.order,
-            codPoFi: row.codPoFi // clave para identificar duplicados
+            order: row.order || 1,
+            codPoFi: row.codPoFi, // clave para identificar duplicados
+            new: row.new // nuevo campo para identificar si es un item nuevo
           });
         }
 
@@ -61,17 +62,23 @@ export class Guardadof9Component {
     let errores = 0;
     let total = this.datosCapturados.length;
     for (const item of this.datosCapturados) {
+      // Buscar si hay otra fila con el mismo codPoFi y diferente order
       const codPoFi = item.codPoFi;
-      const order = Number(item.order);
+      const order = Number(item.order) || 1;
       const idBudgetItem = Number(item.id);
+      // El idBudgetItem debe ser único por codPoFi+order, pero si es duplicado (por Date.now), hay que mapearlo correctamente
+      // Si el id es un timestamp (duplicado), se debe enviar el idBudgetItem original (de la fila original) y el order correspondiente
+      // Si el id es un número muy grande (timestamp), buscar el id original
       let realIdBudgetItem = idBudgetItem;
-      // Si el id es un timestamp (duplicado), buscar el id original de la fila con el mismo codPoFi y order 1 y id válido
+      // Si el id es un timestamp (duplicado), buscar el id original de la fila con el mismo codPoFi y order 1
       if (idBudgetItem > 1000000000) {
         const original = (this.datosCapturados as any[]).find((x: any) => x.codPoFi === codPoFi && Number(x.order) === 1 && Number(x.id) < 1000000000);
         if (original) {
           realIdBudgetItem = Number(original.id);
         }
       }
+      // Para cada orden > 1, el idBudgetItem debe ser el original, pero el orderItem debe ser el correspondiente
+      // Así, si hay n filas con el mismo codPoFi, todas se guardan con el mismo idBudgetItem pero distinto orderItem
       const payload = {
         orderItem: order,
         operationalActivity: { idOperationalActivity: 1 },
@@ -92,6 +99,7 @@ export class Guardadof9Component {
           DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
         }
       };
+      console.log(item.new)
       // Validar que todos los campos requeridos estén presentes y correctos
       if (!payload.budgetItem.idBudgetItem || !payload.operationalActivity.idOperationalActivity || !payload.expenseType) {
         errores++;
@@ -101,19 +109,14 @@ export class Guardadof9Component {
         }
         continue;
       }
-      // Lógica mejorada: PUT para cualquier registro existente (id válido en BD), POST solo para nuevos (id generado por Date.now)
-      const baseUrl = `http://10.0.29.240:8081/operational-activity-budget-item`;
-      let request$;
-      if (idBudgetItem > 1000000000) {
-        // Es un registro nuevo (duplicado), usar POST
-        request$ = this.http.post(baseUrl, payload);
-      } else {
-        // Es un registro existente, usar PUT
-        const putUrl = `${baseUrl}`;
-        request$ = this.http.put(putUrl, payload);
-      }
-      request$.subscribe({
-        next: () => {
+      // Siempre usar PUT para todos los duplicados (order > 1) y POST solo para el original (order === 1)
+      const url = (order === 1 && idBudgetItem < 1000000000) ?
+        `http://10.0.29.240:8081/operational-activity-budget-item` :
+        `http://10.0.29.240:8081/operational-activity-budget-item`;
+      const method = 'post';
+      console.log('Enviando payload:', payload, 'con método', method);
+      this.http[method](url, payload).subscribe({
+        next: (resp) => {
           exitos++;
           if (exitos + errores === total) {
             alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);

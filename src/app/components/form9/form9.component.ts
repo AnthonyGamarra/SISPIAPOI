@@ -25,6 +25,7 @@ interface Row {
   parent?: Row;
   isOriginal?: boolean;  // <-- flag para fila original
   order?: number; // nuevo campo para el orden
+  new?: boolean; // nuevo campo para identificar si es un item nuevo
 }
 
 @Component({
@@ -141,7 +142,8 @@ export class Form9Component implements OnInit {
               editable: true,
               parent: parent,
               isOriginal: order === 1, // solo el primero es original
-              order: order
+              order: order,
+              new: false
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
@@ -158,7 +160,8 @@ export class Form9Component implements OnInit {
             editable: true,
             parent: parent,
             isOriginal: true,
-            order: 1
+            order: 1,
+            new: true
           };
           parent.children = parent.children || [];
           parent.children.push(itemRow);
@@ -237,7 +240,8 @@ export class Form9Component implements OnInit {
       editable: true,
       parent: parent,
       isOriginal: false,
-      order: maxOrder + 1
+      order: maxOrder + 1,
+      new: true // marcar como nuevo
     };
 
     parent.children.splice(index + 1, 0, nuevoItem);
