@@ -34,9 +34,9 @@ interface Row {
 })
 export class Form9Component implements OnInit {
   meses: string[] = [
-    'Enero', 'Febrero', 'Marzo', 'Abril',
-    'Mayo', 'Junio', 'Julio', 'Agosto',
-    'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
+    'MAYO', 'JUNIO', 'JULIO', 'AGOSTO',
+    'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
   ];
   tiposGasto: ExpenseType[] = [];
   data: Row[] = [];
