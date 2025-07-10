@@ -28,8 +28,8 @@ export class OperationalActivityService {
     }
 
     // Actualizar existente
-    update(data: OperationalActivity): Observable<OperationalActivity> {
-      return this.http.put<OperationalActivity>(`${this.BASE_URL}`, data);
+    update(data: OperationalActivity): Observable<void> {
+      return this.http.put<void>(`${this.BASE_URL}`, data);
     }
 
     // Eliminar por ID

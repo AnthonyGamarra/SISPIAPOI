@@ -24,8 +24,8 @@ export class GoalService {
       return this.http.post<Goal>(this.BASE_URL, objective);
     }
   
-    update(id: number, objective: Goal): Observable<Goal> {
-      return this.http.put<Goal>(`${this.BASE_URL}/${id}`, objective);
+    update(objective: Goal): Observable<void> {
+      return this.http.put<void>(`${this.BASE_URL}`, objective);
     }
   
     delete(id: number): Observable<void> {

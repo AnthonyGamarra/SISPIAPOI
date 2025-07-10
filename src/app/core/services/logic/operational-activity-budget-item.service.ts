@@ -33,8 +33,8 @@ export class OperationalActivityBudgetItemService {
     }
 
     // Actualizar
-    update(data: OperationalActivityBudgetItem): Observable<OperationalActivityBudgetItem> {
-      return this.http.put<OperationalActivityBudgetItem>(`${this.BASE_URL}`, data);
+    update(data: OperationalActivityBudgetItem): Observable<void> {
+      return this.http.put<void>(`${this.BASE_URL}`, data);
     }
 
     // Eliminar por ambos IDs

@@ -36,7 +36,7 @@ export class Guardadof9Component {
             id: row.id,
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
-            order: row.order || 1,
+            order: row.order,
             codPoFi: row.codPoFi // clave para identificar duplicados
           });
         }
@@ -62,7 +62,7 @@ export class Guardadof9Component {
     let total = this.datosCapturados.length;
     for (const item of this.datosCapturados) {
       const codPoFi = item.codPoFi;
-      const order = Number(item.order) || 1;
+      const order = Number(item.order);
       const idBudgetItem = Number(item.id);
       let realIdBudgetItem = idBudgetItem;
       // Si el id es un timestamp (duplicado), buscar el id original de la fila con el mismo codPoFi y order 1 y id válido
@@ -109,11 +109,11 @@ export class Guardadof9Component {
         request$ = this.http.post(baseUrl, payload);
       } else {
         // Es un registro existente, usar PUT
-        const putUrl = `${baseUrl}/${realIdBudgetItem}/${order}`;
+        const putUrl = `${baseUrl}`;
         request$ = this.http.put(putUrl, payload);
       }
       request$.subscribe({
-        next: (resp) => {
+        next: () => {
           exitos++;
           if (exitos + errores === total) {
             alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);

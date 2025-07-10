@@ -239,7 +239,7 @@ export class TablaComponent implements OnChanges {
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
-      sapCode: '' // Asegurarse de enviar vacío en la creación
+      sapCode: ''
     };
 
     if (product.idOperationalActivity) {
@@ -261,18 +261,12 @@ export class TablaComponent implements OnChanges {
                 operationalActivity: { idOperationalActivity: product.idOperationalActivity } as OperationalActivity
               };
               if (g.idGoal) {
-                this.goalService.update(g.idGoal, goal).subscribe({
-                  next: () => { },
-                  error: () => {
-                    this.toastr.error('Error al actualizar una meta.', 'Error');
-                  }
+                this.goalService.update(goal).subscribe({
+                  next: () => { }
                 });
               } else {
                 this.goalService.create(goal).subscribe({
-                  next: () => { },
-                  error: () => {
-                    this.toastr.error('Error al crear una meta.', 'Error');
-                  }
+                  next: () => { }
                 });
               }
             }
