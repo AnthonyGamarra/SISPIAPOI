@@ -1,60 +1,164 @@
-table {
-  width: 60%;
-  max-width: 95%;
-  margin: 0 auto; // Centra la tabla
-  table-layout: fixed;
-  word-wrap: break-word;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  background-color: #fff;
-  border-radius: 8px;
-  text-align: center;
+.main-table {
+  width: 100%;
   border-collapse: collapse;
+  margin: 20px 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden; /* Ensures rounded corners are applied to content */
 }
 
 thead {
   background-color: var(--primary, #007acc);
   color: white;
+}
 
-  th {
-    padding: 12px 20px;
-    text-align: center;
-    font-weight: 600;
-    border: 2px solid #005fa3;
-  }
+thead th {
+  padding: 18px 20px;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #005fa3; /* Adjusted border to be consistent */
+  text-transform: uppercase;
+  font-size: 0.9em;
+  letter-spacing: 0.5px;
 }
 
 tbody {
-  tr {
-    border-bottom: 1px solid #c0c0c0;
-    transition: background-color 0.2s ease;
-
-    &:hover {
-      background-color: #f5faff;
-    }
-  }
-
-  td {
-    padding: 12px 20px;
-    vertical-align: middle;
-    color: #333;
-    text-align: center;
-    border: 2px solid #ddd;
-
-    // Asegura que el dropdown ocupe todo el ancho de la celda
-    .p-dropdown {
-      width: 100% !important;
-      min-width: 120px;
-      box-sizing: border-box;
-    }
-  }
+  background-color: #ffffff;
 }
 
+tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+tbody tr:last-child {
+  border-bottom: none; /* No border for the last row */
+}
+
+tbody tr:hover {
+  background-color: #f0f8ff; /* Lighter hover for better contrast */
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+tbody td {
+  padding: 12px 20px;
+  color: #333;
+  text-align: center; /* Keep for horizontal centering of text nodes */
+  border: 1px solid #f0f0f0; /* Lighter border for cells */
+  font-size: 0.95em;
+  word-wrap: break-word; /* Ensures long text breaks */
+  max-width: 150px; /* Optional: limit max width for content cells */
+
+  /* Flexbox para centrado vertical y horizontal */
+  display: flex;
+  align-items: center; /* Centra el contenido verticalmente */
+  justify-content: center; /* Centra los elementos flex directos horizontalmente */
+}
+
+/* Specific styles for editable cells */
+td .p-celleditor-input {
+  width: 100%;
+  padding: 0;
+}
+
+/* Styling for PrimeNG components within the table */
+.p-inputtext {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c0c0c0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 0.9em;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.p-inputtext:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+  outline: none;
+}
+
+.p-dropdown {
+  width: 100% !important;
+  min-width: 100px; /* Adjusted minimum width for better fit */
+  box-sizing: border-box;
+  border: 1px solid #c0c0c0;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.p-dropdown .p-dropdown-label {
+  padding: 8px 10px;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+}
+
+.p-button {
+  padding: 8px 12px;
+  font-size: 0.85em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.p-button.p-button-sm {
+  padding: 6px 10px;
+  font-size: 0.8em;
+}
+
+.p-button[icon="pi pi-pencil"] {
+  color: #007bff;
+  border-color: #007bff;
+}
+.p-button[icon="pi pi-pencil"]:hover {
+  background-color: #e6f2ff;
+}
+
+.p-button[icon="pi pi-check"] {
+  color: #28a745;
+  border-color: #28a745;
+}
+.p-button[icon="pi pi-check"]:hover {
+  background-color: #e6ffe6;
+}
+
+.p-button[icon="pi pi-times"] {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.p-button[icon="pi pi-times"]:hover {
+  background-color: #ffe6e6;
+}
+
+.p-button[icon="pi pi-trash"] {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.p-button[icon="pi pi-trash"]:hover {
+  background-color: #ffe6e6;
+}
+
+.p-button[icon="pi pi-search"] {
+  background-color: #007acc;
+  color: white;
+  border-color: #007acc;
+}
+.p-button[icon="pi pi-search"]:hover {
+  background-color: #005fa3;
+  border-color: #005fa3;
+}
+
+/* Styles for radio buttons and labels */
 input[type="radio"] {
   margin-right: 0.5rem;
   accent-color: #007acc;
   cursor: pointer;
-  width: 9px;
-  height: 9px;
+  width: 16px; /* Slightly larger for easier clicking */
+  height: 16px;
   vertical-align: middle;
 }
 
@@ -65,4 +169,30 @@ label {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  font-size: 0.95em;
+  color: #555;
+}
+
+/* Style for the "Agregar Actividad" button outside the table */
+.p-mb-4 p-button {
+  margin-top: 20px;
+}
+
+.p-button.p-button-success {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  font-size: 1em;
+  border-radius: 5px;
+}
+
+.p-button.p-button-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.p-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
