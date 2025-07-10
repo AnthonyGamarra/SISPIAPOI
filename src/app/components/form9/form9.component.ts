@@ -221,7 +221,9 @@ export class Form9Component implements OnInit {
     this.updateForm9DataService(); // actualizar datos
   }
   replicarEnero(row: Row) {
-    const valor = row.meses['Enero'] || 0;
+    // Copia el valor del primer mes definido en this.meses (debe ser ENERO)
+    const primerMes = this.meses[0];
+    const valor = row.meses[primerMes] || 0;
     for (const mes of this.meses) {
       row.meses[mes] = valor;
     }
