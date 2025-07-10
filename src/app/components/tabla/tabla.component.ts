@@ -56,7 +56,9 @@ export class TablaComponent implements OnChanges {
   @Input() mostrar = false;
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
-  @Input() idDependency: string | null = null; // ¡NUEVO INPUT!
+  @Input() idDependency: string | null = null;
+  @Input() quarter: number | null = null; // ¡NUEVO INPUT!
+  @Input() state: number | null = null; // ¡NUEVO INPUT!
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
   products: OperationalActivity[] = [];
@@ -85,6 +87,8 @@ export class TablaComponent implements OnChanges {
     const cambioAno = changes['ano'] && !changes['ano'].firstChange;
     const cambioMostrar = changes['mostrar'];
     const cambioIdDependency = changes['idDependency']; // Detectar cambio en idDependency
+    const cambioQuarter = changes['quarter'];
+    const cambioState = changes['state'];
 
     if (cambioAno || (cambioMostrar && !this.mostrar) || (cambioIdDependency && changes['idDependency'].currentValue === null)) {
       this.products = [];
@@ -161,6 +165,11 @@ export class TablaComponent implements OnChanges {
   }
 
   agregarActividad(): void {
+    if (this.state === 3) {
+      this.toastr.warning('No se pueden agregar actividades en estado de solo visualización.', 'Acción no permitida');
+      return;
+    }
+
     const nuevaActividad: OperationalActivity = {
       sapCode: '', // Se enviará vacío y se generará después
       name: '',
@@ -188,6 +197,11 @@ export class TablaComponent implements OnChanges {
   }
 
   eliminarActividad(index: number, product: OperationalActivity): void {
+    if (this.state === 3) {
+      this.toastr.warning('No se pueden eliminar actividades en estado de solo visualización.', 'Acción no permitida');
+      return;
+    }
+
     if (product.idOperationalActivity) {
       this.operationalActivityService.deleteById(product.idOperationalActivity).subscribe({
         next: () => {
@@ -209,6 +223,11 @@ export class TablaComponent implements OnChanges {
   onRowEditSave(product: OperationalActivity) {
     if (!this.idFormulation) return;
 
+    if (this.state === 3) {
+      this.toastr.warning('No se pueden guardar cambios en estado de solo visualización.', 'Acción no permitida');
+      return;
+    }
+
     const { goals, ...actividadSinGoals } = product;
 
     const actividad: OperationalActivity = {
@@ -229,22 +248,28 @@ export class TablaComponent implements OnChanges {
         next: () => {
           if (product.goals) {
             for (const g of product.goals) {
+              // Check if goal can be modified based on quarter
+              if (this.quarter !== null && g.goalOrder < this.quarter) {
+                this.toastr.warning(`La meta del trimestre ${g.goalOrder} no puede ser modificada.`, 'Acción no permitida');
+                continue; // Skip modification for this goal
+              }
+
               const goal: Goal = {
                 idGoal: g.idGoal,
                 goalOrder: g.goalOrder,
                 value: g.value,
-                operationalActivity: { idOperationalActivity: product.idOperationalActivity }
+                operationalActivity: { idOperationalActivity: product.idOperationalActivity } as OperationalActivity
               };
               if (g.idGoal) {
                 this.goalService.update(g.idGoal, goal).subscribe({
-                  next: () => {},
+                  next: () => { },
                   error: () => {
                     this.toastr.error('Error al actualizar una meta.', 'Error');
                   }
                 });
               } else {
                 this.goalService.create(goal).subscribe({
-                  next: () => {},
+                  next: () => { },
                   error: () => {
                     this.toastr.error('Error al crear una meta.', 'Error');
                   }
@@ -298,13 +323,19 @@ export class TablaComponent implements OnChanges {
                 // Save Goals after activity is created and SAP code is updated
                 if (product.goals) {
                   for (const g of product.goals) {
+                    // Check if goal can be modified based on quarter for new activity
+                    if (this.quarter !== null && g.goalOrder < this.quarter) {
+                      this.toastr.warning(`La meta del trimestre ${g.goalOrder} no puede ser creada.`, 'Acción no permitida');
+                      continue; // Skip creation for this goal
+                    }
+
                     const goal: Goal = {
                       goalOrder: g.goalOrder,
                       value: g.value,
-                      operationalActivity: { idOperationalActivity: id }
+                      operationalActivity: { idOperationalActivity: id } as OperationalActivity
                     };
                     this.goalService.create(goal).subscribe({
-                      next: () => {},
+                      next: () => { },
                       error: () => {
                         this.toastr.error('Error al crear una meta.', 'Error');
                       }
@@ -331,11 +362,15 @@ export class TablaComponent implements OnChanges {
   }
 
   onRowEditInit(product: OperationalActivity) {
+    if (this.state === 3) {
+      this.toastr.warning('No se pueden editar actividades en estado de solo visualización.', 'Acción no permitida');
+      return;
+    }
     // Cuando se edita una fila, asegurar que el objetivo estratégico se muestre correctamente.
     if (product.strategicAction?.strategicObjective?.idStrategicObjective) {
       product.strategicAction.strategicObjective = this.strategicObjectives.find(
         obj => obj.idStrategicObjective === product.strategicAction?.strategicObjective?.idStrategicObjective
-      ) || {idStrategicObjective: product.strategicAction.strategicObjective.idStrategicObjective} as StrategicObjective;
+      ) || { idStrategicObjective: product.strategicAction.strategicObjective.idStrategicObjective } as StrategicObjective;
       this.filterStrategicActions(product);
     }
   }

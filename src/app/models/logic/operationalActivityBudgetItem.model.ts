@@ -22,6 +22,7 @@ export enum MonthEnum {
 export interface OperationalActivityBudgetItem {
   operationalActivity: OperationalActivity;
   budgetItem: BudgetItem;
+  orderItem: number;
   monthAmounts: Partial<Record<MonthEnum, number>>
   expenseType?: ExpenseType | null;
 }
