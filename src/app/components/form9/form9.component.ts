@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { BudgetCategoryService } from '../../core/services/logic/budget-category.service';
 import { BudgetItemService } from '../../core/services/logic/budget-item.service';
 import { ExpenseTypeService } from '../../core/services/logic/expense-type.service';
+import { OperationalActivityBudgetItemService } from '../../core/services/logic/operational-activity-budget-item.service';
 import { ExpenseType } from '../../models/logic/expenseType.model';
 import { BudgetCategory } from '../../models/logic/budgetCategory.model';
 import { BudgetItem } from '../../models/logic/budgetItem.model';
 import { ButtonModule } from 'primeng/button';
 import { Form9DataService } from '../../core/services/logic/form9-data.service';
+import { OperationalActivityBudgetItem } from '../../models/logic/operationalActivityBudgetItem.model';
 
 
 interface Row {
@@ -45,18 +47,20 @@ export class Form9Component implements OnInit {
     private budgetCategoryService: BudgetCategoryService,
     private budgetItemService: BudgetItemService,
     private expenseTypeService: ExpenseTypeService,
-    private form9DataService: Form9DataService // inyectar servicio
+    private form9DataService: Form9DataService, // inyectar servicio
+    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService // nuevo servicio
   ) {}
 
   ngOnInit() {
     Promise.all([
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
-      this.expenseTypeService.getAll().toPromise()
-    ]).then(([categories, items, expenseTypes]) => {
+      this.expenseTypeService.getAll().toPromise(),
+      this.operationalActivityBudgetItemService.getByOperationalActivity(19).toPromise() // id fijo
+    ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
-        this.data = this.buildRows(categories, items);
+        this.data = this.buildRows(categories, items, oaBudgetItems || []);
         this.form9DataService.setData(this.data); // guardar datos iniciales
       } else {
         this.data = [];
@@ -65,7 +69,7 @@ export class Form9Component implements OnInit {
     });
   }
 
-  buildRows(categories: BudgetCategory[], items: BudgetItem[]): Row[] {
+  buildRows(categories: BudgetCategory[], items: BudgetItem[], oaBudgetItems: OperationalActivityBudgetItem[]): Row[] {
     // Map de categorías
     const catMap = new Map<number, Row>();
     for (const cat of categories) {
@@ -103,12 +107,16 @@ export class Form9Component implements OnInit {
       const parentId = item.budgetCategory.idBudgetCategory ?? 0;
       const parent = catMap.get(parentId);
       if (parent) {
+        // Buscar si hay info de OA para este item
+        const oaItem = oaBudgetItems?.find(oa => oa.budgetItem.idBudgetItem === item.idBudgetItem);
+        const meses = oaItem && oaItem.monthAmounts ? this.initMeses(oaItem.monthAmounts) : this.initMeses();
+        const tipoGasto = oaItem && oaItem.expenseType ? String(oaItem.expenseType.idExpenseType) : (item.budgetType?.name || '');
         const itemRow: Row = {
           id: item.idBudgetItem ?? 0,
           codPoFi: item.codPoFi,
           name: item.name,
-          tipoGasto: item.budgetType?.name || '',
-          meses: this.initMeses(),
+          tipoGasto: tipoGasto,
+          meses: meses,
           expanded: false,
           editable: true,
           parent: parent,
