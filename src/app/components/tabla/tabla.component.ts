@@ -29,6 +29,7 @@ import { Priority } from '../../models/logic/priority.model';
 import { OperationalActivity } from '../../models/logic/operationalActivity.model';
 import { Goal } from '../../models/logic/goal.model';
 import { Formulation } from '../../models/logic/formulation.model';
+import { Dependency } from '../../models/logic/dependency.model'; // Asegúrate de importar Dependency si no está
 
 interface Accion {
   id?: number;
@@ -55,6 +56,7 @@ export class TablaComponent implements OnChanges {
   @Input() mostrar = false;
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
+  @Input() idDependency: string | null = null; // ¡NUEVO INPUT!
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
   products: OperationalActivity[] = [];
@@ -82,29 +84,49 @@ export class TablaComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges) {
     const cambioAno = changes['ano'] && !changes['ano'].firstChange;
     const cambioMostrar = changes['mostrar'];
+    const cambioIdDependency = changes['idDependency']; // Detectar cambio en idDependency
 
-    if (cambioAno || (cambioMostrar && !this.mostrar)) {
+    if (cambioAno || (cambioMostrar && !this.mostrar) || (cambioIdDependency && changes['idDependency'].currentValue === null)) {
       this.products = [];
     }
 
     if (this.mostrar && this.ano && this.idFormulation) {
       this.cargarDatos();
       this.loadOperationalActivities();
+      // Recargar combos si la dependencia cambia (o si es la primera carga y hay dependencia)
+      if (cambioIdDependency || (!changes['idDependency']?.firstChange && this.idDependency !== null)) {
+        this.loadCombos();
+      }
     }
   }
 
   ngOnInit(): void {
-    this.loadCombos();
+    // La carga inicial de combos ahora se maneja en ngOnChanges para reaccionar a idDependency
+    // this.loadCombos(); // Ya no es necesario aquí, ngOnChanges lo manejará
   }
 
   loadCombos(): void {
+    const dependencyId = this.idDependency ? Number(this.idDependency) : null;
+
     this.strategicActionService.getAll().subscribe(data => this.strategicActions = data);
     this.financialFundService.getAll().subscribe(data => this.financialFunds = data);
-    this.managementCenterService.getAll().subscribe(data => this.managementCenters = data);
-    this.costCenterService.getAll().subscribe(data => this.costCenters = data);
     this.measurementTypeService.getAll().subscribe(data => this.measurementTypes = data);
     this.priorityService.getAll().subscribe(data => this.priorities = data);
     this.strategicObjectiveService.getAll().subscribe(data => this.strategicObjectives = data);
+
+    // Filtrar Management Centers por dependencia
+    this.managementCenterService.getAll().subscribe(data => {
+      this.managementCenters = dependencyId
+        ? data.filter(mc => mc.dependency?.idDependency === dependencyId)
+        : data;
+    });
+
+    // Filtrar Cost Centers por dependencia
+    this.costCenterService.getAll().subscribe(data => {
+      this.costCenters = dependencyId
+        ? data.filter(cc => cc.dependency?.idDependency === dependencyId)
+        : data;
+    });
   }
 
   loadOperationalActivities(): void {
@@ -250,13 +272,13 @@ export class TablaComponent implements OnChanges {
             );
             const strategicObjectiveCode = this.strategicObjectives.find(
               so => so.idStrategicObjective === selectedStrategicAction?.strategicObjective?.idStrategicObjective
-            )?.code || ''; // Asumiendo que StrategicObjective tiene propiedad 'code'
-            const strategicActionCode = selectedStrategicAction?.code || ''; // Asumiendo que StrategicAction tiene propiedad 'code'
+            )?.code || '';
+            const strategicActionCode = selectedStrategicAction?.code || '';
 
             const selectedCostCenter = this.costCenters.find(
               cc => cc.idCostCenter === product.costCenter.idCostCenter
             );
-            const costCenterCode = selectedCostCenter?.costCenterCode || ''; // Propiedad 'costCenterCode' del modelo CostCenter
+            const costCenterCode = selectedCostCenter?.costCenterCode || '';
 
             const formattedObjectiveCode = String(strategicObjectiveCode).padStart(1, '0');
             const formattedActionCode = String(strategicActionCode).padStart(2, '0');

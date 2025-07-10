@@ -8,5 +8,7 @@ export interface Formulation {
   formulationState: FormulationState;
   //formulationSupportFile: FormulationSupportFile;
   year?: number;
+  modification?: number;
+  quarter?: number;
 }
 
