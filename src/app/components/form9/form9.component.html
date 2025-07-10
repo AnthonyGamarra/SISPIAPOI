@@ -3,6 +3,7 @@
     <thead>
       <tr>
         <th>POSICIÓN PRESUPUESTARIA</th>
+        <th>ORDEN</th> <!-- Nueva columna de orden -->
         <th style="width: 120px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
         <th style="width: 150px;">TIPO DE GASTO</th>
         <th *ngFor="let mes of meses">{{ mes }}</th>
@@ -68,6 +69,9 @@
               <span [class.categoria-nombre]="!row.editable">
                 {{ row.name }}
               </span>
+            </td>
+            <td>
+              <ng-container *ngIf="row.editable">{{ row.order }}</ng-container>
             </td>
 
             <!-- Columna acciones -->

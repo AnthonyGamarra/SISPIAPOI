@@ -36,6 +36,8 @@ export class Guardadof9Component {
             id: row.id,
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
+            order: row.order || 1,
+            codPoFi: row.codPoFi // clave para identificar duplicados
           });
         }
 
@@ -59,27 +61,58 @@ export class Guardadof9Component {
     let errores = 0;
     let total = this.datosCapturados.length;
     for (const item of this.datosCapturados) {
+      const codPoFi = item.codPoFi;
+      const order = Number(item.order) || 1;
+      const idBudgetItem = Number(item.id);
+      let realIdBudgetItem = idBudgetItem;
+      // Si el id es un timestamp (duplicado), buscar el id original de la fila con el mismo codPoFi y order 1 y id válido
+      if (idBudgetItem > 1000000000) {
+        const original = (this.datosCapturados as any[]).find((x: any) => x.codPoFi === codPoFi && Number(x.order) === 1 && Number(x.id) < 1000000000);
+        if (original) {
+          realIdBudgetItem = Number(original.id);
+        }
+      }
       const payload = {
-        operationalActivity: { idOperationalActivity: 19 },
-        budgetItem: { idBudgetItem: item.id },
-        expenseType: { idExpenseType: item.tipoGastoId },
+        orderItem: order,
+        operationalActivity: { idOperationalActivity: 1 },
+        budgetItem: { idBudgetItem: realIdBudgetItem },
+        expenseType: Number(item.tipoGastoId) ? { idExpenseType: Number(item.tipoGastoId) } : null,
         monthAmounts: {
-          ENERO: item.meses['ENERO'] || 0,
-          FEBRERO: item.meses['FEBRERO'] || 0,
-          MARZO: item.meses['MARZO'] || 0,
-          ABRIL: item.meses['ABRIL'] || 0,
-          MAYO: item.meses['MAYO'] || 0,
-          JUNIO: item.meses['JUNIO'] || 0,
-          JULIO: item.meses['JULIO'] || 0,
-          AGOSTO: item.meses['AGOSTO'] || 0,
-          SEPTIEMBRE: item.meses['SEPTIEMBRE'] || 0,
-          OCTUBRE: item.meses['OCTUBRE'] || 0,
-          NOVIEMBRE: item.meses['NOVIEMBRE'] || 0,
-          DICIEMBRE: item.meses['DICIEMBRE'] || 0
+          ENERO: Number(item.meses['ENERO']) || 0,
+          FEBRERO: Number(item.meses['FEBRERO']) || 0,
+          MARZO: Number(item.meses['MARZO']) || 0,
+          ABRIL: Number(item.meses['ABRIL']) || 0,
+          MAYO: Number(item.meses['MAYO']) || 0,
+          JUNIO: Number(item.meses['JUNIO']) || 0,
+          JULIO: Number(item.meses['JULIO']) || 0,
+          AGOSTO: Number(item.meses['AGOSTO']) || 0,
+          SEPTIEMBRE: Number(item.meses['SEPTIEMBRE']) || 0,
+          OCTUBRE: Number(item.meses['OCTUBRE']) || 0,
+          NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
+          DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
         }
       };
-      console.log('Enviando payload:', payload);
-      this.http.post('http://10.0.29.240:8081/operational-activity-budget-item', payload).subscribe({
+      // Validar que todos los campos requeridos estén presentes y correctos
+      if (!payload.budgetItem.idBudgetItem || !payload.operationalActivity.idOperationalActivity || !payload.expenseType) {
+        errores++;
+        console.error('Payload inválido, no se envía:', payload);
+        if (exitos + errores === total) {
+          alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);
+        }
+        continue;
+      }
+      // Lógica mejorada: PUT para cualquier registro existente (id válido en BD), POST solo para nuevos (id generado por Date.now)
+      const baseUrl = `http://10.0.29.240:8081/operational-activity-budget-item`;
+      let request$;
+      if (idBudgetItem > 1000000000) {
+        // Es un registro nuevo (duplicado), usar POST
+        request$ = this.http.post(baseUrl, payload);
+      } else {
+        // Es un registro existente, usar PUT
+        const putUrl = `${baseUrl}/${realIdBudgetItem}/${order}`;
+        request$ = this.http.put(putUrl, payload);
+      }
+      request$.subscribe({
         next: (resp) => {
           exitos++;
           if (exitos + errores === total) {

@@ -24,6 +24,7 @@ interface Row {
   children?: Row[];
   parent?: Row;
   isOriginal?: boolean;  // <-- flag para fila original
+  order?: number; // nuevo campo para el orden
 }
 
 @Component({
@@ -56,7 +57,7 @@ export class Form9Component implements OnInit {
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
       this.expenseTypeService.getAll().toPromise(),
-      this.operationalActivityBudgetItemService.getByOperationalActivity(19).toPromise() // id fijo
+      this.operationalActivityBudgetItemService.getByOperationalActivity(1).toPromise() // id fijo
     ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
@@ -103,27 +104,65 @@ export class Form9Component implements OnInit {
       }
     }
     // Relacionar items como hijos editables de la categoría correspondiente
+    // Agrupar por idBudgetItem y procesar todos los órdenes
+    const itemsById = new Map<number, BudgetItem>();
     for (const item of items) {
+      if (item.idBudgetItem !== undefined) {
+        itemsById.set(item.idBudgetItem, item);
+      }
+    }
+    // Agrupar todos los oaBudgetItems por idBudgetItem
+    const oaItemsGrouped = new Map<number, OperationalActivityBudgetItem[]>();
+    for (const oa of oaBudgetItems) {
+      const id = oa.budgetItem.idBudgetItem ?? 0;
+      if (!oaItemsGrouped.has(id)) oaItemsGrouped.set(id, []);
+      oaItemsGrouped.get(id)!.push(oa);
+    }
+    for (const [id, item] of itemsById.entries()) {
       const parentId = item.budgetCategory.idBudgetCategory ?? 0;
       const parent = catMap.get(parentId);
       if (parent) {
-        // Buscar si hay info de OA para este item
-        const oaItem = oaBudgetItems?.find(oa => oa.budgetItem.idBudgetItem === item.idBudgetItem);
-        const meses = oaItem && oaItem.monthAmounts ? this.initMeses(oaItem.monthAmounts) : this.initMeses();
-        const tipoGasto = oaItem && oaItem.expenseType ? String(oaItem.expenseType.idExpenseType) : (item.budgetType?.name || '');
-        const itemRow: Row = {
-          id: item.idBudgetItem ?? 0,
-          codPoFi: item.codPoFi,
-          name: item.name,
-          tipoGasto: tipoGasto,
-          meses: meses,
-          expanded: false,
-          editable: true,
-          parent: parent,
-          isOriginal: true // <-- marca original
-        };
-        parent.children = parent.children || [];
-        parent.children.push(itemRow);
+        // Si hay OA para este item, crear una fila por cada orden
+        const oaList = oaItemsGrouped.get(id) || [];
+        if (oaList.length > 0) {
+          // Ordenar por orderItem ascendente
+          oaList.sort((a, b) => (a.orderItem || 1) - (b.orderItem || 1));
+          for (const oaItem of oaList) {
+            const meses = oaItem && oaItem.monthAmounts ? this.initMeses(oaItem.monthAmounts) : this.initMeses();
+            const tipoGasto = oaItem && oaItem.expenseType ? String(oaItem.expenseType.idExpenseType) : (item.budgetType?.name || '');
+            const order = oaItem && typeof oaItem.orderItem === 'number' ? oaItem.orderItem : 1;
+            const itemRow: Row = {
+              id: item.idBudgetItem ?? 0,
+              codPoFi: item.codPoFi,
+              name: item.name,
+              tipoGasto: tipoGasto,
+              meses: meses,
+              expanded: false,
+              editable: true,
+              parent: parent,
+              isOriginal: order === 1, // solo el primero es original
+              order: order
+            };
+            parent.children = parent.children || [];
+            parent.children.push(itemRow);
+          }
+        } else {
+          // Si no hay OA, crear solo la fila original
+          const itemRow: Row = {
+            id: item.idBudgetItem ?? 0,
+            codPoFi: item.codPoFi,
+            name: item.name,
+            tipoGasto: item.budgetType?.name || '',
+            meses: this.initMeses(),
+            expanded: false,
+            editable: true,
+            parent: parent,
+            isOriginal: true,
+            order: 1
+          };
+          parent.children = parent.children || [];
+          parent.children.push(itemRow);
+        }
       }
     }
     // Limpiar arrays vacíos
@@ -186,6 +225,8 @@ export class Form9Component implements OnInit {
     const index = parent.children.indexOf(row);
     if (index === -1) return;
 
+    // Calcular el nuevo orden: máximo de los órdenes actuales + 1
+    const maxOrder = Math.max(...parent.children.filter(r => r.codPoFi === row.codPoFi).map(r => r.order || 1), 1);
     const nuevoItem: Row = {
       id: Date.now(),
       codPoFi: row.codPoFi,
@@ -195,7 +236,8 @@ export class Form9Component implements OnInit {
       expanded: false,
       editable: true,
       parent: parent,
-      isOriginal: false
+      isOriginal: false,
+      order: maxOrder + 1
     };
 
     parent.children.splice(index + 1, 0, nuevoItem);
