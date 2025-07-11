@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog'; // ¡NUEVA IMPORTACIÓN!
+import { SelectButton } from 'primeng/selectbutton';
 
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
 import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
@@ -54,10 +55,12 @@ interface Accion {
     ButtonModule,
     RippleModule,
     TagModule,
-    DialogModule // ¡AÑADIR DialogModule AQUÍ!
+    DialogModule, // ¡AÑADIR DialogModule AQUÍ!
+    SelectButton
   ]
 })
 export class TablaComponent implements OnChanges {
+
   @Input() mostrar = false;
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
@@ -65,7 +68,9 @@ export class TablaComponent implements OnChanges {
   
   quarter: number | null = null; 
   state: number | null = null; 
-  
+  selectedSize: any = undefined;
+  sizes!: any[];
+
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
   products: OperationalActivity[] = [];
@@ -84,6 +89,7 @@ export class TablaComponent implements OnChanges {
   displayOeAeModal: boolean = false;
   tempSelectedStrategicObjectiveId: number | null = null;
   tempSelectedStrategicActionId: number | null = null;
+  year: number | null = null;
   // --- FIN NUEVAS PROPIEDADES ---
 
   private strategicActionService = inject(StrategicActionService);
@@ -120,6 +126,12 @@ export class TablaComponent implements OnChanges {
   }
 
   ngOnInit(): void {
+    
+    this.sizes = [
+      { name: 'Pequeño', value: 'small' },
+      { name: 'Mediano', value: undefined },
+      { name: 'Grande', value: 'large' }
+    ];
   }
 
   loadFormulationDetails(): void {
@@ -336,10 +348,10 @@ export class TablaComponent implements OnChanges {
 
           if (id && !isNaN(id)) {
             const selectedStrategicAction = this.strategicActions.find(
-              sa => sa.idStrategicAction === product.strategicAction.idStrategicAction
+              sa => sa.idStrategicAction == product.strategicAction.idStrategicAction
             );
             const strategicObjectiveCode = this.strategicObjectives.find(
-              so => so.idStrategicObjective === selectedStrategicAction?.strategicObjective?.idStrategicObjective
+              so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
             )?.code || '';
             const strategicActionCode = selectedStrategicAction?.code || '';
 
@@ -453,6 +465,7 @@ export class TablaComponent implements OnChanges {
 
   cargarDatos() {
     const year = parseInt(this.ano!, 10);
+    this.year = year;
 
     this.strategicObjectiveService.getAll().subscribe((objectives: StrategicObjective[]) => {
       this.strategicObjectives = objectives.filter(

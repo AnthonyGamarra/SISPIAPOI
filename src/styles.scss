@@ -16,16 +16,27 @@ $color-secondary-light: #A9BCD9;
 $color-success-light: #81C784;
 $color-warning-light: #EF5350;
 
-:root {
-  --primary: #{$color-primary};
-  --secondary: #{$color-secondary};
-  --success: #{$color-success};
-  --warning: #{$color-warning};
+$color-primary-darker: #00396E;       // Azul institucional más oscuro
+$color-secondary-darker: #5A7CA2;     // Azul grisáceo más profundo
+$color-success-darker: #388E3C;       // Verde éxito más oscuro
+$color-warning-darker: #B71C1C;       // Rojo alerta más intenso
 
-  --primary-light: #{$color-primary-light};
-  --secondary-light: #{$color-secondary-light};
-  --success-light: #{$color-success-light};
-  --warning-light: #{$color-warning-light};
+
+:root {
+  --primary: #{$color-primary} !important;
+  --secondary: #{$color-secondary} !important;
+  --success: #{$color-success} !important;
+  --warning: #{$color-warning} !important;
+
+  --primary-light: #{$color-primary-light} !important;
+  --secondary-light: #{$color-secondary-light} !important;
+  --success-light: #{$color-success-light} !important;
+  --warning-light: #{$color-warning-light} !important;
+
+  --primary-darker: #{$color-primary-darker} !important;
+  --secondary-darker: #{$color-secondary-darker} !important;
+  --success-darker: #{$color-success-darker} !important;
+  --warning-darker: #{$color-warning-darker} !important;
 
   --p-floatlabel-focus-color: #{$color-primary} !important;
   --p-floatlabel-active-color: #{$color-primary} !important;
@@ -43,7 +54,6 @@ html, body {
   padding: 0;
   box-sizing: border-box;
 }
-
 
 *,
 *::before,

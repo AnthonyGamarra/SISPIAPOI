@@ -25,14 +25,14 @@
   border: 1px solid transparent !important;
 }
 
-.selector:disabled {
-  background-color: var(--secondary-light) !important;
+.selector:hover {
+  background-color: var(--primary) !important;
   color: white !important;
   border: 1px solid white !important;
 }
 
-.selector:hover {
-  background-color: var(--primary) !important;
+.selector:disabled {
+  background-color: var(--secondary-light) !important;
   color: white !important;
   border: 1px solid white !important;
 }
