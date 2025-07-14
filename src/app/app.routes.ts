@@ -21,16 +21,18 @@ export const routes: Routes = [
     path: 'formulation', // ✅ nueva ruta para el componente Formu1
     component: FormulationComponent,
     canActivate: [authGuard],
+    // data: {
+    //   roles: ['ADMIN'],
+    // },
+    // data: {
+    //   dependencies: [11, 12, 13],
+    // },
   },
   {
     path: 'valida', // ✅ nueva ruta para el componente Formu1
     component: ValidaComponent,
     canActivate: [authGuard],
   },
-  {
-    path: '',
-    redirectTo: 'menu',
-    pathMatch: 'full',
-  },
+  { path: '', redirectTo: 'menu', pathMatch: 'full' },
   { path: '**', redirectTo: '/menu' },
 ];
