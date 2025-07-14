@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../../components/footer/footer.component';
 import { MenubarComponent } from '../../components/menubar/menubar.component';
 import { SelectorComponent } from '../../components/selector/selector.component';
-import { TablaComponent } from '../../components/tabla/tabla.component';
+import { FormulacionTablaComponent } from '../../components/formulacion-tabla/formulacion-tabla.component';
 
 @Component({
   selector: 'app-formulation',
@@ -13,7 +13,7 @@ import { TablaComponent } from '../../components/tabla/tabla.component';
     FooterComponent,
     MenubarComponent,
     SelectorComponent,
-    TablaComponent
+    FormulacionTablaComponent
   ],
   templateUrl: './formulation.component.html',
   styleUrl: './formulation.component.scss'

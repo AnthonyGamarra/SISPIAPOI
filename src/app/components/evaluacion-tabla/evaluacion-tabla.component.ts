@@ -195,27 +195,28 @@ export class EvaluacionTablaComponent implements OnChanges {
     this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
       next: (data) => {
         this.products = data.map(activity => {
-          // Initialize goals if missing or incomplete
-          if (!activity.goals || activity.goals.length === 0) {
-            activity.goals = Array.from({ length: 4 }, (_, i) => ({ goalOrder: i + 1, value: 0, operationalActivity: {} } as Goal));
-          } else {
-            activity.goals.sort((a, b) => a.goalOrder - b.goalOrder);
-            while (activity.goals.length < 4) {
-              const nextOrder = activity.goals.length + 1;
-              activity.goals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as Goal);
-            }
-          }
+          // Initialize goals if missing or incomplete, and map existing ones
+          const loadedGoals = activity.goals || [];
+          activity.goals = Array.from({ length: 4 }, (_, i) => {
+            const existingGoal = loadedGoals.find(g => g.goalOrder === i + 1);
+            // Crucial Fix: Ensure operationalActivity has the correct ID
+            return existingGoal
+              ? { ...existingGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as Goal;
+          });
+          activity.goals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
 
-          // Initialize executedGoals if missing or incomplete
-          if (!activity.executedGoals || activity.executedGoals.length === 0) {
-            activity.executedGoals = Array.from({ length: 4 }, (_, i) => ({ goalOrder: i + 1, value: 0, operationalActivity: {} } as ExecutedGoal));
-          } else {
-            activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder);
-            while (activity.executedGoals.length < 4) {
-              const nextOrder = activity.executedGoals.length + 1;
-              activity.executedGoals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as ExecutedGoal);
-            }
-          }
+          // Initialize executedGoals if missing or incomplete, and map existing ones
+          const loadedExecutedGoals = activity.executedGoals || [];
+          activity.executedGoals = Array.from({ length: 4 }, (_, i) => {
+            const existingExecutedGoal = loadedExecutedGoals.find(eg => eg.goalOrder === i + 1);
+            // Crucial Fix: Ensure operationalActivity has the correct ID
+            return existingExecutedGoal
+              ? { ...existingExecutedGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as ExecutedGoal;
+          });
+          activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
+          
           return activity;
         });
       },

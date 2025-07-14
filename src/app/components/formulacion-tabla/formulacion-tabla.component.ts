@@ -46,9 +46,9 @@ interface Accion {
 }
 
 @Component({
-  selector: 'app-tabla',
-  templateUrl: './tabla.component.html',
-  styleUrls: ['./tabla.component.scss'],
+  selector: 'app-formulacion-tabla',
+  templateUrl: './formulacion-tabla.component.html',
+  styleUrls: ['./formulacion-tabla.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
@@ -64,7 +64,7 @@ interface Accion {
     LottieComponent
   ]
 })
-export class TablaComponent implements OnChanges {
+export class FormulacionTablaComponent implements OnChanges {
 
   @Input() mostrar = false;
   @Input() ano: string | null = null;
@@ -193,32 +193,28 @@ export class TablaComponent implements OnChanges {
     this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
       next: (data) => {
         this.products = data.map(activity => {
-          if (!activity.goals || activity.goals.length === 0 || !activity.executedGoals || activity.executedGoals.length === 0) {
-            activity.goals = [
-              { goalOrder: 1, value: 0, operationalActivity: {} } as Goal,
-              { goalOrder: 2, value: 0, operationalActivity: {} } as Goal,
-              { goalOrder: 3, value: 0, operationalActivity: {} } as Goal,
-              { goalOrder: 4, value: 0, operationalActivity: {} } as Goal
-            ];
-            activity.executedGoals = [
-              { goalOrder: 1, value: 0, operationalActivity: {} } as ExecutedGoal,
-              { goalOrder: 2, value: 0, operationalActivity: {} } as ExecutedGoal,
-              { goalOrder: 3, value: 0, operationalActivity: {} } as ExecutedGoal,
-              { goalOrder: 4, value: 0, operationalActivity: {} } as ExecutedGoal
-            ];
-          } else {
-            activity.goals.sort((a, b) => a.goalOrder - b.goalOrder);
-            while (activity.goals.length < 4) {
-              const nextOrder = activity.goals.length + 1;
-              activity.goals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as Goal);
-            }
+          // Initialize goals if missing or incomplete, and map existing ones
+          const loadedGoals = activity.goals || [];
+          activity.goals = Array.from({ length: 4 }, (_, i) => {
+            const existingGoal = loadedGoals.find(g => g.goalOrder === i + 1);
+            // Crucial Fix: Ensure operationalActivity has the correct ID
+            return existingGoal
+              ? { ...existingGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as Goal;
+          });
+          activity.goals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
 
-            activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder);
-            while (activity.executedGoals.length < 4) {
-              const nextOrder = activity.executedGoals.length + 1;
-              activity.executedGoals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as ExecutedGoal);
-            }
-          }
+          // Initialize executedGoals if missing or incomplete, and map existing ones
+          const loadedExecutedGoals = activity.executedGoals || [];
+          activity.executedGoals = Array.from({ length: 4 }, (_, i) => {
+            const existingExecutedGoal = loadedExecutedGoals.find(eg => eg.goalOrder === i + 1);
+            // Crucial Fix: Ensure operationalActivity has the correct ID
+            return existingExecutedGoal
+              ? { ...existingExecutedGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as ExecutedGoal;
+          });
+          activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
+          
           return activity;
         });
       },

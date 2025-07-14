@@ -6,14 +6,14 @@ import { AuthService } from '../../core/services/authentication/auth.service'; /
 import { MenubarComponent } from '../../components/menubar/menubar.component';
 import { FooterComponent } from '../../components/footer/footer.component';
 
-import { ModulopComponent } from '../../components/modulop/modulop.component';
-import { EvaluacionComponent } from '../../components/evaluacion/evaluacion.component'
+import { FormulacionModuloComponent } from '../../components/formulacion-modulo/formulacion-modulo.component';
+import { EvaluacionModuloComponent } from '../../components/evaluacion-modulo/evaluacion-modulo.component'
 import { ModuloksComponent } from '../../components/moduloks/moduloks.component';
 
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [CommonModule, FooterComponent, MenubarComponent, ModulopComponent, EvaluacionComponent, ModuloksComponent],
+  imports: [CommonModule, FooterComponent, MenubarComponent, FormulacionModuloComponent, EvaluacionModuloComponent, ModuloksComponent],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })

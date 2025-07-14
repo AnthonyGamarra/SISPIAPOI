@@ -2,11 +2,11 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-modulop',
-  templateUrl: './modulop.component.html',
-  styleUrls: ['./modulop.component.scss']
+  selector: 'app-formulacion-modulo',
+  templateUrl: './formulacion-modulo.component.html',
+  styleUrls: ['./formulacion-modulo.component.scss']
 })
-export class ModulopComponent {
+export class FormulacionModuloComponent {
   constructor(private router: Router) {}
   @Output() clicked = new EventEmitter<void>();
 
