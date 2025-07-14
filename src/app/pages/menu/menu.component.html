@@ -2,6 +2,7 @@
 <div class="modulos">
     <app-formulacion-modulo></app-formulacion-modulo>
     <app-evaluacion-modulo *ngIf="canSeeEvaluacionComponent()"></app-evaluacion-modulo>
+    <app-adm-planificacion-modulo *ngIf="canSeeAdmComponent()"></app-adm-planificacion-modulo>
     <app-moduloks></app-moduloks>
 </div>
 <app-footer></app-footer>

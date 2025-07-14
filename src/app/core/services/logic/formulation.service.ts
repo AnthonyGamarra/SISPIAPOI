@@ -46,4 +46,9 @@ export class FormulationService {
       return this.http.post<Formulation[]>(`${this.BASE_URL}/search`, requestPayload);
     }
 
+    // Añadir una modificación (copia con nuevo trimestre)
+    addModification(idOriginalFormulation: number, newQuarter: number): Observable<Formulation> {
+      return this.http.post<Formulation>(`${this.BASE_URL}/add-modification/${idOriginalFormulation}/${newQuarter}`, {});
+    }
+
 }

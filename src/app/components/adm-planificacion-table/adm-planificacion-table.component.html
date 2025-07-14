@@ -1,0 +1,478 @@
+<div>
+  <div class="grid mx-auto">
+    <div class="col-6 flex justify-center mr-auto my-5">
+      <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false" optionLabel="name" optionValue="value" />
+    </div>
+    <button
+      pButton
+      label="Agregar Actividad"
+      icon="pi pi-plus"
+      (click)="agregarActividad()"
+      [disabled]="state === 3 || !year"
+      class="col-6 add-button ml-auto my-5">
+    </button>
+  </div>
+  <div class="table-container">
+    <p-table
+      [value]="products"
+      [size]="selectedSize"
+      stripedRows
+      showGridlines
+      [resizableColumns]="true"
+      [scrollable]="true"
+      scrollHeight="500px"
+      columnResizeMode="expand"
+      dataKey="idOperationalActivity"
+      editMode="row"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [rowHover]="true"
+      [editingRowKeys]="editingRowKeys">
+      <ng-template pTemplate="header" class="table-header" #header>
+        <tr class="cabecera">
+          <th style="min-width: 100px" rowspan="2" >Acciones</th>
+          <th style="min-width: 150px" rowspan="2" >Código de actividad</th>
+          <th style="min-width: 250px" rowspan="2" >Nombre de actividad</th>
+          <th style="min-width: 200px" rowspan="2" >Unidad de medida</th>
+          <th style="min-width: 200px" rowspan="2" >Objetivo estratégico</th>
+          <th style="min-width: 200px" rowspan="2" >Acción estratégica</th>
+          <th style="min-width: 200px" rowspan="2" >Fondo financiero</th>
+          <th style="min-width: 200px" rowspan="2" >Centro gestor</th>
+          <th style="min-width: 200px" rowspan="2" >Centro de costos</th>
+          <th style="min-width: 150px" rowspan="2" >Prioridad</th>
+          <th style="min-width: 200px" rowspan="2" >Código SAP</th>
+          <th style="min-width: 200px" rowspan="2" >Código Correlativo</th>
+          <th style="min-width: 250px" rowspan="2" >Descripción de actividad</th>
+          <th style="min-width: 120px" rowspan="2">Línea Base</th>
+          <th style="min-width: 120px" rowspan="2">Meta Programada</th>
+          <th [attr.colspan]="12" style="text-align: center;">Programación de Metas Mensuales</th>
+          <th style="min-width: 120px" rowspan="2">Meta Total</th>
+          <th style="min-width: 120px" rowspan="2">Avance</th>
+          <th style="min-width: 120px" rowspan="2">Efectividad</th>
+        </tr>
+        <tr class="cabecera">
+          <th style="min-width: 100px">Ene</th>
+          <th style="min-width: 100px">Feb</th>
+          <th style="min-width: 100px">Mar</th>
+          <th style="min-width: 100px">Abr</th>
+          <th style="min-width: 100px">May</th>
+          <th style="min-width: 100px">Jun</th>
+          <th style="min-width: 100px">Jul</th>
+          <th style="min-width: 100px">Ago</th>
+          <th style="min-width: 100px">Sep</th>
+          <th style="min-width: 100px">Oct</th>
+          <th style="min-width: 100px">Nov</th>
+          <th style="min-width: 100px">Dic</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-product let-ri="rowIndex">
+        <tr [pEditableRow]="product">
+          <td>
+            <div class="flex align-items-center justify-content-center gap-2">
+              <button *ngIf="!editingRowKeys[product.idOperationalActivity as number]" pButton pRipple type="button" icon="pi pi-pencil" (click)="startEdit(product)" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="editingRowKeys[product.idOperationalActivity as number]" pButton pRipple type="button" icon="pi pe-7s-check" (click)="saveEdit(product)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+              <button *ngIf="editingRowKeys[product.idOperationalActivity as number]" pButton pRipple type="button" icon="pi pi-times" (click)="cancelEdit(product, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
+              <button pButton pRipple type="button" icon="pi pi-trash" (click)="confirmDelete(product)" class="p-button-rounded p-button-text p-button-danger"></button>
+            </div>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="product.activityCode" required />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.activityCode }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="product.activityName" required />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.activityName }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="measurementTypes" [(ngModel)]="product.measurementType!.idMeasurementType" optionValue="idMeasurementType" optionLabel="name" [filter]="true" filterBy="name"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ getMeasurementTypeName(product.measurementType!.idMeasurementType) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <button pButton type="button" label="Seleccionar OE/AE" (click)="showOeAeSelectionModal(product)" class="p-button-sm"></button>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.strategicAction?.strategicObjective?.name || 'N/A' }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="filteredStrategicActions" [(ngModel)]="product.strategicAction!.idStrategicAction" optionValue="idStrategicAction" optionLabel="name" [filter]="true" filterBy="name" [disabled]="true"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.strategicAction?.name || 'N/A' }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="financialFunds" [(ngModel)]="product.financialFund!.idFinancialFund" optionValue="idFinancialFund" optionLabel="name" [filter]="true" filterBy="name"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ getFinancialFundName(product.financialFund!.idFinancialFund) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="managementCenters" [(ngModel)]="product.managementCenter!.idManagementCenter" optionValue="idManagementCenter" optionLabel="name" [filter]="true" filterBy="name"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ getManagementCenterName(product.managementCenter!.idManagementCenter) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="costCenters" [(ngModel)]="product.costCenter!.idCostCenter" optionValue="idCostCenter" optionLabel="name" [filter]="true" filterBy="name"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ getCostCenterName(product.costCenter!.idCostCenter) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-dropdown [options]="priorities" [(ngModel)]="product.priority!.idPriority" optionValue="idPriority" optionLabel="name" [filter]="true" filterBy="name"></p-dropdown>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ getPriorityName(product.priority!.idPriority) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="product.sapCode" disabled />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.sapCode }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="product.correlativeCode" disabled />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.correlativeCode }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="product.description" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.description }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.baseLine" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.baseLine }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.programedGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.programedGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.januaryGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.januaryGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.februaryGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.februaryGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.marchGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.marchGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.aprilGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.aprilGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.mayGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.mayGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.juneGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.juneGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.julyGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.julyGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.augustGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.augustGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.septemberGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.septemberGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.octoberGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.octoberGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.novemberGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.novemberGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.decemberGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.decemberGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.totalGoal" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.totalGoal }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.progress" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.progress }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="number" [(ngModel)]="product.effectivity" />
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ product.effectivity }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<div class="flex justify-content-end mt-4 mr-4">
+  <button pButton label="Generar Modificatoria" icon="pi pi-pencil" (click)="showGenerateModificatoriaDialog()" class="add-button"></button>
+</div>
+
+<p-dialog
+  header="Seleccionar Objetivo y Acción Estratégica"
+  [(visible)]="showOeAeModal"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [breakpoints]="{ '960px': '75vw', '640px': '90vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [baseZIndex]="10000">
+  <div class="p-fluid">
+    <div class="flex items-center gap-4">
+        <label for="strategicObjective" class="font-semibold w-10rem">Objetivo Estratégico:</label>
+        <p-dropdown
+          id="strategicObjective"
+          [options]="strategicObjectives"
+          optionLabel="name"
+          optionValue="idStrategicObjective"
+          [(ngModel)]="tempSelectedStrategicObjectiveId"
+          (onChange)="onModalStrategicObjectiveChange($event)"
+          placeholder="Selecciona un objetivo"
+          [filter]="true"
+          filterBy="name"
+          appendTo="body"
+          class="flex-auto">
+        </p-dropdown>
+    </div>
+    <div class="flex items-center gap-4 mt-8">
+        <label for="strategicAction" class="font-semibold w-10rem">Acción Estratégica:</label>
+        <p-dropdown
+        id="strategicAction"
+        [options]="filteredStrategicActions"
+        optionLabel="name"
+        optionValue="idStrategicAction"
+        [(ngModel)]="tempSelectedStrategicActionId"
+        [disabled]="!tempSelectedStrategicObjectiveId"
+        placeholder="Selecciona una acción"
+        [filter]="true"
+        filterBy="name"
+        appendTo="body"
+        class="flex-auto">
+      </p-dropdown>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()" styleClass="p-button-text" class="cancel-button"></button>
+    <button pButton label="Seleccionar" icon="pi pi-check" (click)="confirmOeAeSelection()" class="add-button"></button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Confirmar Eliminación"
+  [(visible)]="showDeleteConfirmation"
+  [modal]="true"
+  [style]="{ width: '30vw' }"  [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+  [resizable]="false"
+  [baseZIndex]="10000">
+  <div class="confirmation-content text-center">
+    <div class="success-animation mb-0">
+      <ng-lottie [options]="options"></ng-lottie>
+    </div>
+    <h3>¿Estás seguro de que quieres eliminar esta actividad?</h3>
+    <p>Esta acción no se puede deshacer.</p>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer-buttons-wrapper">
+      <button pButton label="No" icon="pi pi-times" (click)="cancelDelete()" class="p-button-text cancel-button"></button>
+      <button pButton label="Sí" icon="pi pi-check" (click)="deleteActivity()" class="add-button"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Generar Modificatoria"
+  [(visible)]="showGenerarModificatoriaDialog"
+  [modal]="true"
+  [style]="{ width: '30vw' }"
+  [breakpoints]="{ '960px': '80vw', '640px': '90vw' }"
+  [draggable]="false"
+  [resizable]="false"
+  [baseZIndex]="10000">
+  <div class="p-fluid">
+    <div class="p-field mt-4">
+      <label for="quarter">Selecciona el Trimestre</label>
+      <p-dropdown
+        id="quarter"
+        [options]="quartersOptions"
+        [(ngModel)]="quarter"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Selecciona un trimestre"
+        [filter]="false"
+        appendTo="body"
+        class="p-fluid mt-5">
+      </p-dropdown>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelGenerateModificatoria()" styleClass="p-button-text" class="cancel-button"></button>
+    <button pButton label="Generar" icon="pi pi-check" (click)="generateModificatoria()" class="mx-3 add-button"></button>
+  </ng-template>
+</p-dialog>

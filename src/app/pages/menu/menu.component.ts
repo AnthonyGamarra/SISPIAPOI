@@ -8,12 +8,21 @@ import { FooterComponent } from '../../components/footer/footer.component';
 
 import { FormulacionModuloComponent } from '../../components/formulacion-modulo/formulacion-modulo.component';
 import { EvaluacionModuloComponent } from '../../components/evaluacion-modulo/evaluacion-modulo.component'
+import { AdmPlanificacionModuloComponent } from '../../components/adm-planificacion-modulo/adm-planificacion-modulo.component'
 import { ModuloksComponent } from '../../components/moduloks/moduloks.component';
 
 @Component({
   selector: 'app-menu',
   standalone: true,
-  imports: [CommonModule, FooterComponent, MenubarComponent, FormulacionModuloComponent, EvaluacionModuloComponent, ModuloksComponent],
+  imports: [
+    CommonModule, 
+    FooterComponent, 
+    MenubarComponent, 
+    FormulacionModuloComponent, 
+    EvaluacionModuloComponent,
+    AdmPlanificacionModuloComponent,
+    ModuloksComponent
+  ],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })
@@ -23,8 +32,14 @@ export class MenuComponent {
 
   allowedRolesForEvaluacion: string[] = ["ADMIN", "UPLANEAMIENTO", "GPLANEAMIENTO"];
 
+  allowedRolesForAdm: string[] = ["ADMIN", "GPLANEAMIENTO"];
+
   canSeeEvaluacionComponent(): boolean {
     return this.authService.hasRole(this.allowedRolesForEvaluacion);
+  }
+
+  canSeeAdmComponent(): boolean {
+    return this.authService.hasRole(this.allowedRolesForAdm);
   }
 
 }
