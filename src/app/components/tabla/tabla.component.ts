@@ -72,7 +72,7 @@ export class TablaComponent implements OnChanges {
 
   quarter: number | null = null;
   state: number | null = null;
-  selectedSize: any = undefined;
+  selectedSize: any = 'small';
   sizes!: any[];
 
   @Output() seleccionCambio = new EventEmitter<Accion>();
@@ -224,6 +224,7 @@ export class TablaComponent implements OnChanges {
     const nuevaActividad: OperationalActivity = {
       idOperationalActivity: this.newActivityCounter--,
       sapCode: '',
+      correlativeCode: '',
       name: '',
       measurementUnit: '',
       strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction,
@@ -463,14 +464,15 @@ export class TablaComponent implements OnChanges {
 
           if (id && !isNaN(id)) {
             // Call the new private method to generate SAP Code (now returns an Observable)
-            this._generateSapCode(product).subscribe({
-              next: (newSapCode: string) => {
-                const activityWithSapCode: OperationalActivity = {
+            this._generateSapCodeAndCorrelative(product).subscribe({ // Modified method call
+              next: (result: { sapCode: string, correlativeCode: string }) => { // Expect an object
+                const activityWithCodes: OperationalActivity = { // Renamed for clarity
                   ...actividadCreada,
-                  sapCode: newSapCode
+                  sapCode: result.sapCode,
+                  correlativeCode: result.correlativeCode // Assign the correlativeCode
                 };
 
-                this.operationalActivityService.update(activityWithSapCode).subscribe({
+                this.operationalActivityService.update(activityWithCodes).subscribe({ // Use activityWithCodes
                   next: () => {
                     const goalObservables: Observable<any>[] = [];
                     if (product.goals) {
@@ -506,14 +508,14 @@ export class TablaComponent implements OnChanges {
                     }
                   },
                   error: (err) => {
-                    this.toastr.error('Error al actualizar la actividad con el código SAP.', 'Error');
-                    console.error('Error al actualizar la actividad con el código SAP:', err);
+                    this.toastr.error('Error al actualizar la actividad con el código SAP y correlativo.', 'Error');
+                    console.error('Error al actualizar la actividad con el código SAP y correlativo:', err);
                   }
                 });
               },
               error: (err) => {
-                this.toastr.error('Error al generar el código SAP.', 'Error');
-                console.error('Error generating SAP code:', err);
+                this.toastr.error('Error al generar el código SAP y correlativo.', 'Error');
+                console.error('Error generating SAP code and correlative:', err);
               }
             });
           } else {
@@ -671,11 +673,11 @@ export class TablaComponent implements OnChanges {
   }
 
   /**
-   * Generates the SAP Code for a new Operational Activity.
+   * Generates the SAP Code and correlative code for an Operational Activity.
    * @param activity The OperationalActivity object with strategic action and cost center details.
-   * @returns An Observable that emits the generated SAP code string.
+   * @returns An Observable that emits an object containing the generated SAP code string and the correlative code.
    */
-  private _generateSapCode(activity: OperationalActivity): Observable<string> {
+  private _generateSapCodeAndCorrelative(activity: OperationalActivity): Observable<{ sapCode: string, correlativeCode: string }> {
     const selectedStrategicAction = this.strategicActions.find(
       sa => sa.idStrategicAction == activity.strategicAction.idStrategicAction
     );
@@ -697,7 +699,7 @@ export class TablaComponent implements OnChanges {
 
     if (!idCostCenter) {
       this.toastr.error('ID de Centro de Costos es nulo para generar código SAP.', 'Error');
-      return of(''); // Return an observable with an empty string on error
+      return of({ sapCode: '', correlativeCode: '' }); // Return an observable with empty strings on error
     }
 
     return this.operationalActivityService.getHigherCorrelativeCodeByCostCenter(idCostCenter).pipe(
@@ -706,12 +708,15 @@ export class TablaComponent implements OnChanges {
         const nextCorrelative = (isNaN(currentCorrelative) ? 0 : currentCorrelative) + 1;
         const formattedActivityId = String(nextCorrelative).padStart(3, '0');
 
-        return `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
+        const sapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
+        console.log(correlativeCodeStr);
+
+        return { sapCode: sapCode, correlativeCode: formattedActivityId }; // Return both values
       }),
       catchError(err => {
         this.toastr.error('Error al obtener el código correlativo superior para el código SAP.', 'Error');
         console.error('Error fetching higher correlative code:', err);
-        return of(''); // Return an observable with an empty string or handle error appropriately
+        return of({ sapCode: '', correlativeCode: '' }); // Return an observable with empty strings on error
       })
     );
   }

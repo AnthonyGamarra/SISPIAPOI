@@ -150,7 +150,8 @@ label {
   border: 1px solid transparent !important;
   margin-right: 17px;
   padding: 10px;
-  max-width: 15%;
+  min-width: 10%;
+  max-width: 12%;
 }
 
 .add-button:hover {
@@ -170,6 +171,8 @@ label {
   color: var(--primary) !important;
   border: none !important;
   border: 1px solid transparent !important;
+  min-width: 25%;
+  max-width: 30%;
 }
 
 .cancel-button:hover {
@@ -265,4 +268,34 @@ label {
   background-color: var(--primary);
   color: white;
   border-radius: 10px;
+}
+
+
+
+
+// Add or modify styles for the dialog
+::ng-deep .dialog-header {
+  .p-dialog { // Target the PrimeNG dialog component itself
+    max-width: 80vw;
+    max-height: 50vh;
+
+    @media (max-width: 768px) {
+      max-width: 95vw !important; /* Make dialog wider on small screens */
+      max-height: 90vh !important; /* Allow more height on small screens */
+      top: 5vh !important; /* Adjust vertical position for better viewing */
+    }
+  }
+
+  .p-dialog-footer {
+    justify-content: flex-end; /* Align buttons to the right by default */
+    @media (max-width: 768px) {
+      justify-content: center !important; /* Center buttons on small screens */
+      padding: 1rem; /* Add some padding */
+    }
+  }
+}
+
+
+::ng-deep .p-select-list-container {
+  max-width: 85vw;
 }

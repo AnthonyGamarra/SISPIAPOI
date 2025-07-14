@@ -10,6 +10,7 @@ import { Priority } from "./priority.model";
 export interface OperationalActivity {
   idOperationalActivity?: number;
   sapCode: string;
+  correlativeCode: String;
   name: string;
   active?: boolean;
   strategicAction: StrategicAction;
