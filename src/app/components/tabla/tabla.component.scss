@@ -271,11 +271,10 @@ label {
 }
 
 
-
-
 // Add or modify styles for the dialog
 ::ng-deep .dialog-header {
   .p-dialog { // Target the PrimeNG dialog component itself
+    min-width: 65vw;
     max-width: 80vw;
     max-height: 50vh;
 

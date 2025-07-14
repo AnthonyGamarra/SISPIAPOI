@@ -67,7 +67,7 @@
       type="button"
       pButton
       class="selector"
-      [label]="formulationExists ? 'Mostrar formulación' : 'Crear formulación'"
+      [label]="formulationExists ? 'Mostrar formulación' : 'Iniciar formulación'"
       [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
       [disabled]="checkingFormulation || !selectedAno || !selectedDependency || (formulationExists && !selectedModificationOption)"
       (click)="onBuscar()"

@@ -1,18 +1,20 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown'; // Cambiado de SelectModule a DropdownModule
+import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
 import { LottieComponent } from 'ngx-lottie';
-import { InputTextModule } from 'primeng/inputtext'; // Importar para el campo de trimestre
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DependencyService } from '../../core/services/logic/dependency.service';
 import { FormulationService } from '../../core/services/logic/formulation.service';
+import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service'; // Import StrategicObjectiveService
 import { Formulation } from '../../models/logic/formulation.model';
 import { Dependency } from '../../models/logic/dependency.model';
 import { FormulationState } from '../../models/logic/formulationState.model';
+import { MinMaxYears } from '../../models/logic/min-max-years.model'; // Import MinMaxYears interface
 
 @Component({
   selector: 'app-selector',
@@ -20,10 +22,10 @@ import { FormulationState } from '../../models/logic/formulationState.model';
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule, // Usar DropdownModule
+    DropdownModule,
     ButtonModule,
     LottieComponent,
-    InputTextModule // Añadir InputTextModule
+    InputTextModule
   ],
   templateUrl: './selector.component.html',
   styleUrls: ['./selector.component.scss']
@@ -35,6 +37,7 @@ export class SelectorComponent implements OnInit {
   private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
+  private strategicObjectiveService = inject(StrategicObjectiveService); // Inject StrategicObjectiveService
 
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
@@ -46,24 +49,72 @@ export class SelectorComponent implements OnInit {
   checkingFormulation = false;
   showSuccessAnimation = false;
 
-  foundFormulations: Formulation[] = []; // Para almacenar todas las formulaciones encontradas
-  modificationOptions: { label: string; value: number }[] = []; // Opciones para el filtro de modificación
-  selectedModificationOption: { label: string; value: number } | null = null; // Selección actual del filtro de modificación
-  quarterLabel: string | null = null; // Etiqueta para mostrar el trimestre
+  foundFormulations: Formulation[] = [];
+  modificationOptions: { label: string; value: number }[] = [];
+  selectedModificationOption: { label: string; value: number } | null = null;
+  quarterLabel: string | null = null;
 
-  optionsAno = Array.from({ length: 14 }, (_, i) => {
-    const year = (2025 + i).toString();
-    return { label: year, value: year };
-  });
+  optionsAno: { label: string; value: string }[] = []; // Initialized as empty, will be populated dynamically
 
   options: AnimationOptions = {
     path: 'resources/succes-allert.json'
   };
 
   ngOnInit(): void {
+    this.loadYearsAndDependencies();
+  }
+
+  loadYearsAndDependencies(): void {
+    // Fetch min and max years from StrategicObjectiveService
+    this.strategicObjectiveService.getMinMaxYears().subscribe({
+      next: (yearsRange: MinMaxYears) => {
+        if (yearsRange.minYear !== null && yearsRange.maxYear !== null) {
+          this.optionsAno = [];
+          for (let i = yearsRange.minYear; i <= yearsRange.maxYear; i++) {
+            this.optionsAno.push({ label: i.toString(), value: i.toString() });
+          }
+          // Optionally, set the selected year to the max year or current year if within range
+          const currentYear = new Date().getFullYear().toString();
+          if (this.optionsAno.some(opt => opt.value === currentYear)) {
+            this.selectedAno = currentYear;
+          } else if (this.optionsAno.length > 0) {
+            this.selectedAno = yearsRange.maxYear.toString(); // Default to latest year if current year not available
+          }
+
+        } else {
+          // Fallback if no years are returned (e.g., no strategic objectives yet)
+          // You can set a default range or leave it empty.
+          this.toastr.info('No se encontraron años de formulación. Se mostrará un rango predeterminado.', 'Información');
+          this.optionsAno = Array.from({ length: 5 }, (_, i) => {
+            const year = (new Date().getFullYear() + i).toString(); // Example: current year + 4 years
+            return { label: year, value: year };
+          });
+          this.selectedAno = new Date().getFullYear().toString();
+        }
+        // After years are loaded, proceed with dependencies and verification
+        this.loadDependencies();
+      },
+      error: (err) => {
+        this.toastr.error('Error al cargar el rango de años de formulación.', 'Error de Carga');
+        console.error('Error fetching min/max years:', err);
+        // Fallback to a default range on error
+        this.optionsAno = Array.from({ length: 5 }, (_, i) => {
+          const year = (new Date().getFullYear() + i).toString();
+          return { label: year, value: year };
+        });
+        this.selectedAno = new Date().getFullYear().toString();
+        this.loadDependencies(); // Still attempt to load dependencies
+      }
+    });
+  }
+
+  loadDependencies(): void {
     const dependencyIds: number[] = JSON.parse(localStorage.getItem('dependencies') || '[]');
 
-    if (dependencyIds.length === 0) return;
+    if (dependencyIds.length === 0) {
+      this.toastr.warning('No se encontraron dependencias para el usuario.', 'Acceso Restringido');
+      return;
+    }
 
     this.dependencyService.getAll().subscribe(dependencies => {
       const filtered = dependencies.filter(dep => dependencyIds.includes(dep.idDependency!));
@@ -76,6 +127,7 @@ export class SelectorComponent implements OnInit {
 
       this.selectedDependency = this.isSingleDependency ? this.dependencyOptions[0]?.value : null;
 
+      // Only verify formulation if both year and dependency are selected
       if (this.selectedAno && this.selectedDependency) {
         this.verificarFormulacion();
       }
@@ -83,16 +135,14 @@ export class SelectorComponent implements OnInit {
   }
 
   verificarFormulacion() {
-    this.cambioAno.emit(this.selectedAno); // Esto sigue siendo solo para limpiar la tabla
+    this.cambioAno.emit(this.selectedAno);
 
-    // Reiniciar estados relacionados con la formulación al cambiar año/dependencia
     this.formulationExists = false;
     this.idFormulation = null;
     this.foundFormulations = [];
     this.modificationOptions = [];
     this.selectedModificationOption = null;
     this.quarterLabel = null;
-
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
@@ -109,21 +159,17 @@ export class SelectorComponent implements OnInit {
         this.formulationExists = this.foundFormulations.length > 0;
 
         if (this.formulationExists) {
-          // Ordenar por modificación de forma descendente para que la última sea la primera opción
           this.foundFormulations.sort((a, b) => (b.modification || 0) - (a.modification || 0));
 
-          // Mapear formulaciones a opciones de dropdown de modificación
           this.modificationOptions = this.foundFormulations.map(f => ({
             label: this.getModificationLabel(f.modification),
             value: f.modification!
           }));
 
-          // Seleccionar la primera opción (la más reciente por el sort)
           this.selectedModificationOption = this.modificationOptions[0] || null;
-          this.onModificationChange(); // Actualizar idFormulation y quarterLabel con la selección predeterminada
-
+          this.onModificationChange();
         } else {
-          this.idFormulation = null; // No hay formulación existente
+          this.idFormulation = null;
         }
 
         this.checkingFormulation = false;
@@ -166,7 +212,6 @@ export class SelectorComponent implements OnInit {
     if (modification === 3) return 'Segunda Modificación';
     if (modification === 4) return 'Tercera Modificación';
     if (modification === 5) return 'Cuarta Modificación';
-    // Puedes añadir más casos o una lógica genérica si hay muchas modificaciones
     return `Modificación ${modification}`;
   }
 
@@ -188,8 +233,6 @@ export class SelectorComponent implements OnInit {
     }
 
     if (this.formulationExists) {
-      // Si hay formulaciones existentes, se debe haber seleccionado una modificación,
-      // y idFormulation ya estará actualizado por onModificationChange
       if (this.idFormulation) {
         this.buscar.emit({
           ano: this.selectedAno,
@@ -202,21 +245,19 @@ export class SelectorComponent implements OnInit {
       return;
     }
 
-    // Crear nueva formulación
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
       formulationState: { idFormulationState: 1 } as FormulationState,
       active: true,
-      modification: 1, // La primera vez siempre es modificación 1
-      quarter: 1 // Asumimos que la creación inicial es en el trimestre 1, ajustar si es diferente
+      modification: 1,
+      quarter: 1
     };
 
     this.formulationService.create(nuevaFormulacion).subscribe({
       next: (nueva) => {
         this.formulationExists = true;
         this.idFormulation = nueva.idFormulation ?? null;
-        // Recargar formulaciones para incluir la recién creada y actualizar el filtro
         this.verificarFormulacion();
 
         this.showSuccessAnimation = true;
@@ -233,7 +274,5 @@ export class SelectorComponent implements OnInit {
         this.toastr.error('Error al crear la formulación.', 'Error');
       }
     });
-
   }
-
 }

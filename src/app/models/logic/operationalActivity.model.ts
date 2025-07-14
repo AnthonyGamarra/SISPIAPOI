@@ -6,6 +6,7 @@ import { CostCenter } from "./costCenter.model";
 import { MeasurementType } from "./measurementType.model";
 import { Goal } from "./goal.model";
 import { Priority } from "./priority.model";
+import { ExecutedGoal } from "./executedGoal.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
@@ -20,9 +21,8 @@ export interface OperationalActivity {
   costCenter: CostCenter;
   measurementType: MeasurementType;
   measurementUnit: string;
-  executedGoal?: number | null;
-  expectedGoal?: number | null;
   goals?: Goal[];
+  executedGoals?: ExecutedGoal[];
   priority: Priority;
   goods: number;
   remuneration: number;

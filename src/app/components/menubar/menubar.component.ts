@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router'; // Import Router
 import { TieredMenuModule } from 'primeng/tieredmenu';
 import { ButtonModule } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
@@ -18,6 +19,7 @@ import { AuthService } from '../../core/services/authentication/auth.service'; /
 })
 export class MenubarComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
   userMenuItems: MenuItem[] = [];
   settingsMenuItems: MenuItem[] = [];
 
@@ -49,5 +51,9 @@ export class MenubarComponent {
 
   onHelp() {
     console.log('Ayuda');
+  }
+
+  goToLogin() {
+    this.router.navigate(['/menu']); // Navigate to the login route
   }
 }

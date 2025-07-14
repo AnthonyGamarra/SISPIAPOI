@@ -38,6 +38,7 @@ import { Dependency } from '../../models/logic/dependency.model';
 
 import { forkJoin, Observable, of } from 'rxjs'; // Import 'of'
 import { map, catchError } from 'rxjs/operators'; // Import 'map' and 'catchError'
+import { ExecutedGoal } from '../../models/logic/executedGoal.model';
 
 interface Accion {
   id?: number;
@@ -192,18 +193,30 @@ export class TablaComponent implements OnChanges {
     this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
       next: (data) => {
         this.products = data.map(activity => {
-          if (!activity.goals || activity.goals.length === 0) {
+          if (!activity.goals || activity.goals.length === 0 || !activity.executedGoals || activity.executedGoals.length === 0) {
             activity.goals = [
               { goalOrder: 1, value: 0, operationalActivity: {} } as Goal,
               { goalOrder: 2, value: 0, operationalActivity: {} } as Goal,
               { goalOrder: 3, value: 0, operationalActivity: {} } as Goal,
               { goalOrder: 4, value: 0, operationalActivity: {} } as Goal
             ];
+            activity.executedGoals = [
+              { goalOrder: 1, value: 0, operationalActivity: {} } as ExecutedGoal,
+              { goalOrder: 2, value: 0, operationalActivity: {} } as ExecutedGoal,
+              { goalOrder: 3, value: 0, operationalActivity: {} } as ExecutedGoal,
+              { goalOrder: 4, value: 0, operationalActivity: {} } as ExecutedGoal
+            ];
           } else {
             activity.goals.sort((a, b) => a.goalOrder - b.goalOrder);
             while (activity.goals.length < 4) {
               const nextOrder = activity.goals.length + 1;
               activity.goals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as Goal);
+            }
+
+            activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder);
+            while (activity.executedGoals.length < 4) {
+              const nextOrder = activity.executedGoals.length + 1;
+              activity.executedGoals.push({ goalOrder: nextOrder, value: 0, operationalActivity: {} } as ExecutedGoal);
             }
           }
           return activity;
@@ -233,8 +246,6 @@ export class TablaComponent implements OnChanges {
       costCenter: {} as CostCenter,
       measurementType: {} as MeasurementType,
       priority: {} as Priority,
-      expectedGoal: null,
-      executedGoal: null,
       goods: 0,
       remuneration: 0,
       services: 0,
@@ -244,7 +255,13 @@ export class TablaComponent implements OnChanges {
         { goalOrder: 2, value: 0, operationalActivity: {} } as Goal,
         { goalOrder: 3, value: 0, operationalActivity: {} } as Goal,
         { goalOrder: 4, value: 0, operationalActivity: {} } as Goal
-      ]
+      ],
+      executedGoals: [
+        { goalOrder: 1, value: 0, operationalActivity: {} } as ExecutedGoal,
+        { goalOrder: 2, value: 0, operationalActivity: {} } as ExecutedGoal,
+        { goalOrder: 3, value: 0, operationalActivity: {} } as ExecutedGoal,
+        { goalOrder: 4, value: 0, operationalActivity: {} } as ExecutedGoal
+      ],
     };
     this.products = [...this.products, nuevaActividad];
     this.editingRowKeys[nuevaActividad.idOperationalActivity as any] = true; // ¡Añade esta línea!
@@ -390,7 +407,7 @@ export class TablaComponent implements OnChanges {
         return;
     }
 
-    const { goals, ...actividadSinGoals } = product;
+    const { goals, executedGoals, ...actividadSinGoals } = product; // Explicitly destructure executedGoals
 
     const actividad: OperationalActivity = {
       ...actividadSinGoals,
