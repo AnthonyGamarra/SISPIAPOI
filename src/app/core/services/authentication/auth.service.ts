@@ -1,3 +1,4 @@
+// src/app/core/services/authentication/auth.service.ts
 import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequest, AuthTokens } from '../../../models/auth/auth.model';
@@ -24,14 +25,17 @@ export class AuthService {
         this.tokens.set(res);
         localStorage.setItem('access_token', res.access_token);
         localStorage.setItem('refresh_token', res.refresh_token);
-        // Decodificar el token y guardar las dependencias
+        // Decodificar el token y guardar las dependencias y el rol
         try {
           const payload = JSON.parse(atob(res.access_token.split('.')[1]));
           if (payload.dependencies) {
             localStorage.setItem('dependencies', JSON.stringify(payload.dependencies));
           }
+          if (payload.role) { // Store the user role from the token payload
+            localStorage.setItem('user_role', payload.role);
+          }
         } catch (e) {
-          // Si falla la decodificación, no hacer nada
+          console.error('Error decoding access token during login:', e);
         }
       })
     );
@@ -39,9 +43,11 @@ export class AuthService {
 
   logout(data: AuthTokens) {
     return this.http.post(`${this.BASE_URL}/logout-tokens`, data, { responseType: 'text' }).pipe(
-      tap(() => {        
+      tap(() => {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_role'); // Clear the stored role on logout
+        localStorage.removeItem('dependencies'); // Clear dependencies on logout
         this.tokens.set(null);
         this.toastr.success('Sesión cerrada correctamente. ¡Hasta pronto!', 'Cierre de sesión');
         this.router.navigate(['/login']);
@@ -59,5 +65,36 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!this.accessToken;
+  }
+
+  /**
+   * Decodes the access token and returns the user's role.
+   * @returns The user's role as a string, or null if not found or token is invalid.
+   */
+  getUserRole(): string | null {
+    const accessToken = this.accessToken;
+    if (accessToken) {
+      try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        return payload.role || null;
+      } catch (e) {
+        console.error('Error decoding access token to get user role:', e);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Checks if the current user has any of the specified roles.
+   * @param allowedRoles An array of roles that are permitted.
+   * @returns True if the user's role is in the allowedRoles array, false otherwise.
+   */
+  hasRole(allowedRoles: string[]): boolean {
+    const userRole = this.getUserRole();
+    if (userRole) {
+      return allowedRoles.includes(userRole);
+    }
+    return false;
   }
 }

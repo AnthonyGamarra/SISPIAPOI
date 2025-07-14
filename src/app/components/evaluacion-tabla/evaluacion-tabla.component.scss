@@ -1,0 +1,300 @@
+.table-container {
+  margin: 0px 18px;
+}
+
+tbody td {
+  padding: 12px 20px;
+  color: #333;
+  text-align: center; /* Keep for horizontal centering of text nodes */
+  border: 1px solid #f0f0f0; /* Lighter border for cells */
+  font-size: 0.95em;
+  word-wrap: break-word; /* Ensures long text breaks */
+  max-width: 150px; /* Optional: limit max width for content cells */
+
+  /* Flexbox para centrado vertical y horizontal */
+  display: flex;
+  align-items: center; /* Centra el contenido verticalmente */
+  justify-content: center; /* Centra los elementos flex directos horizontalmente */
+}
+
+/* Specific styles for editable cells */
+td .p-celleditor-input {
+  width: 100%;
+  padding: 0;
+}
+
+/* Styling for PrimeNG components within the table */
+.p-inputtext {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #c0c0c0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 0.9em;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.p-inputtext:focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+  outline: none;
+}
+
+.p-dropdown {
+  width: 100% !important;
+  min-width: 100px; /* Adjusted minimum width for better fit */
+  box-sizing: border-box;
+  border: 1px solid #c0c0c0;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.p-dropdown .p-dropdown-label {
+  padding: 8px 10px;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  border-color: #007acc;
+  box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
+}
+
+.p-button {
+  padding: 8px 12px;
+  font-size: 0.85em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.p-button.p-button-sm {
+  padding: 6px 10px;
+  font-size: 0.8em;
+}
+
+.p-button[icon="pi pi-pencil"] {
+  color: #007bff;
+  border-color: #007bff;
+}
+.p-button[icon="pi pi-pencil"]:hover {
+  background-color: #e6f2ff;
+}
+
+.p-button[icon="pi pi-check"] {
+  color: #28a745;
+  border-color: #28a745;
+}
+.p-button[icon="pi pi-check"]:hover {
+  background-color: #e6ffe6;
+}
+
+.p-button[icon="pi pi-times"] {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.p-button[icon="pi pi-times"]:hover {
+  background-color: #ffe6e6;
+}
+
+.p-button[icon="pi pi-trash"] {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.p-button[icon="pi pi-trash"]:hover {
+  background-color: #ffe6e6;
+}
+
+.p-button[icon="pi pi-search"] {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary-darker);
+}
+.p-button[icon="pi pi-search"]:hover {
+  background-color: var(--primary-darker);
+}
+
+/* Styles for radio buttons and labels */
+input[type="radio"] {
+  margin-right: 0.5rem;
+  accent-color: #007acc;
+  cursor: pointer;
+  width: 16px; /* Slightly larger for easier clicking */
+  height: 16px;
+  vertical-align: middle;
+}
+
+label {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.p-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.size-buttons {
+  margin-left: 10px;
+  max-width: 30%;
+}
+
+.add-button {
+  background-color: var(--primary) !important;
+  color: white !important;  
+  border: none !important;
+  border: 1px solid transparent !important;
+  margin-right: 17px;
+  padding: 10px;
+  min-width: 10%;
+  max-width: 12%;
+}
+
+.add-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.cancel-button {
+  background-color: white;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+  min-width: 25%;
+  max-width: 30%;
+}
+
+.cancel-button:hover {
+  background-color: var(--secondary-light) !important;
+  color: var(--primary-darker) !important;
+  border: 1px solid white !important;
+}
+
+::ng-deep .cabecera th{
+  color: #ffffff !important;
+  background-color: #00529B !important;
+  font-weight: bold !important;
+  border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+
+  .size-buttons {
+    max-width: 130%;
+  }
+
+
+  .add-button {
+    padding: 10px;
+    max-width: 30%;
+  }
+
+}
+::ng-deep .p-togglebutton .p-togglebutton-label {
+  font-size: 14px !important;
+  padding: 2px 0px !important;
+}
+
+/* Centrar el contenido de la animación Lottie (ya lo tenías, solo para asegurar) */
+.success-animation {
+  width: 25vw;
+  height: 25vh;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Centrar el contenido general del diálogo de confirmación */
+.confirmation-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centra los elementos hijos horizontalmente */
+  justify-content: center; /* Centra los elementos hijos verticalmente (si el espacio lo permite) */
+  text-align: center; /* Asegura que el texto también se centre */
+  padding: 20px; /* Añade un poco de relleno para que no esté pegado a los bordes del diálogo */
+}
+
+@media (max-width: 768px) {
+  .success-animation {
+    width: 40vw;
+    height: 20vh;
+  }
+}
+
+/* Estilos para centrar los botones en el footer del diálogo */
+/* Usamos ::ng-deep para afectar el componente p-dialog */
+::ng-deep .p-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: center; /* Centra los botones horizontalmente */
+}
+
+/* Personalización de colores para el botón "No" */
+.custom-cancel-button {
+  background-color: var(--warning-light) !important; /* Un color rojo suave */
+  color: white !important;
+  border: 1px solid var(--warning) !important;
+  border-radius: 6px; /* Bordes ligeramente redondeados */
+  padding: 10px 20px; /* Relleno para el botón */
+  &:hover {
+    background-color: var(--warning) !important;
+    border: 1px solid var(--warning-darker) !important;
+  }
+}
+
+/* Personalización de colores para el botón "Sí" */
+.custom-confirm-button {
+  background-color: var(--success-light) !important; /* Un color rojo suave */
+  color: white !important;
+  border: 1px solid var(--success) !important;
+  border-radius: 6px; /* Bordes ligeramente redondeados */
+  padding: 10px 20px; /* Relleno para el botón */
+  &:hover {
+    background-color: var(--success) !important;
+    border: 1px solid var(--success-darker) !important;
+  }
+}
+
+::ng-deep .p-dialog-header {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 10px;
+}
+
+
+// Add or modify styles for the dialog
+::ng-deep .dialog-header {
+  .p-dialog { // Target the PrimeNG dialog component itself
+    min-width: 65vw;
+    max-width: 80vw;
+    max-height: 50vh;
+
+    @media (max-width: 768px) {
+      max-width: 95vw !important; /* Make dialog wider on small screens */
+      max-height: 90vh !important; /* Allow more height on small screens */
+      top: 5vh !important; /* Adjust vertical position for better viewing */
+    }
+  }
+
+  .p-dialog-footer {
+    justify-content: flex-end; /* Align buttons to the right by default */
+    @media (max-width: 768px) {
+      justify-content: center !important; /* Center buttons on small screens */
+      padding: 1rem; /* Add some padding */
+    }
+  }
+}
+
+
+::ng-deep .p-select-list-container {
+  max-width: 85vw;
+}

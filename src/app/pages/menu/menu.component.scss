@@ -5,7 +5,7 @@
   align-items: center; // centra verticalmente
   gap: 1rem;
   padding: 1rem;
-  min-height: 80vh;
+  min-height: 85vh;
   box-sizing: border-box;
 }
 
@@ -18,7 +18,7 @@
 // Responsive: 1 por fila en pantallas pequeñas
 @media (max-width: 768px) {
   .modulos {
-    min-height: 60vh; // menos alto en móvil
+    min-height: 90vh; // menos alto en móvil
   }
   .modulos > * {
     flex: 0 0 100%;

@@ -1,0 +1,15 @@
+<app-menubar></app-menubar>
+
+<app-selector
+  (buscar)="manejarBusqueda($event)"
+  (cambioAno)="limpiarTabla()">
+</app-selector>
+
+<app-evaluacion-tabla
+  [ano]="anoSeleccionado"
+  [idFormulation]="idFormulation"
+  [mostrar]="mostrarTabla"
+  [idDependency]="idDependencySeleccionado"  (seleccionCambio)="onSeleccionAccion($event)">
+</app-evaluacion-tabla>
+
+<app-footer></app-footer>

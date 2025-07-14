@@ -1,0 +1,524 @@
+<div>
+  <div class="grid mx-auto">
+    <div class="col-6 flex justify-center mr-auto my-5">
+      <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false" optionLabel="name" optionValue="value" />
+    </div>
+    <button
+      pButton
+      label="Agregar Actividad"
+      icon="pi pi-plus"
+      (click)="agregarActividad()"
+      [disabled]="state === 3 || !year"
+      class="col-6 add-button ml-auto my-5">
+    </button>
+  </div>
+    <div class="table-container">
+      <p-table
+      [value]="products"
+      [size]="selectedSize"
+      stripedRows
+      showGridlines
+      [resizableColumns]="true"
+      [scrollable]="true"
+      scrollHeight="500px"
+      columnResizeMode="expand"
+      dataKey="idOperationalActivity"
+      editMode="row"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [rowHover]="true"
+      [editingRowKeys]="editingRowKeys">
+        <ng-template pTemplate="header" class="table-header" #header>
+          <tr class="cabecera">
+            <th style="min-width: 100px" rowspan="2" >Accionesss</th>
+            <th style="min-width: 150px" rowspan="2" >Código de actividad</th>
+            <th style="min-width: 250px" rowspan="2" >Nombre de actividad</th>
+            <th style="min-width: 200px" rowspan="2" >Unidad de medida</th>
+            <th style="min-width: 200px" rowspan="2" >Objetivo estratégico</th>
+            <th style="min-width: 80px" rowspan="2" >Acción estratégica</th>
+            <th style="min-width: 150px" rowspan="2" >Fondo financiero</th>
+            <th style="min-width: 150px" rowspan="2" >Centro gestor</th>
+            <th style="min-width: 150px" rowspan="2" >Centro de costos</th>
+            <th style="min-width: 200px" rowspan="2" >Tipo de medida</th>
+            <th style="min-width: 120px" rowspan="2" >Prioridad</th>
+
+            <th colspan="16" >Trimestre</th> <th colspan="4" >Presupuesto S/.</th>
+            
+
+          </tr>
+          <tr class="cabecera">
+            <th style="min-width: 100px">I</th>
+            <th style="min-width: 100px">I EJECUTADO</th>
+            <th style="min-width: 150px">% de Cumplimiento</th>
+            <th style="min-width: 180px">NIVEL de Cumplimiento</th>
+
+            <th style="min-width: 100px">II</th>
+            <th style="min-width: 100px">II EJECUTADO</th>
+            <th style="min-width: 150px">% de Cumplimiento</th>
+            <th style="min-width: 180px">NIVEL de Cumplimiento</th>
+
+            <th style="min-width: 100px">III</th>
+            <th style="min-width: 100px">III EJECUTADO</th>
+            <th style="min-width: 150px">% de Cumplimiento</th>
+            <th style="min-width: 180px">NIVEL de Cumplimiento</th>
+
+            <th style="min-width: 100px">IV</th>
+            <th style="min-width: 100px">IV EJECUTADO</th>
+            <th style="min-width: 150px">% de Cumplimiento</th>
+            <th style="min-width: 180px">NIVEL de Cumplimiento</th>
+
+            <th style="min-width: 150px">Bienes</th>
+            <th style="min-width: 150px">Remuneraciones</th>
+            <th style="min-width: 150px">Servicios</th>
+            <th style="min-width: 180px">Total</th>
+
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
+          <tr [pEditableRow]="product">
+            <td >
+              <div class="flex items-center justify-center gap-2">
+                <button
+                  *ngIf="!editing && state !== 3" pButton
+                  pRipple
+                  type="button"
+                  pInitEditableRow
+                  icon="pi pi-pencil"
+                  (click)="onRowEditInit(product)"
+                  text
+                  rounded
+                  severity="secondary">
+                </button>
+
+                <button
+                  *ngIf="editing" pButton
+                  pRipple
+                  type="button"
+                  pSaveEditableRow
+                  icon="pi pi-check"
+                  (click)="onRowEditSave(product)"
+                  text
+                  rounded
+                  severity="success">
+                </button>
+
+                <button
+                  *ngIf="editing"
+                  pButton
+                  pRipple
+                  type="button"
+                  pCancelEditableRow
+                  icon="pi pi-times"
+                  (click)="onRowEditCancel(product, ri)"
+                  text
+                  rounded
+                  severity="danger">
+                </button>
+
+                <button
+                  *ngIf="!editing && state !== 3" pButton
+                  pRipple
+                  type="button"
+                  icon="pi pi-trash"
+                  (click)="eliminarActividad(ri, product)"
+                  text
+                  rounded
+                  severity="danger">
+                </button>
+              </div>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.sapCode" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.sapCode }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.name" type="text" [disabled]="state === 3" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.name }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.measurementUnit" type="text" [disabled]="state === 3" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.measurementUnit }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [ngModel]="getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective)" type="text" [disabled]="true" style="max-width: 80%"/>
+                  <button
+                    *ngIf="editing"
+                    pButton
+                    type="button"
+                    icon="pi pi-search"
+                    (click)="openOeAeSelectionModal(product)"
+                    label=""
+                    [disabled]="state === 3"
+                    class="p-button-sm ml-2">
+                  </button>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [ngModel]="getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction)" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-dropdown
+                    [options]="financialFunds"
+                    optionLabel="name"
+                    optionValue="idFinancialFund"
+                    [(ngModel)]="product.financialFund.idFinancialFund"
+                    [style]="{ width: '100%' }"
+                    [disabled]="state === 3"
+                    appendTo="body"> </p-dropdown>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-dropdown
+                    [options]="managementCenters"
+                    optionLabel="name"
+                    optionValue="idManagementCenter"
+                    [(ngModel)]="product.managementCenter.idManagementCenter"
+                    [style]="{ width: '100%' }"
+                    [disabled]="state === 3"
+                    appendTo="body"> </p-dropdown>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-dropdown
+                    [options]="costCenters"
+                    optionLabel="name"
+                    optionValue="idCostCenter"
+                    [(ngModel)]="product.costCenter.idCostCenter"
+                    [style]="{ width: '100%' }"
+                    [disabled]="state === 3"
+                    appendTo="body"> </p-dropdown>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getCostCenterName(product.costCenter?.idCostCenter) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-dropdown
+                    [options]="measurementTypes"
+                    optionLabel="name"
+                    optionValue="idMeasurementType"
+                    [(ngModel)]="product.measurementType.idMeasurementType"
+                    [style]="{ width: '100%' }"
+                    [disabled]="state === 3"
+                    appendTo="body"> </p-dropdown>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getMeasurementTypeName(product.measurementType?.idMeasurementType) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td >
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-dropdown
+                    [options]="priorities"
+                    optionLabel="name"
+                    optionValue="idPriority"
+                    [(ngModel)]="product.priority.idPriority"
+                    [style]="{ width: '100%' }"
+                    [disabled]="state === 3"
+                    appendTo="body"> </p-dropdown>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  {{ getPriorityName(product.priority?.idPriority) }}
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goals[0].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 1 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goals[0]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.executedGoals[0].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 1 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.executedGoals[0]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getCompliancePercentage(product.goals[0]?.value, product.executedGoals[0]?.value) | number:'1.0-2'" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getCompliancePercentage(product.goals[0]?.value, product.executedGoals[0]?.value) | number:'1.0-2' }}%</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getComplianceLevel(product.goals[0]?.value, product.executedGoals[0]?.value, 1, product)" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getComplianceLevel(product.goals[0]?.value, product.executedGoals[0]?.value, 1, product) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goals[1].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 2 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goals[1]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.executedGoals[1].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 2 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.executedGoals[1]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getCompliancePercentage(product.goals[1]?.value, product.executedGoals[1]?.value) | number:'1.0-2'" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getCompliancePercentage(product.goals[1]?.value, product.executedGoals[1]?.value) | number:'1.0-2' }}%</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getComplianceLevel(product.goals[1]?.value, product.executedGoals[1]?.value, 2, product)" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getComplianceLevel(product.goals[1]?.value, product.executedGoals[1]?.value, 2, product) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goals[2].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 3 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goals[2]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.executedGoals[2].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 3 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.executedGoals[2]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getCompliancePercentage(product.goals[2]?.value, product.executedGoals[2]?.value) | number:'1.0-2'" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getCompliancePercentage(product.goals[2]?.value, product.executedGoals[2]?.value) | number:'1.0-2' }}%</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getComplianceLevel(product.goals[2]?.value, product.executedGoals[2]?.value, 3, product)" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getComplianceLevel(product.goals[2]?.value, product.executedGoals[2]?.value, 3, product) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goals[3].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 4 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goals[3]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.executedGoals[3].value" type="number"
+                         [disabled]="state === 3 || (quarter !== null && 4 < quarter)" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.executedGoals[3]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getCompliancePercentage(product.goals[3]?.value, product.executedGoals[3]?.value) | number:'1.0-2'" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getCompliancePercentage(product.goals[3]?.value, product.executedGoals[3]?.value) | number:'1.0-2' }}%</ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [value]="getComplianceLevel(product.goals[3]?.value, product.executedGoals[3]?.value, 4, product)" type="text" [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ getComplianceLevel(product.goals[3]?.value, product.executedGoals[3]?.value, 4, product) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goods" type="number" [disabled]="state === 3" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goods }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.remuneration" type="number" [disabled]="state === 3" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.remuneration }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.services" type="number" [disabled]="state === 3" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.services }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">{{ product.goods + product.remuneration + product.services }}</ng-template>
+                <ng-template pTemplate="output">{{ product.goods + product.remuneration + product.services }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+</div>
+<p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true" [resizable]="true" class="dialog-header">
+  <div class="p-fluid p-grid"> <div class="mt-5"> <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
+      <p-dropdown
+        id="strategicObjective"
+        [options]="strategicObjectives"
+        optionLabel="name"
+        optionValue="idStrategicObjective"
+        [(ngModel)]="tempSelectedStrategicObjectiveId"
+        (onChange)="onModalStrategicObjectiveChange($event)"
+        placeholder="Selecciona un objetivo"
+        [filter]="true"
+        filterBy="name"
+        appendTo="body"
+        class="p-fluid mt-5"> </p-dropdown>
+    </div>
+    <div class="mt-5"> <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
+      <p-dropdown
+        id="strategicAction"
+        [options]="filteredStrategicActions"
+        optionLabel="name"
+        optionValue="idStrategicAction"
+        [(ngModel)]="tempSelectedStrategicActionId"
+        [disabled]="!tempSelectedStrategicObjectiveId"
+        placeholder="Selecciona una acción"
+        [filter]="true"
+        filterBy="name"
+        appendTo="body"
+        class="p-fluid mt-5"> </p-dropdown>
+    </div>
+  </div>
+  <ng-template pTemplate="footer"> <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()" styleClass="p-button-text" class="cancel-button"></button>
+    <button pButton label="Seleccionar" icon="pi pi-check" (click)="confirmOeAeSelection()" class="mx-3 add-button"></button>
+  </ng-template>
+</p-dialog>
+<p-dialog
+  header="Confirmar Eliminación"
+  [(visible)]="showDeleteConfirmation"
+  [modal]="true"
+  [style]="{ width: '30vw' }"  [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+  [resizable]="false"
+  [baseZIndex]="10000"> 
+  <div class="confirmation-content text-center">
+    <div class="success-animation mb-0">
+      <ng-lottie [options]="options"></ng-lottie>
+    </div>
+    <h3>¿Estás seguro de que quieres eliminar esta actividad?</h3>
+    <p>Esta acción no se puede deshacer.</p>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer-buttons-wrapper">
+      <button
+        pButton
+        label="No"
+        icon="pi pi-times"
+        (click)="cancelDelete()"
+        class="custom-cancel-button mx-2"> </button>
+      <button
+        pButton
+        label="Sí"
+        icon="pi pi-check"
+        (click)="confirmDelete()"
+        class="custom-confirm-button mx-2"> </button>
+    </div>
+  </ng-template>
+</p-dialog>
