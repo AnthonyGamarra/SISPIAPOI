@@ -37,8 +37,7 @@ export class Guardadof9Component {
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
             order: row.order || 1,
-            codPoFi: row.codPoFi, // clave para identificar duplicados
-            new: row.new // nuevo campo para identificar si es un item nuevo
+            codPoFi: row.codPoFi // clave para identificar duplicados
           });
         }
 
@@ -81,7 +80,7 @@ export class Guardadof9Component {
       // Así, si hay n filas con el mismo codPoFi, todas se guardan con el mismo idBudgetItem pero distinto orderItem
       const payload = {
         orderItem: order,
-        operationalActivity: { idOperationalActivity: 1 },
+        operationalActivity: { idOperationalActivity: 8 },
         budgetItem: { idBudgetItem: realIdBudgetItem },
         expenseType: Number(item.tipoGastoId) ? { idExpenseType: Number(item.tipoGastoId) } : null,
         monthAmounts: {
@@ -97,11 +96,12 @@ export class Guardadof9Component {
           OCTUBRE: Number(item.meses['OCTUBRE']) || 0,
           NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
           DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
-        }
+        },
+        createTime: new Date().toISOString()
       };
-      console.log(item.new)
-      // Validar que todos los campos requeridos estén presentes y correctos
-      if (!payload.budgetItem.idBudgetItem || !payload.operationalActivity.idOperationalActivity || !payload.expenseType) {
+      // Validar que los campos requeridos estén presentes y correctos
+      // Para la fila original (order === 1), expenseType es obligatorio
+      if (!payload.budgetItem.idBudgetItem || !payload.operationalActivity.idOperationalActivity || (order === 1 && !payload.expenseType)) {
         errores++;
         console.error('Payload inválido, no se envía:', payload);
         if (exitos + errores === total) {
@@ -113,7 +113,7 @@ export class Guardadof9Component {
       const url = (order === 1 && idBudgetItem < 1000000000) ?
         `http://10.0.29.240:8081/operational-activity-budget-item` :
         `http://10.0.29.240:8081/operational-activity-budget-item`;
-      const method = 'post';
+      const method = (order === 1 && idBudgetItem < 1000000000) ? 'post' : 'put';
       console.log('Enviando payload:', payload, 'con método', method);
       this.http[method](url, payload).subscribe({
         next: (resp) => {

@@ -25,7 +25,6 @@ interface Row {
   parent?: Row;
   isOriginal?: boolean;  // <-- flag para fila original
   order?: number; // nuevo campo para el orden
-  new?: boolean; // nuevo campo para identificar si es un item nuevo
 }
 
 @Component({
@@ -58,7 +57,7 @@ export class Form9Component implements OnInit {
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
       this.expenseTypeService.getAll().toPromise(),
-      this.operationalActivityBudgetItemService.getByOperationalActivity(1).toPromise() // id fijo
+      this.operationalActivityBudgetItemService.getByOperationalActivity(8).toPromise() // id fijo
     ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
@@ -142,8 +141,7 @@ export class Form9Component implements OnInit {
               editable: true,
               parent: parent,
               isOriginal: order === 1, // solo el primero es original
-              order: order,
-              new: false
+              order: order
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
@@ -160,8 +158,7 @@ export class Form9Component implements OnInit {
             editable: true,
             parent: parent,
             isOriginal: true,
-            order: 1,
-            new: true
+            order: 1
           };
           parent.children = parent.children || [];
           parent.children.push(itemRow);
@@ -240,8 +237,7 @@ export class Form9Component implements OnInit {
       editable: true,
       parent: parent,
       isOriginal: false,
-      order: maxOrder + 1,
-      new: true // marcar como nuevo
+      order: maxOrder + 1
     };
 
     parent.children.splice(index + 1, 0, nuevoItem);
@@ -253,6 +249,14 @@ export class Form9Component implements OnInit {
     if (row.isOriginal) {
       alert('No se puede eliminar la fila original.');
       return;
+    }
+
+    // Enviar petición DELETE al backend antes de eliminar de la UI
+    if (row.id && row.id < 1000000000) {
+      const url = `http://10.0.29.240:8081/operational-activity-budget-item/${row.id}`;
+      fetch(url, { method: 'DELETE' })
+        .then(() => console.log('Eliminado en backend:', row.id))
+        .catch(err => console.error('Error al eliminar en backend:', row.id, err));
     }
 
     const parent = row.parent;
