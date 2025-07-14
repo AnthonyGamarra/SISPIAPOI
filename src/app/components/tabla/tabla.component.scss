@@ -1,16 +1,5 @@
-.main-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  overflow: hidden; /* Ensures rounded corners are applied to content */
-}
-
-tbody tr:hover {
-  background-color: #f0f8ff; /* Lighter hover for better contrast */
-  transform: translateY(-2px); /* Slight lift effect */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+.table-container {
+  margin: 0px 18px;
 }
 
 tbody td {
@@ -150,8 +139,8 @@ label {
 }
 
 .size-buttons {
-  margin-left: 23px;
-  max-width: 25%;
+  margin-left: 10px;
+  max-width: 30%;
 }
 
 .add-button {
@@ -159,9 +148,9 @@ label {
   color: white !important;  
   border: none !important;
   border: 1px solid transparent !important;
-  margin-right: 23px;
+  margin-right: 17px;
   padding: 10px;
-  max-width: 8%;
+  max-width: 15%;
 }
 
 .add-button:hover {
@@ -194,4 +183,86 @@ label {
   background-color: #00529B !important;
   font-weight: bold !important;
   border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+
+  .size-buttons {
+    max-width: 130%;
+  }
+
+
+  .add-button {
+    padding: 10px;
+    max-width: 30%;
+  }
+
+}
+::ng-deep .p-togglebutton .p-togglebutton-label {
+  font-size: 14px !important;
+  padding: 2px 0px !important;
+}
+
+/* Centrar el contenido de la animación Lottie (ya lo tenías, solo para asegurar) */
+.success-animation {
+  width: 25vw;
+  height: 25vh;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Centrar el contenido general del diálogo de confirmación */
+.confirmation-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Centra los elementos hijos horizontalmente */
+  justify-content: center; /* Centra los elementos hijos verticalmente (si el espacio lo permite) */
+  text-align: center; /* Asegura que el texto también se centre */
+  padding: 20px; /* Añade un poco de relleno para que no esté pegado a los bordes del diálogo */
+}
+
+@media (max-width: 768px) {
+  .success-animation {
+    width: 40vw;
+    height: 20vh;
+  }
+}
+
+/* Estilos para centrar los botones en el footer del diálogo */
+/* Usamos ::ng-deep para afectar el componente p-dialog */
+::ng-deep .p-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: center; /* Centra los botones horizontalmente */
+}
+
+/* Personalización de colores para el botón "No" */
+.custom-cancel-button {
+  background-color: var(--warning-light) !important; /* Un color rojo suave */
+  color: white !important;
+  border: 1px solid var(--warning) !important;
+  border-radius: 6px; /* Bordes ligeramente redondeados */
+  padding: 10px 20px; /* Relleno para el botón */
+  &:hover {
+    background-color: var(--warning) !important;
+    border: 1px solid var(--warning-darker) !important;
+  }
+}
+
+/* Personalización de colores para el botón "Sí" */
+.custom-confirm-button {
+  background-color: var(--success-light) !important; /* Un color rojo suave */
+  color: white !important;
+  border: 1px solid var(--success) !important;
+  border-radius: 6px; /* Bordes ligeramente redondeados */
+  padding: 10px 20px; /* Relleno para el botón */
+  &:hover {
+    background-color: var(--success) !important;
+    border: 1px solid var(--success-darker) !important;
+  }
+}
+
+::ng-deep .p-dialog-header {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 10px;
 }

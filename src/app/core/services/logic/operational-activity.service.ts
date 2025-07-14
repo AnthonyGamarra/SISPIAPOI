@@ -45,4 +45,11 @@ export class OperationalActivityService {
       return this.http.post<OperationalActivity[]>(`${this.BASE_URL}/search`, payload);
     }
 
+    // Obtener el código correlativo mayor por centro de costo
+    getHigherCorrelativeCodeByCostCenter(idCostCenter: number): Observable<string> {
+      const url = `${this.BASE_URL}/higher-correlative-code/cost-center/${idCostCenter}`;
+      return this.http.get(url, { responseType: 'text' });
+    }
+
+
 }

@@ -8,8 +8,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 import { TagModule } from 'primeng/tag';
-import { DialogModule } from 'primeng/dialog'; // ¡NUEVA IMPORTACIÓN!
-import { SelectButton } from 'primeng/selectbutton';
+import { DialogModule } from 'primeng/dialog';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { AnimationOptions } from 'ngx-lottie';
+import { LottieComponent } from 'ngx-lottie';
 
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
 import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
@@ -34,7 +36,8 @@ import { Goal } from '../../models/logic/goal.model';
 import { Formulation } from '../../models/logic/formulation.model';
 import { Dependency } from '../../models/logic/dependency.model';
 
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs'; // Import 'of'
+import { map, catchError } from 'rxjs/operators'; // Import 'map' and 'catchError'
 
 interface Accion {
   id?: number;
@@ -55,8 +58,9 @@ interface Accion {
     ButtonModule,
     RippleModule,
     TagModule,
-    DialogModule, // ¡AÑADIR DialogModule AQUÍ!
-    SelectButton
+    DialogModule,
+    SelectButtonModule,
+    LottieComponent
   ]
 })
 export class TablaComponent implements OnChanges {
@@ -65,15 +69,16 @@ export class TablaComponent implements OnChanges {
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
   @Input() idDependency: string | null = null;
-  
-  quarter: number | null = null; 
-  state: number | null = null; 
+
+  quarter: number | null = null;
+  state: number | null = null;
   selectedSize: any = undefined;
   sizes!: any[];
 
   @Output() seleccionCambio = new EventEmitter<Accion>();
 
   products: OperationalActivity[] = [];
+  clonedProducts: { [s: string]: OperationalActivity } = {};
 
   strategicObjectives: StrategicObjective[] = [];
   strategicActions: StrategicAction[] = [];
@@ -83,14 +88,16 @@ export class TablaComponent implements OnChanges {
   costCenters: CostCenter[] = [];
   measurementTypes: MeasurementType[] = [];
   priorities: Priority[] = [];
+  editingRowKeys: { [s: string]: boolean } = {};
+  showDeleteConfirmation: boolean = false;
+  activityToDelete: OperationalActivity | null = null;
+  activityToDeleteIndex: number | null = null; // ¡Nueva propiedad!
 
-  // --- NUEVAS PROPIEDADES PARA EL MODAL ---
   selectedProductForOeAe: OperationalActivity | null = null;
   displayOeAeModal: boolean = false;
   tempSelectedStrategicObjectiveId: number | null = null;
   tempSelectedStrategicActionId: number | null = null;
   year: number | null = null;
-  // --- FIN NUEVAS PROPIEDADES ---
 
   private strategicActionService = inject(StrategicActionService);
   private financialFundService = inject(FinancialFundService);
@@ -104,10 +111,17 @@ export class TablaComponent implements OnChanges {
   private strategicObjectiveService = inject(StrategicObjectiveService);
   private formulationService = inject(FormulationService);
 
+  private newActivityCounter: number = -1;
+  
+  options: AnimationOptions = {
+    path: 'resources/warning-allert.json'
+  };
+
   ngOnChanges(changes: SimpleChanges) {
     const cambioAno = changes['ano'] && !changes['ano'].firstChange;
     const cambioMostrar = changes['mostrar'];
-    const cambioIdDependency = changes['idDependency']; 
+    const cambioIdDependency = changes['idDependency'];
+    
 
     if (cambioAno || (cambioMostrar && !this.mostrar) || (cambioIdDependency && changes['idDependency'].currentValue === null)) {
       this.products = [];
@@ -126,7 +140,6 @@ export class TablaComponent implements OnChanges {
   }
 
   ngOnInit(): void {
-    
     this.sizes = [
       { name: 'Pequeño', value: 'small' },
       { name: 'Mediano', value: undefined },
@@ -209,17 +222,18 @@ export class TablaComponent implements OnChanges {
     }
 
     const nuevaActividad: OperationalActivity = {
+      idOperationalActivity: this.newActivityCounter--,
       sapCode: '',
       name: '',
       measurementUnit: '',
-      strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction, // Initialize properly
+      strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction,
       financialFund: {} as FinancialFund,
       managementCenter: {} as ManagementCenter,
       costCenter: {} as CostCenter,
       measurementType: {} as MeasurementType,
       priority: {} as Priority,
-      expectedGoal: 0,
-      executedGoal: 0,
+      expectedGoal: null,
+      executedGoal: null,
       goods: 0,
       remuneration: 0,
       services: 0,
@@ -232,30 +246,127 @@ export class TablaComponent implements OnChanges {
       ]
     };
     this.products = [...this.products, nuevaActividad];
+    this.editingRowKeys[nuevaActividad.idOperationalActivity as any] = true; // ¡Añade esta línea!
   }
 
   eliminarActividad(index: number, product: OperationalActivity): void {
-    if (this.state === 3) {
-      this.toastr.warning('No se pueden eliminar actividades en estado de solo visualización.', 'Acción no permitida');
-      return;
-    }
+  if (this.state === 3) {
+    this.toastr.warning('No se pueden eliminar actividades en estado de solo visualización.', 'Acción no permitida');
+    return;
+  }
 
-    if (product.idOperationalActivity) {
-      this.operationalActivityService.deleteById(product.idOperationalActivity).subscribe({
+  if (product.idOperationalActivity && product.idOperationalActivity > 0) {
+    // Es una actividad existente: guarda la actividad y su índice para la confirmación
+    this.activityToDelete = product;
+    this.activityToDeleteIndex = index; // Guarda el índice
+    this.showDeleteConfirmation = true; // Muestra el modal de confirmación
+    // IMPORTANTE: NO elimines la actividad del array 'products' aquí.
+    // Se eliminará solo después de la confirmación exitosa de la API.
+    } else {
+      // Es una actividad nueva (sin guardar), se elimina directamente de la tabla
+      this.products.splice(index, 1);
+      this.products = [...this.products]; // Forzar la detección de cambios en la tabla
+      this.toastr.info('Actividad no guardada eliminada.', 'Información'); // Este toast debería mostrarse
+    }
+  }
+
+  confirmDelete(): void {
+    if (this.activityToDelete && this.activityToDelete.idOperationalActivity) {
+      this.operationalActivityService.deleteById(this.activityToDelete.idOperationalActivity).subscribe({
         next: () => {
-          this.toastr.success('Actividad operativa eliminada.', 'Éxito');
-          this.products.splice(index, 1);
-          this.products = [...this.products];
+          // Elimina la actividad de la vista solo DESPUÉS de que la API la elimine exitosamente
+          if (this.activityToDeleteIndex !== null) {
+            this.products.splice(this.activityToDeleteIndex, 1);
+            this.products = [...this.products]; // Forzar la detección de cambios en la tabla
+          }
+          this.toastr.success('Actividad eliminada exitosamente.', 'Éxito');
+          this.showDeleteConfirmation = false;
+          this.activityToDelete = null;
+          this.activityToDeleteIndex = null;
+          // Opcional: Si `loadOperationalActivities()` recarga toda la tabla, puedes llamarlo.
+          // Si `splice` es suficiente para la UI, puedes omitirlo para evitar recargas innecesarias.
+          // Lo mantengo por si hay otras dependencias.
+          this.loadOperationalActivities();
         },
-        error: () => {
-          this.toastr.error('Error al eliminar la actividad operativa.', 'Error');
+        error: (errorResponse) => {
+          // Manejo de errores con Toastr
+          const errorMessage = errorResponse?.error?.message || 'Error desconocido al eliminar la actividad.';
+          this.toastr.error(`Error al eliminar la actividad: ${errorMessage}`, 'Error');
+          console.error('Error deleting activity:', errorResponse);
+          this.showDeleteConfirmation = false;
+          this.activityToDelete = null;
+          this.activityToDeleteIndex = null;
         }
       });
-    } else {
-      this.products.splice(index, 1);
-      this.products = [...this.products];
-      this.toastr.info('Actividad no guardada eliminada.', 'Información');
     }
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirmation = false;
+    this.activityToDelete = null;
+    this.activityToDeleteIndex = null; // Limpia el índice
+  }
+
+  private validateActivity(product: OperationalActivity): boolean {
+    if (!product.name || product.name.trim() === '') {
+      this.toastr.error('El campo "Nombre de actividad" no puede estar vacío.', 'Error de validación');
+      return false;
+    }
+    if (!product.measurementUnit || product.measurementUnit.trim() === '') {
+      this.toastr.error('El campo "Unidad de medida" no puede estar vacío.', 'Error de validación');
+      return false;
+    }
+    if (!product.strategicAction?.idStrategicAction || !product.strategicAction?.strategicObjective?.idStrategicObjective) {
+      this.toastr.error('Debe seleccionar un Objetivo Estratégico y una Acción Estratégica.', 'Error de validación');
+      return false;
+    }
+    if (!product.financialFund?.idFinancialFund) {
+      this.toastr.error('Debe seleccionar un Fondo financiero.', 'Error de validación');
+      return false;
+    }
+    if (!product.managementCenter?.idManagementCenter) {
+      this.toastr.error('Debe seleccionar un Centro gestor.', 'Error de validación');
+      return false;
+    }
+    if (!product.costCenter?.idCostCenter) {
+      this.toastr.error('Debe seleccionar un Centro de costos.', 'Error de validación');
+      return false;
+    }
+    if (!product.measurementType?.idMeasurementType) {
+      this.toastr.error('Debe seleccionar un Tipo de medida.', 'Error de validación');
+      return false;
+    }
+    if (!product.priority?.idPriority) {
+      this.toastr.error('Debe seleccionar una Prioridad.', 'Error de validación');
+      return false;
+    }
+    if (typeof product.goods !== 'number' || isNaN(product.goods)) {
+        this.toastr.error('El campo "Bienes" debe ser un número válido.', 'Error de validación');
+        return false;
+    }
+    if (typeof product.remuneration !== 'number' || isNaN(product.remuneration)) {
+        this.toastr.error('El campo "Remuneraciones" debe ser un número válido.', 'Error de validación');
+        return false;
+    }
+    if (typeof product.services !== 'number' || isNaN(product.services)) {
+        this.toastr.error('El campo "Servicios" debe ser un número válido.', 'Error de validación');
+        return false;
+    }
+
+    if (product.goals && product.goals.length === 4) {
+      for (let i = 0; i < product.goals.length; i++) {
+        const goal = product.goals[i];
+        if (typeof goal.value !== 'number' || isNaN(goal.value)) {
+          this.toastr.error(`La meta del trimestre ${i + 1} debe ser un número válido.`, 'Error de validación');
+          return false;
+        }
+      }
+    } else {
+      this.toastr.error('Las metas de los trimestres no están completas.', 'Error de validación');
+      return false;
+    }
+
+    return true;
   }
 
   onRowEditSave(product: OperationalActivity) {
@@ -266,7 +377,10 @@ export class TablaComponent implements OnChanges {
       return;
     }
 
-    // Asegurarse de que strategicAction y strategicObjective tengan los IDs correctos
+    if (!this.validateActivity(product)) {
+      return;
+    }
+
     const strategicActionId = product.strategicAction?.idStrategicAction;
     const strategicObjectiveId = product.strategicAction?.strategicObjective?.idStrategicObjective;
 
@@ -279,7 +393,7 @@ export class TablaComponent implements OnChanges {
 
     const actividad: OperationalActivity = {
       ...actividadSinGoals,
-      strategicAction: { 
+      strategicAction: {
           idStrategicAction: strategicActionId,
           strategicObjective: { idStrategicObjective: strategicObjectiveId } as StrategicObjective
       } as StrategicAction,
@@ -289,10 +403,10 @@ export class TablaComponent implements OnChanges {
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
-      sapCode: product.sapCode || '' // Mantener el SAP Code si ya existe
+      sapCode: product.sapCode || ''
     };
 
-    if (product.idOperationalActivity) {
+    if (product.idOperationalActivity && product.idOperationalActivity > 0) {
       this.operationalActivityService.update(actividad).subscribe({
         next: () => {
           const goalObservables: Observable<any>[] = [];
@@ -300,7 +414,6 @@ export class TablaComponent implements OnChanges {
           if (product.goals) {
             for (const g of product.goals) {
               if (this.quarter !== null && g.goalOrder < this.quarter) {
-                this.toastr.warning(`La meta del trimestre ${g.goalOrder} no puede ser modificada.`, 'Acción no permitida');
                 continue;
               }
 
@@ -342,78 +455,67 @@ export class TablaComponent implements OnChanges {
         }
       });
     } else {
+      delete actividad.idOperationalActivity;
+
       this.operationalActivityService.create(actividad).subscribe({
         next: (actividadCreada: OperationalActivity) => {
           const id = actividadCreada.idOperationalActivity;
 
           if (id && !isNaN(id)) {
-            const selectedStrategicAction = this.strategicActions.find(
-              sa => sa.idStrategicAction == product.strategicAction.idStrategicAction
-            );
-            const strategicObjectiveCode = this.strategicObjectives.find(
-              so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
-            )?.code || '';
-            const strategicActionCode = selectedStrategicAction?.code || '';
+            // Call the new private method to generate SAP Code (now returns an Observable)
+            this._generateSapCode(product).subscribe({
+              next: (newSapCode: string) => {
+                const activityWithSapCode: OperationalActivity = {
+                  ...actividadCreada,
+                  sapCode: newSapCode
+                };
 
-            const selectedCostCenter = this.costCenters.find(
-              cc => cc.idCostCenter === product.costCenter.idCostCenter
-            );
-            const costCenterCode = selectedCostCenter?.costCenterCode || '';
+                this.operationalActivityService.update(activityWithSapCode).subscribe({
+                  next: () => {
+                    const goalObservables: Observable<any>[] = [];
+                    if (product.goals) {
+                      for (const g of product.goals) {
+                        if (this.quarter !== null && g.goalOrder < this.quarter) {
+                          continue;
+                        }
 
-            const formattedObjectiveCode = String(strategicObjectiveCode).padStart(1, '0');
-            const formattedActionCode = String(strategicActionCode).padStart(2, '0');
-            const formattedCostCenterCode = String(costCenterCode).padStart(10, '0');
-            const formattedActivityId = String(id).padStart(3, '0');
-
-            const newSapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
-
-            const activityWithSapCode: OperationalActivity = {
-              ...actividadCreada,
-              sapCode: newSapCode
-            };
-
-            this.operationalActivityService.update(activityWithSapCode).subscribe({
-              next: () => {
-                const goalObservables: Observable<any>[] = [];
-                if (product.goals) {
-                  for (const g of product.goals) {
-                    if (this.quarter !== null && g.goalOrder < this.quarter) {
-                      this.toastr.warning(`La meta del trimestre ${g.goalOrder} no puede ser creada.`, 'Acción no permitida');
-                      continue;
+                        const goal: Goal = {
+                          goalOrder: g.goalOrder,
+                          value: g.value,
+                          operationalActivity: { idOperationalActivity: id } as OperationalActivity
+                        };
+                        goalObservables.push(this.goalService.create(goal));
+                      }
                     }
 
-                    const goal: Goal = {
-                      goalOrder: g.goalOrder,
-                      value: g.value,
-                      operationalActivity: { idOperationalActivity: id } as OperationalActivity
-                    };
-                    goalObservables.push(this.goalService.create(goal));
+                    if (goalObservables.length > 0) {
+                      forkJoin(goalObservables).subscribe({
+                        next: () => {
+                          this.toastr.success('Actividad operativa creada, metas guardadas', 'Éxito');
+                          this.loadOperationalActivities();
+                        },
+                        error: (err) => {
+                          this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
+                          console.error('Error al crear metas para la nueva actividad:', err);
+                          this.loadOperationalActivities();
+                        }
+                      });
+                    } else {
+                      this.toastr.success('Actividad operativa creada.', 'Éxito');
+                      this.loadOperationalActivities();
+                    }
+                  },
+                  error: (err) => {
+                    this.toastr.error('Error al actualizar la actividad con el código SAP.', 'Error');
+                    console.error('Error al actualizar la actividad con el código SAP:', err);
                   }
-                }
-
-                if (goalObservables.length > 0) {
-                  forkJoin(goalObservables).subscribe({
-                    next: () => {
-                      this.toastr.success('Actividad operativa creada y metas guardadas.', 'Éxito');
-                      this.loadOperationalActivities();
-                    },
-                    error: (err) => {
-                      this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
-                      console.error('Error al crear metas para la nueva actividad:', err);
-                      this.loadOperationalActivities();
-                    }
-                  });
-                } else {
-                  this.toastr.success('Actividad operativa creada y código SAP generado.', 'Éxito');
-                  this.loadOperationalActivities();
-                }
+                });
               },
               error: (err) => {
-                this.toastr.error('Error al actualizar la actividad con el código SAP.', 'Error');
-                console.error('Error al actualizar la actividad con el código SAP:', err);
+                this.toastr.error('Error al generar el código SAP.', 'Error');
+                console.error('Error generating SAP code:', err);
               }
             });
-
           } else {
             this.toastr.error('El ID devuelto no es válido.', 'Error');
           }
@@ -431,16 +533,21 @@ export class TablaComponent implements OnChanges {
       this.toastr.warning('No se pueden editar actividades en estado de solo visualización.', 'Acción no permitida');
       return;
     }
-    // No es necesario inicializar los dropdowns de OE/AE aquí ya que se manejan en el modal
+    this.clonedProducts[product.idOperationalActivity as any] = { ...product };
   }
 
   onRowEditCancel(product: OperationalActivity, index: number) {
-    if (!product.idOperationalActivity) {
-      this.products.splice(index, 1);
-      this.products = [...this.products];
+    if (product.idOperationalActivity && product.idOperationalActivity > 0) {
+      let clonedProduct = this.clonedProducts[product.idOperationalActivity as any];
+      let productIndex = this.products.findIndex(p => p.idOperationalActivity === product.idOperationalActivity);
+      if (productIndex !== -1) {
+        this.products[productIndex] = clonedProduct;
+      }
     } else {
-      this.loadOperationalActivities();
+      this.products.splice(index, 1);
     }
+    this.products = [...this.products];
+    delete this.clonedProducts[product.idOperationalActivity as any];
   }
 
   getStrategicObjectiveName(id?: number): string {
@@ -451,7 +558,6 @@ export class TablaComponent implements OnChanges {
     return this.strategicActions.find(a => a.idStrategicAction === id)?.name || '';
   }
 
-  // --- NUEVOS MÉTODOS PARA MOSTRAR CÓDIGOS ---
   getStrategicObjectiveCodeDisplay(id?: number): string {
     const obj = this.strategicObjectives.find(o => o.idStrategicObjective === id);
     return obj && obj.code ? `O.E. ${obj.code}` : '';
@@ -461,7 +567,6 @@ export class TablaComponent implements OnChanges {
     const act = this.strategicActions.find(a => a.idStrategicAction === id);
     return act && act.code ? `A.E. ${act.code}` : '';
   }
-  // --- FIN NUEVOS MÉTODOS ---
 
   cargarDatos() {
     const year = parseInt(this.ano!, 10);
@@ -474,18 +579,15 @@ export class TablaComponent implements OnChanges {
     });
   }
 
-  // --- MÉTODOS DEL MODAL ---
   openOeAeSelectionModal(product: OperationalActivity) {
     this.selectedProductForOeAe = product;
-    // Inicializar selecciones temporales con los valores actuales del producto
     this.tempSelectedStrategicObjectiveId = product.strategicAction?.strategicObjective?.idStrategicObjective || null;
     this.tempSelectedStrategicActionId = product.strategicAction?.idStrategicAction || null;
-    
-    // Filtrar acciones estratégicas para el modal si ya hay un objetivo seleccionado
+
     if (this.tempSelectedStrategicObjectiveId) {
       this.filterStrategicActions({ strategicAction: { strategicObjective: { idStrategicObjective: this.tempSelectedStrategicObjectiveId } } } as OperationalActivity);
     } else {
-      this.filteredStrategicActions = []; // Limpiar si no hay objetivo
+      this.filteredStrategicActions = [];
     }
 
     this.displayOeAeModal = true;
@@ -493,7 +595,7 @@ export class TablaComponent implements OnChanges {
 
   onModalStrategicObjectiveChange(event: any) {
     this.tempSelectedStrategicObjectiveId = event.value;
-    this.tempSelectedStrategicActionId = null; // Limpiar acción cuando el objetivo cambia
+    this.tempSelectedStrategicActionId = null;
     this.filterStrategicActions({ strategicAction: { strategicObjective: { idStrategicObjective: this.tempSelectedStrategicObjectiveId } } } as OperationalActivity);
   }
 
@@ -513,7 +615,7 @@ export class TablaComponent implements OnChanges {
       if (selectedObjective && selectedAction) {
         this.selectedProductForOeAe.strategicAction = {
           ...selectedAction,
-          strategicObjective: selectedObjective // Asegurarse de que el objetivo esté anidado correctamente
+          strategicObjective: selectedObjective
         };
       } else {
         this.toastr.warning('Por favor, selecciona tanto un Objetivo Estratégico como una Acción Estratégica.', 'Selección Incompleta');
@@ -529,7 +631,6 @@ export class TablaComponent implements OnChanges {
     this.tempSelectedStrategicObjectiveId = null;
     this.tempSelectedStrategicActionId = null;
   }
-  // --- FIN MÉTODOS DEL MODAL ---
 
   filterStrategicActions(product: OperationalActivity): void {
     if (product.strategicAction?.strategicObjective?.idStrategicObjective) {
@@ -542,9 +643,6 @@ export class TablaComponent implements OnChanges {
   }
 
   onSeleccionar(id: number, product: OperationalActivity) {
-    // Este método ya no se usará para la selección de OE/AE con el modal.
-    // Si aún se usa para otra lógica, asegúrate de que sea compatible.
-    // De lo contrario, puedes eliminarlo si solo se usaba para los dropdowns previos.
     product.strategicAction.idStrategicAction = id;
     const selectedAction = this.strategicActions.find(a => a.idStrategicAction === id);
     if (selectedAction) {
@@ -571,5 +669,50 @@ export class TablaComponent implements OnChanges {
   getPriorityName(id?: number): string {
     return this.priorities.find(p => p.idPriority === id)?.name || '';
   }
-  
+
+  /**
+   * Generates the SAP Code for a new Operational Activity.
+   * @param activity The OperationalActivity object with strategic action and cost center details.
+   * @returns An Observable that emits the generated SAP code string.
+   */
+  private _generateSapCode(activity: OperationalActivity): Observable<string> {
+    const selectedStrategicAction = this.strategicActions.find(
+      sa => sa.idStrategicAction == activity.strategicAction.idStrategicAction
+    );
+    const strategicObjectiveCode = this.strategicObjectives.find(
+      so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
+    )?.code || '';
+    const strategicActionCode = selectedStrategicAction?.code || '';
+
+    const selectedCostCenter = this.costCenters.find(
+      cc => cc.idCostCenter === activity.costCenter.idCostCenter
+    );
+    const costCenterCode = selectedCostCenter?.costCenterCode || '';
+
+    const formattedObjectiveCode = String(strategicObjectiveCode).padStart(1, '0');
+    const formattedActionCode = String(strategicActionCode).padStart(2, '0');
+    const formattedCostCenterCode = String(costCenterCode).padStart(10, '0');
+
+    const idCostCenter = activity.costCenter?.idCostCenter;
+
+    if (!idCostCenter) {
+      this.toastr.error('ID de Centro de Costos es nulo para generar código SAP.', 'Error');
+      return of(''); // Return an observable with an empty string on error
+    }
+
+    return this.operationalActivityService.getHigherCorrelativeCodeByCostCenter(idCostCenter).pipe(
+      map(correlativeCodeStr => {
+        const currentCorrelative = parseInt(correlativeCodeStr, 10);
+        const nextCorrelative = (isNaN(currentCorrelative) ? 0 : currentCorrelative) + 1;
+        const formattedActivityId = String(nextCorrelative).padStart(3, '0');
+
+        return `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
+      }),
+      catchError(err => {
+        this.toastr.error('Error al obtener el código correlativo superior para el código SAP.', 'Error');
+        console.error('Error fetching higher correlative code:', err);
+        return of(''); // Return an observable with an empty string or handle error appropriately
+      })
+    );
+  }
 }

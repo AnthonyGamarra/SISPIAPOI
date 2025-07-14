@@ -19,8 +19,8 @@ export interface OperationalActivity {
   costCenter: CostCenter;
   measurementType: MeasurementType;
   measurementUnit: string;
-  executedGoal: number;
-  expectedGoal: number;
+  executedGoal?: number | null;
+  expectedGoal?: number | null;
   goals?: Goal[];
   priority: Priority;
   goods: number;
