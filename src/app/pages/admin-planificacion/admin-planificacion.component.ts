@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../../components/footer/footer.component';
 import { MenubarComponent } from '../../components/menubar/menubar.component';
-import { SelectorComponent } from '../../components/selector/selector.component';
 import { AdmPlanificacionTableComponent } from "../../components/adm-planificacion-table/adm-planificacion-table.component";
 
 @Component({
