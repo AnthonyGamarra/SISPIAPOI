@@ -1,15 +1,5 @@
 <app-menubar></app-menubar>
 
-<app-selector
-    (buscar)="manejarBusqueda($event)"
-    (cambioAno)="limpiarTabla()">
-</app-selector>
-
-<app-adm-planificacion-table
-    [ano]="anoSeleccionado"
-    [idFormulation]="idFormulation"
-    [mostrar]="mostrarTabla"
-    [idDependency]="idDependencySeleccionado"  (seleccionCambio)="onSeleccionAccion($event)">
-</app-adm-planificacion-table>
+<app-adm-planificacion-table></app-adm-planificacion-table>
 
 <app-footer></app-footer>
