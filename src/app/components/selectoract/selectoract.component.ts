@@ -16,6 +16,7 @@ import { OperationalActivity } from '../../models/logic/operationalActivity.mode
   templateUrl: './selectoract.component.html',
   styleUrl: './selectoract.component.scss'
 })
+
 export class SelectoractComponent implements OnInit {
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
@@ -24,7 +25,13 @@ export class SelectoractComponent implements OnInit {
   activityOptions: { label: string; value: number }[] = [];
   selectedActivityId: number | null = null;
 
-  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null }>();
+  // Modificación
+  formulationExists: boolean = false;
+  foundFormulations: any[] = [];
+  modificationOptions: { label: string; value: number }[] = [];
+  selectedModificationOption: number | null = null;
+
+  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null, modificationId?: number | null }>();
 
   constructor(
     private dependencyService: DependencyService,
@@ -77,15 +84,31 @@ export class SelectoractComponent implements OnInit {
   actualizarActividades(): void {
     if (!this.selectedAno || !this.selectedDependency) {
       this.activityOptions = [];
+      this.modificationOptions = [];
+      this.formulationExists = false;
+      this.foundFormulations = [];
       return;
     }
     this.formulationService.searchByDependencyAndYear(Number(this.selectedDependency), Number(this.selectedAno)).subscribe({
       next: formulaciones => {
+        this.foundFormulations = formulaciones || [];
+        this.formulationExists = this.foundFormulations.length > 0;
+        // Modificación dropdown
+        this.modificationOptions = this.foundFormulations.map(f => ({
+          label: f.quarter ? `Trimestre ${f.quarter}` : `Formulación ${f.idFormulation}`,
+          value: f.idFormulation
+        }));
+        // Si no hay modificación seleccionada, seleccionar la primera
+        if (!this.selectedModificationOption || !this.modificationOptions.some(opt => opt.value === this.selectedModificationOption)) {
+          this.selectedModificationOption = this.modificationOptions[0]?.value || null;
+        }
+
         if (!formulaciones || formulaciones.length === 0) {
           this.activityOptions = [];
           return;
         }
-        const formulacion = formulaciones[0];
+        // Usar la formulación seleccionada en el dropdown de modificación
+        const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption) || this.foundFormulations[0];
         this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
           next: actividades => {
             if (!actividades || actividades.length === 0) {
@@ -105,6 +128,9 @@ export class SelectoractComponent implements OnInit {
       },
       error: () => {
         this.activityOptions = [];
+        this.modificationOptions = [];
+        this.formulationExists = false;
+        this.foundFormulations = [];
       }
     });
   }
@@ -116,13 +142,39 @@ export class SelectoractComponent implements OnInit {
 
   emitirActividadSeleccionada() {
     this.buscar.emit({
-      idOperationalActivity: this.selectedActivityId
+      idOperationalActivity: this.selectedActivityId,
+      modificationId: this.selectedModificationOption
     });
   }
 
   onActivityChange(event: any) {
     this.selectedActivityId = event.value;
     this.emitirActividadSeleccionada();
+  }
+
+  onModificationChange() {
+    // Al cambiar la modificación, recargar actividades para esa formulación
+    if (this.selectedModificationOption) {
+      const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption);
+      if (formulacion) {
+        this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
+          next: actividades => {
+            if (!actividades || actividades.length === 0) {
+              this.activityOptions = [];
+            } else {
+              this.activityOptions = actividades.map(act => ({
+                label: act.name,
+                value: act.idOperationalActivity!
+              }));
+              this.selectedActivityId = this.activityOptions[0]?.value || null;
+            }
+          },
+          error: () => {
+            this.activityOptions = [];
+          }
+        });
+      }
+    }
   }
 }
 // ...existing code...

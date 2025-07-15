@@ -16,7 +16,7 @@
     </p-dropdown>
   </div>
 
-  <div class="selector-group col-4 lg:col-2">
+  <div class="selector-group col-2 lg:col-2">
     <label class="selector-label">Año:</label>
     <p-dropdown
       [options]="optionsAno"
@@ -29,7 +29,21 @@
     </p-dropdown>
   </div>
 
-  <div class="selector-group col-5 lg:col-3 flex align-items-center">
+  <div class="selector-group col-8 lg:col-2">
+    <label class="selector-label">Modificación:</label>
+    <p-dropdown
+      [options]="modificationOptions"
+      [(ngModel)]="selectedModificationOption"
+      (onChange)="onModificationChange()"
+      placeholder="Seleccione una modificación"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+      [disabled]="foundFormulations.length <= 1"
+    ></p-dropdown>
+  </div>
+
+  <div class="selector-group col-6 lg:col-3">
     <label class="selector-label">Actividad registrada:</label>
     <p-dropdown
       [options]="activityOptions"
@@ -43,13 +57,13 @@
       [filter]="true"
       filterBy="label">
     </p-dropdown>
-    <button
+  </div>
+  <div><button
       pButton
       type="button"
       label="Buscar"
       class="p-button-sm ml-2"
       (click)="emitirActividadSeleccionada()">
-    </button>
-  </div>
+    </button></div>
 </div>
 

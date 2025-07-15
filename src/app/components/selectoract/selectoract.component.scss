@@ -1,3 +1,13 @@
+.actividad-grande {
+  flex: 2 1 0%;
+}
+
+.actividad-dropdown-grande {
+  min-width: 260px !important;
+  max-width: 340px !important;
+  font-size: 1.1rem !important;
+  height: 2.7rem !important;
+}
 .selector-bar {
   background-color: var(--primary); /* azul */
   padding: 0.5rem;
