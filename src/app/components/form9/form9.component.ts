@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, SimpleChanges } from '@angular/core';
+import { Component, OnInit, Input, SimpleChanges, OnChanges } from '@angular/core'; // Import OnChanges
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BudgetCategoryService } from '../../core/services/logic/budget-category.service';
@@ -23,7 +23,7 @@ interface Row {
   editable: boolean;
   children?: Row[];
   parent?: Row;
-  isOriginal?: boolean;  // <-- flag para fila original
+  isOriginal?: boolean;  // <-- flag para fila original
   order?: number; // nuevo campo para el orden
 }
 
@@ -35,34 +35,9 @@ interface Row {
   imports: [CommonModule, FormsModule,ButtonModule],
   providers: [BudgetCategoryService, BudgetItemService, ExpenseTypeService]
 })
-export class Form9Component implements OnInit {
+export class Form9Component implements OnInit, OnChanges { // Implement OnChanges
   @Input() idOperationalActivity: number | null = null;
 
-  eliminarFila(row: Row) {
-    if (!row || !row.id) return;
-    if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
-    this.operationalActivityBudgetItemService.deleteById(14, row.id).subscribe({
-      next: () => {
-        // Reiniciar la fila a valores predeterminados, pero no eliminar del visual
-        for (const mes of this.meses) {
-          row.meses[mes] = 0;
-        }
-        row.tipoGasto = '';
-        // Puedes limpiar otros campos si lo deseas
-        // row.order = 1;
-        // row.isOriginal = true;
-        if (row.parent) {
-          this.updateParentValues(row.parent);
-        }
-        this.updateForm9DataService();
-        alert('Registro eliminado correctamente.');
-      },
-      error: (err) => {
-        alert('Error al eliminar el registro.');
-        console.error(err);
-      }
-    });
-  }
   meses: string[] = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
     'MAYO', 'JUNIO', 'JULIO', 'AGOSTO',
@@ -75,36 +50,81 @@ export class Form9Component implements OnInit {
     private budgetCategoryService: BudgetCategoryService,
     private budgetItemService: BudgetItemService,
     private expenseTypeService: ExpenseTypeService,
-    private form9DataService: Form9DataService, // inyectar servicio
-    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService // nuevo servicio
+    private form9DataService: Form9DataService,
+    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService
   ) {}
 
   ngOnInit() {
-    if (this.idOperationalActivity) {
-      console.log(this.idOperationalActivity)
-          Promise.all([
+    // ngOnInit is primarily for initial setup that doesn't depend on input changes
+    // or for services that only need to be initialized once.
+    // Data fetching that depends on @Input should be in ngOnChanges.
+  }
+
+  // --- ngOnChanges Implementation ---
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['idOperationalActivity']) {
+      const currentId = changes['idOperationalActivity'].currentValue;
+      // Only fetch data if the idOperationalActivity is a valid number and has changed
+      if (typeof currentId === 'number' && currentId !== null) {
+        this.fetchBudgetData(currentId);
+      } else {
+        // Optionally clear data if idOperationalActivity becomes null or invalid
+        this.data = [];
+        this.form9DataService.setData([]);
+      }
+    }
+  }
+
+  private fetchBudgetData(id: number): void {
+    console.log(`Fetching data for idOperationalActivity: ${id}`);
+    Promise.all([
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
       this.expenseTypeService.getAll().toPromise(),
-      
-        this.operationalActivityBudgetItemService.getByOperationalActivity(this.idOperationalActivity).toPromise() // id fijo
-           
+      this.operationalActivityBudgetItemService.getByOperationalActivity(id).toPromise()
     ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
         this.data = this.buildRows(categories, items, oaBudgetItems || []);
-        this.form9DataService.setData(this.data); // guardar datos iniciales
+        this.form9DataService.setData(this.data);
       } else {
         this.data = [];
         this.form9DataService.setData([]);
       }
+    }).catch(error => {
+      console.error('Error fetching initial budget data:', error);
+      // Handle error, maybe display a message to the user
+      this.data = []; // Clear data on error
+      this.form9DataService.setData([]);
     });
-    } 
+  }
 
+  // --- Existing methods from your component ---
+
+  eliminarFila(row: Row) {
+    if (!row || !row.id) return;
+    if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
+    // Assuming 14 is a fixed ID for deletion, consider making it dynamic if needed
+    this.operationalActivityBudgetItemService.deleteById(14, row.id).subscribe({
+      next: () => {
+        for (const mes of this.meses) {
+          row.meses[mes] = 0;
+        }
+        row.tipoGasto = '';
+        if (row.parent) {
+          this.updateParentValues(row.parent);
+        }
+        this.updateForm9DataService();
+        alert('Registro eliminado correctamente.');
+      },
+      error: (err) => {
+        alert('Error al eliminar el registro.');
+        console.error(err);
+      }
+    });
   }
 
   buildRows(categories: BudgetCategory[], items: BudgetItem[], oaBudgetItems: OperationalActivityBudgetItem[]): Row[] {
-    // Map de categorías
     const catMap = new Map<number, Row>();
     for (const cat of categories) {
       const id = cat.idBudgetCategory ?? 0;
@@ -119,7 +139,7 @@ export class Form9Component implements OnInit {
         children: []
       });
     }
-    // Relacionar jerarquía de categorías
+
     const roots: Row[] = [];
     for (const cat of categories) {
       const id = cat.idBudgetCategory ?? 0;
@@ -136,33 +156,32 @@ export class Form9Component implements OnInit {
         roots.push(node);
       }
     }
-    // Relacionar items como hijos editables de la categoría correspondiente
-    // Agrupar por idBudgetItem y procesar todos los órdenes
+
     const itemsById = new Map<number, BudgetItem>();
     for (const item of items) {
       if (item.idBudgetItem !== undefined) {
         itemsById.set(item.idBudgetItem, item);
       }
     }
-    // Agrupar todos los oaBudgetItems por idBudgetItem
+
     const oaItemsGrouped = new Map<number, OperationalActivityBudgetItem[]>();
     for (const oa of oaBudgetItems) {
       const id = oa.budgetItem.idBudgetItem ?? 0;
       if (!oaItemsGrouped.has(id)) oaItemsGrouped.set(id, []);
       oaItemsGrouped.get(id)!.push(oa);
     }
+
     for (const [id, item] of itemsById.entries()) {
       const parentId = item.budgetCategory.idBudgetCategory ?? 0;
       const parent = catMap.get(parentId);
       if (parent) {
-        // Si hay OA para este item, crear una fila por cada orden
         const oaList = oaItemsGrouped.get(id) || [];
         if (oaList.length > 0) {
-          // Ordenar por orderItem ascendente
           oaList.sort((a, b) => (a.orderItem || 1) - (b.orderItem || 1));
           for (const oaItem of oaList) {
             const meses = oaItem && oaItem.monthAmounts ? this.initMeses(oaItem.monthAmounts) : this.initMeses();
-            const tipoGasto = oaItem && oaItem.expenseType ? String(oaItem.expenseType.idExpenseType) : (item.budgetType?.name || '');
+            // Ensure tipoGasto is a string, converting from number if necessary
+            const tipoGasto = oaItem && oaItem.expenseType && oaItem.expenseType.idExpenseType !== undefined ? String(oaItem.expenseType.idExpenseType) : (item.budgetType?.name || '');
             const order = oaItem && typeof oaItem.orderItem === 'number' ? oaItem.orderItem : 1;
             const itemRow: Row = {
               id: item.idBudgetItem ?? 0,
@@ -173,14 +192,13 @@ export class Form9Component implements OnInit {
               expanded: false,
               editable: true,
               parent: parent,
-              isOriginal: order === 1, // solo el primero es original
+              isOriginal: order === 1,
               order: order
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
           }
         } else {
-          // Si no hay OA, crear solo la fila original
           const itemRow: Row = {
             id: item.idBudgetItem ?? 0,
             codPoFi: item.codPoFi,
@@ -198,13 +216,13 @@ export class Form9Component implements OnInit {
         }
       }
     }
-    // Limpiar arrays vacíos
+
     for (const row of catMap.values()) {
       if (row.children && row.children.length === 0) {
         delete row.children;
       }
     }
-    // Calcular sumas iniciales por categoría
+
     for (const root of roots) {
       this.updateParentValuesRecursive(root);
     }
@@ -256,10 +274,10 @@ export class Form9Component implements OnInit {
     if (row.parent) {
       this.updateParentValues(row.parent);
     }
-    this.updateForm9DataService(); // actualizar datos
+    this.updateForm9DataService();
   }
+
   replicarEnero(row: Row) {
-    // Copia el valor del primer mes definido en this.meses (debe ser ENERO)
     const primerMes = this.meses[0];
     const valor = row.meses[primerMes] || 0;
     for (const mes of this.meses) {
@@ -268,10 +286,9 @@ export class Form9Component implements OnInit {
     if (row.parent) {
       this.updateParentValues(row.parent);
     }
-    this.updateForm9DataService(); // actualizar datos
+    this.updateForm9DataService();
   }
 
-  // Llamar esto cada vez que los datos cambien
   updateForm9DataService() {
     this.form9DataService.setData(this.data);
   }
