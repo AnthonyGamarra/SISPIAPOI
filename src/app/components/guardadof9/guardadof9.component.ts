@@ -17,7 +17,6 @@ import { AnimationOptions } from 'ngx-lottie';
 
 export class Guardadof9Component {
   @Input() idOperationalActivity: number | null = null;
-  
   datosCapturados: any = null;
 
   constructor(
@@ -72,12 +71,12 @@ export class Guardadof9Component {
       alert('No hay datos para guardar.');
       return;
     }
+    // Obtener los datos originales del backend antes de guardar
     if (!this.idOperationalActivity) {
       alert('No se ha seleccionado una actividad operativa.');
       return;
     }
-    // Obtener los datos originales del backend antes de guardar
-    this.operationalActivityBudgetItemService.getByOperationalActivity(Number(this.idOperationalActivity)).subscribe({
+    this.operationalActivityBudgetItemService.getByOperationalActivity(this.idOperationalActivity).subscribe({
       next: (originalData: any[]) => {
         let exitos = 0;
         let errores = 0;
@@ -95,7 +94,7 @@ export class Guardadof9Component {
           const originalItem = originalData.find((orig: any) => orig.budgetItem?.idBudgetItem === idBudgetItem);
           // Construir el payload usando los objetos completos si existen
           const payload = {
-            operationalActivity: originalItem?.operationalActivity || { idOperationalActivity: 14 },
+            operationalActivity: originalItem?.operationalActivity || { idOperationalActivity: this.idOperationalActivity },
             budgetItem: originalItem?.budgetItem || { idBudgetItem: idBudgetItem },
             expenseType: Number(item.tipoGastoId)
               ? (originalItem?.expenseType && Number(item.tipoGastoId) === Number(originalItem.expenseType.idExpenseType)
@@ -116,7 +115,7 @@ export class Guardadof9Component {
               NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
               DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
             },
-            orderItem: 1
+            orderItem: 1,
           };
           // Validar que los campos requeridos estén presentes y correctos (permitir valores 0)
           if (

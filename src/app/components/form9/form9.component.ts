@@ -63,14 +63,12 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   // --- ngOnChanges Implementation ---
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['idOperationalActivity']) {
+      // Limpia los datos antes de cargar nuevos
+      this.data = [];
+      this.form9DataService.setData([]);
       const currentId = changes['idOperationalActivity'].currentValue;
-      // Only fetch data if the idOperationalActivity is a valid number and has changed
       if (typeof currentId === 'number' && currentId !== null) {
         this.fetchBudgetData(currentId);
-      } else {
-        // Optionally clear data if idOperationalActivity becomes null or invalid
-        this.data = [];
-        this.form9DataService.setData([]);
       }
     }
   }

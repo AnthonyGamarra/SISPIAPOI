@@ -34,7 +34,7 @@
     <p-dropdown
       [options]="activityOptions"
       [(ngModel)]="selectedActivityId"
-      (onChange)="emitirActividadSeleccionada()"
+      (onChange)="onActivityChange($event)"
       placeholder="Seleccione"
       class="selector-dropdown"
       optionLabel="label"

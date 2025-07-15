@@ -119,5 +119,10 @@ export class SelectoractComponent implements OnInit {
       idOperationalActivity: this.selectedActivityId
     });
   }
+
+  onActivityChange(event: any) {
+    this.selectedActivityId = event.value;
+    this.emitirActividadSeleccionada();
+  }
 }
 // ...existing code...
