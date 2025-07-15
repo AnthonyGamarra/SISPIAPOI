@@ -1,0 +1,37 @@
+::ng-deep .p-paginator-page.p-paginator-page-selected {
+    background: var(--secondary-light) !important;
+    color: var(--primary) !important;
+}
+
+.add-button {
+  background-color: var(--primary) !important;
+  color: white !important;  
+  border: none !important;
+  border: 1px solid transparent !important;
+  padding: 10px;
+}
+
+.add-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.cancel-button {
+  background-color: white;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+.cancel-button:hover {
+  background-color: var(--secondary-light) !important;
+  color: var(--primary-darker) !important;
+  border: 1px solid white !important;
+}
