@@ -1,59 +1,13 @@
-@media (max-width: 1200px) {
-  .matrix-table-wrapper {
-    min-width: 100vw;
-    max-width: 100vw;
-    padding: 0 4px;
-  }
-  .matrix-table {
-    width: 100%;
-    font-size: 0.85rem;
-  }
-  .matrix-table thead th,
-  .matrix-table tbody td {
-    padding: 4px;
-    font-size: 0.85rem;
-  }
-  .matrix-table thead th:first-child,
-  .matrix-table tbody td:first-child {
-    width: 180px;
-    max-width: 180px;
-    min-width: 120px;
-    font-size: 0.95rem;
-  }
-  .matrix-table thead th:nth-child(2),
-  .matrix-table tbody td:nth-child(2) {
-    width: 40px;
-    max-width: 40px;
-    min-width: 40px;
-  }
-  .matrix-table thead th:nth-child(3),
-  .matrix-table tbody td:nth-child(3) {
-    width: 70px;
-    max-width: 70px;
-    min-width: 70px;
-  }
-  .matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)),
-  .matrix-table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)) {
-    width: 60px;
-    max-width: 60px;
-    min-width: 60px;
-  }
-  button.toggle-btn {
-    width: 22px;
-    height: 22px;
-    font-size: 0.9rem;
-  }
-}
 :root {
   --primary: #005fa3;
 }
 
 .matrix-table-wrapper {
   width: 100%;
-  max-width: 2000px;  /* ancho que ya tienes o el que quieras */
-  min-width: 2000px;
+  max-width: 100vw;  /* ancho que ya tienes o el que quieras */
+  min-width: 100vw;
   
-  max-height: 90vh;  /* no sobrepasa la altura de la pantalla */
+  max-height: 65vh;  /* no sobrepasa la altura de la pantalla */
   overflow-y: auto;   /* scroll vertical si el contenido es muy alto */
   overflow-x: auto;   /* scroll horizontal si es necesario */
   
@@ -175,3 +129,54 @@ button.toggle-btn:hover {
 }
 
 /* cambios final */
+
+@media (max-width: 1200px) {
+  .matrix-table-wrapper {
+    min-width: 100vw;
+    max-width: 100vw;
+    max-height: 50vh;  /* no sobrepasa la altura de la pantalla */
+    overflow-y: auto;   /* scroll vertical si el contenido es muy alto */
+    overflow-x: auto;   /* scroll horizontal si es necesario */
+    
+    margin: 0 auto;
+  }
+  .matrix-table {
+    width: 100%;
+    font-size: 0.85rem;
+  }
+  .matrix-table thead th,
+  .matrix-table tbody td {
+    padding: 4px;
+    font-size: 0.85rem;
+  }
+  .matrix-table thead th:first-child,
+  .matrix-table tbody td:first-child {
+    width: 180px;
+    max-width: 180px;
+    min-width: 120px;
+    font-size: 0.95rem;
+  }
+  .matrix-table thead th:nth-child(2),
+  .matrix-table tbody td:nth-child(2) {
+    width: 40px;
+    max-width: 40px;
+    min-width: 40px;
+  }
+  .matrix-table thead th:nth-child(3),
+  .matrix-table tbody td:nth-child(3) {
+    width: 70px;
+    max-width: 70px;
+    min-width: 70px;
+  }
+  .matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)),
+  .matrix-table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)) {
+    width: 60px;
+    max-width: 60px;
+    min-width: 60px;
+  }
+  button.toggle-btn {
+    width: 22px;
+    height: 22px;
+    font-size: 0.9rem;
+  }
+}

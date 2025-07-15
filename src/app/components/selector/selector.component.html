@@ -1,7 +1,8 @@
 <div class="selector-bar grid align-items-center">
   <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Dependencia:</label>
-    <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+    <p-dropdown
+      *ngIf="isSingleDependency; else multipleDeps"
       [options]="dependencyOptions"
       [(ngModel)]="selectedDependency"
       [disabled]="true"
@@ -19,7 +20,8 @@
         optionLabel="label"
         optionValue="value"
         [filter]="true"
-        filterBy="label" ></p-dropdown>
+        filterBy="label"
+      ></p-dropdown>
     </ng-template>
   </div>
 
@@ -36,11 +38,15 @@
     ></p-dropdown>
   </div>
 
-  <div class="col-3 lg:col-5" *ngIf="! formulationExists && foundFormulations.length == 0">
+  <div
+    class="col-3 lg:col-5"
+    *ngIf="!formulationExists && foundFormulations.length == 0"
+  ></div>
 
-  </div>
-
-  <div class="selector-group col-8 lg:col-2" *ngIf="formulationExists && foundFormulations.length > 0">
+  <div
+    class="selector-group col-8 lg:col-2"
+    *ngIf="formulationExists && foundFormulations.length > 0"
+  >
     <label class="selector-label">Etapa:</label>
     <p-dropdown
       [options]="modificationOptions"
@@ -53,7 +59,27 @@
     ></p-dropdown>
   </div>
 
-  <div class="selector-group col-7 lg:col-3" *ngIf="formulationExists && quarterLabel">
+  <div
+    class="selector-group col-7 lg:col-2"
+    *ngIf="formulationExists && currentFormulationStateLabel"
+  >
+    <label class="selector-label">Estado:</label>
+    <input
+      pInputText
+      [(ngModel)]="currentFormulationStateLabel"
+      [disabled]="true"
+      class="selector-dropdown"
+    />
+  </div>
+
+  <div
+    class="selector-group col-7 lg:col-2"
+    *ngIf="
+      formulationExists &&
+      quarterLabel &&
+      selectedModificationOption?.value !== 1
+    "
+  >
     <label class="selector-label">A partir de:</label>
     <input
       pInputText
@@ -70,8 +96,28 @@
       class="selector"
       [label]="formulationExists ? 'Mostrar formulación' : 'Iniciar formulación'"
       [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
-      [disabled]="checkingFormulation || !selectedAno || !selectedDependency || (formulationExists && !selectedModificationOption)"
+      [disabled]="
+        checkingFormulation ||
+        !selectedAno ||
+        !selectedDependency ||
+        (formulationExists && !selectedModificationOption)
+      "
       (click)="onBuscar()"
+    ></button>
+  </div>
+
+  <div
+    class="col-5 lg:col-1 flex align-items-center justify-content-center"
+    *ngIf="formulationExists && isAdmin"
+  >
+    <button
+      type="button"
+      pButton
+      class="p-button-secondary"
+      label="Cambiar estado"
+      icon="pi pi-pencil"
+      (click)="showChangeStateModal = true"
+      [disabled]="!idFormulation"
     ></button>
   </div>
 </div>
@@ -80,3 +126,51 @@
   <ng-lottie [options]="options"></ng-lottie>
   <div class="message">Formulación iniciada correctamente</div>
 </div>
+
+<p-dialog
+  header="Cambiar Estado de Formulación"
+  [(visible)]="showChangeStateModal"
+  [modal]="true" [resizable]="true" class="dialog-header-state"
+>
+  <div class="p-fluid">
+    <div class="p-field mt-5">
+      <label for="state" class="mr-5">Estado Actual:</label>
+      <input
+        pInputText
+        id="currentState"
+        [ngModel]="currentFormulationStateLabel"
+        [disabled]="true"
+      />
+    </div>
+    <div class="p-field mt-3">
+      <label for="newState" class="mr-5">Nuevo Estado:</label>
+      <p-dropdown
+        id="newState"
+        [options]="formulationStateOptions"
+        [(ngModel)]="selectedFormulationState"
+        placeholder="Seleccione un nuevo estado"
+        optionLabel="name"
+        optionValue="idFormulationState"
+        appendTo="body"
+      ></p-dropdown>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      label="Cancelar"
+      icon="pi pi-times"
+      styleClass="p-button-text"
+      (click)="showChangeStateModal = false"
+      class="cancel-button"
+    ></button>
+    <button
+      pButton
+      label="Guardar"
+      icon="pi pi-check"
+      (click)="changeFormulationState()"
+      [disabled]="!selectedFormulationState"
+      class="add-button"
+    ></button>
+  </ng-template>
+</p-dialog>

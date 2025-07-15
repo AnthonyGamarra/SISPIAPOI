@@ -1,0 +1,82 @@
+<div class="selector-bar grid align-items-center">
+  <div class="selector-group col-12 lg:col-4">
+    <label class="selector-label">Dependencia:</label>
+    <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+      [options]="dependencyOptions"
+      [(ngModel)]="selectedDependency"
+      [disabled]="true"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+    ></p-dropdown>
+    <ng-template #multipleDeps>
+      <p-dropdown
+        [options]="dependencyOptions"
+        [(ngModel)]="selectedDependency"
+        (onChange)="verificarFormulacion()"
+        placeholder="Seleccione"
+        class="selector-dropdown"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label" ></p-dropdown>
+    </ng-template>
+  </div>
+
+  <div class="selector-group col-4 lg:col-2">
+    <label class="selector-label">Año:</label>
+    <p-dropdown
+      [options]="optionsAno"
+      [(ngModel)]="selectedAno"
+      (onChange)="verificarFormulacion()"
+      placeholder="Seleccione"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+    ></p-dropdown>
+  </div>
+
+  <div class="col-3 lg:col-5" *ngIf="! formulationExists && foundFormulations.length == 0">
+
+  </div>
+
+  <div class="selector-group col-8 lg:col-2" *ngIf="formulationExists && foundFormulations.length > 0">
+    <label class="selector-label">Etapa:</label>
+    <p-dropdown
+      [options]="modificationOptions"
+      [(ngModel)]="selectedModificationOption"
+      (onChange)="onModificationChange()"
+      placeholder="Seleccione una modificación"
+      class="selector-dropdown"
+      optionLabel="label"
+      [disabled]="foundFormulations.length <= 1"
+    ></p-dropdown>
+  </div>
+
+  <div class="selector-group col-7 lg:col-3" *ngIf="formulationExists && quarterLabel">
+    <label class="selector-label">A partir de:</label>
+    <input
+      pInputText
+      [(ngModel)]="quarterLabel"
+      [disabled]="true"
+      class="selector-dropdown"
+    />
+  </div>
+
+  <div class="col-5 lg:col-1 flex align-items-center justify-content-center">
+    <button
+      type="button"
+      pButton
+      class="selector"
+      [label]="formulationExists ? 'Mostrar formulación' : 'Iniciar formulación'"
+      [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
+      [disabled]="checkingFormulation || !selectedAno || !selectedDependency || (formulationExists && !selectedModificationOption)"
+      (click)="onBuscar()"
+    ></button>
+  </div>
+</div>
+
+<div class="success-animation" *ngIf="showSuccessAnimation">
+  <ng-lottie [options]="options"></ng-lottie>
+  <div class="message">Formulación iniciada correctamente</div>
+</div>

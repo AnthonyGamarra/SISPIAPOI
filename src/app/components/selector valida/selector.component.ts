@@ -1,3 +1,4 @@
+// src/app/selector/selector.component.ts
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,13 +8,11 @@ import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
 import { LottieComponent } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
-import { DialogModule } from 'primeng/dialog'; // New import
 
-import { AuthService } from '../../core/services/authentication/auth.service';
+import { AuthService } from '../../core/services/authentication/auth.service'; // Import AuthService
 import { DependencyService } from '../../core/services/logic/dependency.service';
 import { FormulationService } from '../../core/services/logic/formulation.service';
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
-import { FormulationStateService } from '../../core/services/logic/formulation-state.service'; // New import
 import { Formulation } from '../../models/logic/formulation.model';
 import { Dependency } from '../../models/logic/dependency.model';
 import { FormulationState } from '../../models/logic/formulationState.model';
@@ -28,26 +27,20 @@ import { MinMaxYears } from '../../models/logic/min-max-years.model';
     DropdownModule,
     ButtonModule,
     LottieComponent,
-    InputTextModule,
-    DialogModule, // Add DialogModule
+    InputTextModule
   ],
   templateUrl: './selector.component.html',
-  styleUrls: ['./selector.component.scss'],
+  styleUrls: ['./selector.component.scss']
 })
 export class SelectorComponent implements OnInit {
-  @Output() buscar = new EventEmitter<{
-    ano: string | null;
-    dependencia: string | null;
-    idFormulation: number | null;
-  }>();
+  @Output() buscar = new EventEmitter<{ ano: string | null; dependencia: string | null; idFormulation: number | null }>();
   @Output() cambioAno = new EventEmitter<string | null>();
 
   private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private strategicObjectiveService = inject(StrategicObjectiveService);
-  private authService = inject(AuthService);
-  private formulationStateService = inject(FormulationStateService); // Inject new service
+  private authService = inject(AuthService); // Inject AuthService
 
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
@@ -63,25 +56,18 @@ export class SelectorComponent implements OnInit {
   modificationOptions: { label: string; value: number }[] = [];
   selectedModificationOption: { label: string; value: number } | null = null;
   quarterLabel: string | null = null;
-  currentFormulationStateLabel: string | null = null; // New property for state display
 
   optionsAno: { label: string; value: string }[] = [];
 
   options: AnimationOptions = {
-    path: 'resources/succes-allert.json',
+    path: 'resources/succes-allert.json'
   };
 
-  isAdmin: boolean = false;
-
-  // New properties for modal and state management
-  showChangeStateModal: boolean = false;
-  formulationStateOptions: FormulationState[] = [];
-  selectedFormulationState: number | null = null;
+  isAdmin: boolean = false; // Initialize as false, will be set in ngOnInit
 
   ngOnInit(): void {
-    this.isAdmin = this.authService.hasRole(['ADMIN']);
+    this.isAdmin = this.authService.hasRole(['ADMIN']); // Set isAdmin based on user role
     this.loadYearsAndDependencies();
-    this.loadFormulationStates(); // Load formulation states on init
   }
 
   loadYearsAndDependencies(): void {
@@ -93,16 +79,13 @@ export class SelectorComponent implements OnInit {
             this.optionsAno.push({ label: i.toString(), value: i.toString() });
           }
           const currentYear = new Date().getFullYear().toString();
-          if (this.optionsAno.some((opt) => opt.value === currentYear)) {
+          if (this.optionsAno.some(opt => opt.value === currentYear)) {
             this.selectedAno = currentYear;
           } else if (this.optionsAno.length > 0) {
             this.selectedAno = yearsRange.maxYear.toString();
           }
         } else {
-          this.toastr.info(
-            'No se encontraron años de formulación. Se mostrará un rango predeterminado.',
-            'Información'
-          );
+          this.toastr.info('No se encontraron años de formulación. Se mostrará un rango predeterminado.', 'Información');
           this.optionsAno = Array.from({ length: 5 }, (_, i) => {
             const year = (new Date().getFullYear() + i).toString();
             return { label: year, value: year };
@@ -112,10 +95,7 @@ export class SelectorComponent implements OnInit {
         this.loadDependencies();
       },
       error: (err) => {
-        this.toastr.error(
-          'Error al cargar el rango de años de formulación.',
-          'Error de Carga'
-        );
+        this.toastr.error('Error al cargar el rango de años de formulación.', 'Error de Carga');
         console.error('Error fetching min/max years:', err);
         this.optionsAno = Array.from({ length: 5 }, (_, i) => {
           const year = (new Date().getFullYear() + i).toString();
@@ -123,63 +103,48 @@ export class SelectorComponent implements OnInit {
         });
         this.selectedAno = new Date().getFullYear().toString();
         this.loadDependencies();
-      },
+      }
     });
   }
 
   loadDependencies(): void {
-    this.dependencyService.getAll().subscribe((dependencies) => {
+    this.dependencyService.getAll().subscribe(dependencies => {
       let filteredDependencies: Dependency[];
 
       if (this.isAdmin) {
+        // If admin, show all dependencies
         filteredDependencies = dependencies;
       } else {
-        const dependencyIds: number[] = JSON.parse(
-          localStorage.getItem('dependencies') || '[]'
-        );
+        // If not admin, filter by user's assigned dependencies from local storage
+        const dependencyIds: number[] = JSON.parse(localStorage.getItem('dependencies') || '[]');
         if (dependencyIds.length === 0) {
-          this.toastr.warning(
-            'No se encontraron dependencias para el usuario.',
-            'Acceso Restringido'
-          );
+          this.toastr.warning('No se encontraron dependencias para el usuario.', 'Acceso Restringido');
           return;
         }
-        filteredDependencies = dependencies.filter((dep) =>
-          dependencyIds.includes(dep.idDependency!)
-        );
+        filteredDependencies = dependencies.filter(dep => dependencyIds.includes(dep.idDependency!));
       }
 
       this.isSingleDependency = filteredDependencies.length === 1;
 
-      this.dependencyOptions = filteredDependencies.map((dep) => ({
+      this.dependencyOptions = filteredDependencies.map(dep => ({
         label: dep.name,
-        value: dep.idDependency!.toString(),
+        value: dep.idDependency!.toString()
       }));
 
+      // Automatically select the dependency if there's only one.
+      // Admins will select manually from the full list.
       if (this.isSingleDependency) {
         this.selectedDependency = this.dependencyOptions[0]?.value;
       } else if (this.isAdmin && this.dependencyOptions.length > 0) {
+        // Optional: If admin and you want to auto-select the first, you can keep this.
+        // For now, I'll remove it to allow admin to always make a selection.
         this.selectedDependency = null;
       }
+
 
       if (this.selectedAno && this.selectedDependency) {
         this.verificarFormulacion();
       }
-    });
-  }
-
-  loadFormulationStates(): void {
-    this.formulationStateService.getAll().subscribe({
-      next: (states) => {
-        this.formulationStateOptions = states;
-      },
-      error: (err) => {
-        this.toastr.error(
-          'Error al cargar los estados de formulación.',
-          'Error de Carga'
-        );
-        console.error('Error fetching formulation states:', err);
-      },
     });
   }
 
@@ -192,7 +157,6 @@ export class SelectorComponent implements OnInit {
     this.modificationOptions = [];
     this.selectedModificationOption = null;
     this.quarterLabel = null;
-    this.currentFormulationStateLabel = null; // Reset state label
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
@@ -209,18 +173,14 @@ export class SelectorComponent implements OnInit {
         this.formulationExists = this.foundFormulations.length > 0;
 
         if (this.formulationExists) {
-          this.foundFormulations.sort(
-            (a, b) => (b.modification || 0) - (a.modification || 0)
-          );
+          this.foundFormulations.sort((a, b) => (b.modification || 0) - (a.modification || 0));
 
-          this.modificationOptions = this.foundFormulations.map((f) => ({
+          this.modificationOptions = this.foundFormulations.map(f => ({
             label: this.getModificationLabel(f.modification),
-            value: f.modification!,
+            value: f.modification!
           }));
 
-          // Automatically select the latest modification
-          this.selectedModificationOption =
-            this.modificationOptions[0] || null;
+          this.selectedModificationOption = this.modificationOptions[0] || null;
           this.onModificationChange();
         } else {
           this.idFormulation = null;
@@ -237,36 +197,25 @@ export class SelectorComponent implements OnInit {
         this.modificationOptions = [];
         this.selectedModificationOption = null;
         this.quarterLabel = null;
-        this.currentFormulationStateLabel = null;
-      },
+      }
     });
   }
 
   onModificationChange(): void {
     if (this.selectedModificationOption) {
       const selectedFormulation = this.foundFormulations.find(
-        (f) => f.modification === this.selectedModificationOption!.value
+        f => f.modification === this.selectedModificationOption!.value
       );
       if (selectedFormulation) {
         this.idFormulation = selectedFormulation.idFormulation ?? null;
         this.quarterLabel = this.getQuarterLabel(selectedFormulation.quarter);
-        // Set the state label
-        this.currentFormulationStateLabel =
-          selectedFormulation.formulationState?.name ?? null;
-        // Pre-select the current state in the modal's dropdown
-        this.selectedFormulationState =
-          selectedFormulation.formulationState?.idFormulationState ?? null;
       } else {
         this.idFormulation = null;
         this.quarterLabel = null;
-        this.currentFormulationStateLabel = null;
-        this.selectedFormulationState = null;
       }
     } else {
       this.idFormulation = null;
       this.quarterLabel = null;
-      this.currentFormulationStateLabel = null;
-      this.selectedFormulationState = null;
     }
   }
 
@@ -283,16 +232,11 @@ export class SelectorComponent implements OnInit {
   getQuarterLabel(quarter?: number): string {
     if (quarter === undefined || quarter === null) return '';
     switch (quarter) {
-      case 1:
-        return 'I Trimestre';
-      case 2:
-        return 'II Trimestre';
-      case 3:
-        return 'III Trimestre';
-      case 4:
-        return 'IV Trimestre';
-      default:
-        return `Trimestre ${quarter}`;
+      case 1: return 'I Trimestre';
+      case 2: return 'II Trimestre';
+      case 3: return 'III Trimestre';
+      case 4: return 'IV Trimestre';
+      default: return `Trimestre ${quarter}`;
     }
   }
 
@@ -307,13 +251,10 @@ export class SelectorComponent implements OnInit {
         this.buscar.emit({
           ano: this.selectedAno,
           dependencia: this.selectedDependency,
-          idFormulation: this.idFormulation,
+          idFormulation: this.idFormulation
         });
       } else {
-        this.toastr.warning(
-          'Por favor, seleccione una modificación para la formulación existente.',
-          'Selección Requerida'
-        );
+        this.toastr.warning('Por favor, seleccione una modificación para la formulación existente.', 'Selección Requerida');
       }
       return;
     }
@@ -321,10 +262,10 @@ export class SelectorComponent implements OnInit {
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
-      formulationState: { idFormulationState: 1 } as FormulationState, // Default to initial state
+      formulationState: { idFormulationState: 1 } as FormulationState,
       active: true,
       modification: 1,
-      quarter: 1,
+      quarter: 1
     };
 
     this.formulationService.create(nuevaFormulacion).subscribe({
@@ -336,72 +277,16 @@ export class SelectorComponent implements OnInit {
         this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
-          this.toastr.success('Formulación iniciada correctamente.', 'Éxito'); // Add toastr success message
           this.buscar.emit({
             ano: this.selectedAno,
             dependencia: this.selectedDependency,
-            idFormulation: this.idFormulation,
+            idFormulation: this.idFormulation
           });
         }, 2500);
       },
-      error: (err) => {
+      error: () => {
         this.toastr.error('Error al crear la formulación.', 'Error');
-        console.error('Error creating formulation:', err);
-      },
-    });
-  }
-
-  /**
-   * Handles changing the formulation state.
-   */
-  changeFormulationState(): void {
-    if (!this.idFormulation || !this.selectedFormulationState) {
-      this.toastr.warning('Seleccione un estado válido.', 'Advertencia');
-      return;
-    }
-
-    const selectedState = this.formulationStateOptions.find(
-      (state) => state.idFormulationState === this.selectedFormulationState
-    );
-
-    if (!selectedState) {
-      this.toastr.error('Estado de formulación no válido.', 'Error');
-      return;
-    }
-
-    const currentFormulation = this.foundFormulations.find(
-      (f) => f.idFormulation === this.idFormulation
-    );
-
-    if (!currentFormulation) {
-      this.toastr.error(
-        'No se encontró la formulación actual.',
-        'Error Interno'
-      );
-      return;
-    }
-
-    // *** MODIFICATION START ***
-    // Create a NEW object to avoid direct mutation of foundFormulations if not desired
-    const formulationToUpdate: Formulation = {
-      ...currentFormulation, // Copy all existing properties
-      formulationState: selectedState // Update the specific property
-    };
-    // *** MODIFICATION END ***
-
-
-    // Call the update method with the full Formulation object
-    this.formulationService.update(formulationToUpdate).subscribe({ // <--- Pass the full object here
-      next: () => {
-        this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
-        this.showChangeStateModal = false;
-        // Refresh the formulation data to reflect the change
-        this.verificarFormulacion();
-      },
-      error: (err) => {
-        this.toastr.error('Error al cambiar el estado de formulación.', 'Error');
-        console.error('Error updating formulation state:', err);
-      },
+      }
     });
   }
 }
