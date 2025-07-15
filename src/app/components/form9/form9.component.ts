@@ -36,6 +36,34 @@ interface Row {
   providers: [BudgetCategoryService, BudgetItemService, ExpenseTypeService]
 })
 export class Form9Component implements OnInit {
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['idOperationalActivity'] && !changes['idOperationalActivity'].firstChange) {
+      this.cargarDatos();
+    }
+  }
+
+  cargarDatos() {
+    if (this.idOperationalActivity) {
+      Promise.all([
+        this.budgetCategoryService.getAll().toPromise(),
+        this.budgetItemService.getAll().toPromise(),
+        this.expenseTypeService.getAll().toPromise(),
+        this.operationalActivityBudgetItemService.getByOperationalActivity(this.idOperationalActivity).toPromise()
+      ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
+        this.tiposGasto = expenseTypes || [];
+        if (categories && items) {
+          this.data = this.buildRows(categories, items, oaBudgetItems || []);
+          this.form9DataService.setData(this.data);
+        } else {
+          this.data = [];
+          this.form9DataService.setData([]);
+        }
+      });
+    } else {
+      this.data = [];
+      this.form9DataService.setData([]);
+    }
+  }
   @Input() idOperationalActivity: number | null = null;
 
   eliminarFila(row: Row) {
@@ -80,27 +108,7 @@ export class Form9Component implements OnInit {
   ) {}
 
   ngOnInit() {
-    if (this.idOperationalActivity) {
-      console.log(this.idOperationalActivity)
-          Promise.all([
-      this.budgetCategoryService.getAll().toPromise(),
-      this.budgetItemService.getAll().toPromise(),
-      this.expenseTypeService.getAll().toPromise(),
-      
-        this.operationalActivityBudgetItemService.getByOperationalActivity(this.idOperationalActivity).toPromise() // id fijo
-           
-    ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
-      this.tiposGasto = expenseTypes || [];
-      if (categories && items) {
-        this.data = this.buildRows(categories, items, oaBudgetItems || []);
-        this.form9DataService.setData(this.data); // guardar datos iniciales
-      } else {
-        this.data = [];
-        this.form9DataService.setData([]);
-      }
-    });
-    } 
-
+    this.cargarDatos();
   }
 
   buildRows(categories: BudgetCategory[], items: BudgetItem[], oaBudgetItems: OperationalActivityBudgetItem[]): Row[] {

@@ -13,17 +13,8 @@ import {SelectoractComponent} from '../../components/selectoract/selectoract.com
 })
 export class ValidaComponent {
   idOperationalActivitySeleccionado: number | null = null;
-  // Se llama apenas se cambia el año desde el selecto
 
-  // Se llama cuando se presiona "Mostrar" o "Crear"
   manejarBusqueda(event: { idOperationalActivity: number | null }) {
-
-    if (!event.idOperationalActivity) return;
-
-    this.idOperationalActivitySeleccionado = event.idOperationalActivity;
-
-    console.log('Actividad seleccionada:', this.idOperationalActivitySeleccionado);
-    // Mostrar la tabla después de un ciclo de vida
+    this.idOperationalActivitySeleccionado = event?.idOperationalActivity ?? null;
   }
-
 }
