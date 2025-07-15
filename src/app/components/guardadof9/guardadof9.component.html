@@ -1,1 +1,5 @@
 <button pButton type="button" label="Guardar" icon="pi pi-save" (click)="capturarDatosForm9(); guardarDatos()"></button>
+<div class="success-animation" *ngIf="showSuccessAnimation">
+  <ng-lottie [options]="options"></ng-lottie>
+  <div class="message">Guardado correctamente</div>
+</div>

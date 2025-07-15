@@ -10,3 +10,28 @@ button {
   font-size: 1rem;
   padding: 0.6rem 1.2rem;
 }
+.success-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8); // semitransparente
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  ng-lottie {
+    width: 250px;
+    height: 250px;
+  }
+
+  .message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2e7d32;
+    margin-top: 1rem;
+  }
+}

@@ -7,7 +7,7 @@
   max-width: 2000px;  /* ancho que ya tienes o el que quieras */
   min-width: 2000px;
   
-  max-height: 200vh;  /* no sobrepasa la altura de la pantalla */
+  max-height: 90vh;  /* no sobrepasa la altura de la pantalla */
   overflow-y: auto;   /* scroll vertical si el contenido es muy alto */
   overflow-x: auto;   /* scroll horizontal si es necesario */
   
@@ -61,16 +61,16 @@
 /* Segunda columna más ancha */
 .matrix-table thead th:nth-child(2),
 .matrix-table tbody td:nth-child(2) {
-  width: 160px;
-  max-width: 160px;
-  min-width: 160px;
+  width: 65px;
+  max-width: 65px;
+  min-width: 65px;
   text-align: center;
 }
 .matrix-table thead th:nth-child(3),
 .matrix-table tbody td:nth-child(3) {
-  width: 150px;  /* o el ancho que quieras */
-  max-width: 150px;
-  min-width: 150px;
+  width: 130px;
+  max-width: 130px;
+  min-width: 130px;
   text-align: center;
 }
 /* Resto de columnas igual */

@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { Form9DataService } from '../../core/services/logic/form9-data.service';
 import { ButtonModule } from 'primeng/button';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { OperationalActivityBudgetItemService } from '../../core/services/logic/operational-activity-budget-item.service';
+import { LottieComponent } from 'ngx-lottie';
+import { AnimationOptions } from 'ngx-lottie';
 
 @Component({
   selector: 'app-guardadof9',
   standalone: true,
-  imports: [CommonModule, ButtonModule, HttpClientModule],
+  imports: [CommonModule, ButtonModule, HttpClientModule,LottieComponent],
   templateUrl: './guardadof9.component.html',
   styleUrl: './guardadof9.component.scss'
 })
@@ -15,7 +18,16 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 export class Guardadof9Component {
   datosCapturados: any = null;
 
-  constructor(private form9DataService: Form9DataService, private http: HttpClient) {}
+  constructor(
+    private form9DataService: Form9DataService,
+    private http: HttpClient,
+    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService
+  ) {}
+
+  options: AnimationOptions = {
+    path: 'resources/succes-allert.json'
+  };
+ showSuccessAnimation = false;
 
   capturarDatosForm9() {
     // Solo budgetItems (filas editables) CON información
@@ -36,8 +48,7 @@ export class Guardadof9Component {
             id: row.id,
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
-            order: row.order || 1,
-            codPoFi: row.codPoFi // clave para identificar duplicados
+            codPoFi: row.codPoFi
           });
         }
 
@@ -45,7 +56,9 @@ export class Guardadof9Component {
           items = items.concat(extraerBudgetItemsConInfo(row.children));
         }
       }
-      return items;
+      // Filtrar duplicados por id (solo uno por id)
+      const uniqueItems = items.filter((item, idx, arr) => arr.findIndex(x => x.id === item.id) === idx);
+      return uniqueItems;
     }
 
     this.datosCapturados = extraerBudgetItemsConInfo(allRows);
@@ -57,79 +70,145 @@ export class Guardadof9Component {
       alert('No hay datos para guardar.');
       return;
     }
-    let exitos = 0;
-    let errores = 0;
-    let total = this.datosCapturados.length;
-    for (const item of this.datosCapturados) {
-      // Buscar si hay otra fila con el mismo codPoFi y diferente order
-      const codPoFi = item.codPoFi;
-      const order = Number(item.order) || 1;
-      const idBudgetItem = Number(item.id);
-      // El idBudgetItem debe ser único por codPoFi+order, pero si es duplicado (por Date.now), hay que mapearlo correctamente
-      // Si el id es un timestamp (duplicado), se debe enviar el idBudgetItem original (de la fila original) y el order correspondiente
-      // Si el id es un número muy grande (timestamp), buscar el id original
-      let realIdBudgetItem = idBudgetItem;
-      // Si el id es un timestamp (duplicado), buscar el id original de la fila con el mismo codPoFi y order 1
-      if (idBudgetItem > 1000000000) {
-        const original = (this.datosCapturados as any[]).find((x: any) => x.codPoFi === codPoFi && Number(x.order) === 1 && Number(x.id) < 1000000000);
-        if (original) {
-          realIdBudgetItem = Number(original.id);
-        }
-      }
-      // Para cada orden > 1, el idBudgetItem debe ser el original, pero el orderItem debe ser el correspondiente
-      // Así, si hay n filas con el mismo codPoFi, todas se guardan con el mismo idBudgetItem pero distinto orderItem
-      const payload = {
-        orderItem: order,
-        operationalActivity: { idOperationalActivity: 8 },
-        budgetItem: { idBudgetItem: realIdBudgetItem },
-        expenseType: Number(item.tipoGastoId) ? { idExpenseType: Number(item.tipoGastoId) } : null,
-        monthAmounts: {
-          ENERO: Number(item.meses['ENERO']) || 0,
-          FEBRERO: Number(item.meses['FEBRERO']) || 0,
-          MARZO: Number(item.meses['MARZO']) || 0,
-          ABRIL: Number(item.meses['ABRIL']) || 0,
-          MAYO: Number(item.meses['MAYO']) || 0,
-          JUNIO: Number(item.meses['JUNIO']) || 0,
-          JULIO: Number(item.meses['JULIO']) || 0,
-          AGOSTO: Number(item.meses['AGOSTO']) || 0,
-          SEPTIEMBRE: Number(item.meses['SEPTIEMBRE']) || 0,
-          OCTUBRE: Number(item.meses['OCTUBRE']) || 0,
-          NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
-          DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
-        },
-        createTime: new Date().toISOString()
-      };
-      // Validar que los campos requeridos estén presentes y correctos
-      // Para la fila original (order === 1), expenseType es obligatorio
-      if (!payload.budgetItem.idBudgetItem || !payload.operationalActivity.idOperationalActivity || (order === 1 && !payload.expenseType)) {
-        errores++;
-        console.error('Payload inválido, no se envía:', payload);
-        if (exitos + errores === total) {
-          alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);
-        }
-        continue;
-      }
-      // Siempre usar PUT para todos los duplicados (order > 1) y POST solo para el original (order === 1)
-      const url = (order === 1 && idBudgetItem < 1000000000) ?
-        `http://10.0.29.240:8081/operational-activity-budget-item` :
-        `http://10.0.29.240:8081/operational-activity-budget-item`;
-      const method = (order === 1 && idBudgetItem < 1000000000) ? 'post' : 'put';
-      console.log('Enviando payload:', payload, 'con método', method);
-      this.http[method](url, payload).subscribe({
-        next: (resp) => {
-          exitos++;
-          if (exitos + errores === total) {
-            alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);
+    // Obtener los datos originales del backend antes de guardar
+    this.operationalActivityBudgetItemService.getByOperationalActivity(14).subscribe({
+      next: (originalData: any[]) => {
+        let exitos = 0;
+        let errores = 0;
+        let total = this.datosCapturados.length;
+        for (const item of this.datosCapturados) {
+          const idBudgetItem = Number(item.id);
+          // Validar tipo de gasto si hay valores en meses
+          const tieneValores = Object.values(item.meses).some((v: any) => Number(v) > 0);
+          if (tieneValores && (!item.tipoGastoId || item.tipoGastoId === '' || item.tipoGastoId === null)) {
+            alert('Seleccione el tipo de gasto para los items con valores.');
+            errores++;
+            continue;
           }
-        },
-        error: (err) => {
-          errores++;
-          console.error('Error al guardar item:', err);
-          if (exitos + errores === total) {
-            alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);
+          // Buscar si existe en los datos originales del backend
+          const originalItem = originalData.find((orig: any) => orig.budgetItem?.idBudgetItem === idBudgetItem);
+          // Construir el payload usando los objetos completos si existen
+          const payload = {
+            operationalActivity: originalItem?.operationalActivity || { idOperationalActivity: 14 },
+            budgetItem: originalItem?.budgetItem || { idBudgetItem: idBudgetItem },
+            expenseType: Number(item.tipoGastoId)
+              ? (originalItem?.expenseType && Number(item.tipoGastoId) === Number(originalItem.expenseType.idExpenseType)
+                  ? originalItem.expenseType
+                  : { idExpenseType: Number(item.tipoGastoId) })
+              : null,
+            monthAmounts: {
+              ENERO: Number(item.meses['ENERO']) || 0,
+              FEBRERO: Number(item.meses['FEBRERO']) || 0,
+              MARZO: Number(item.meses['MARZO']) || 0,
+              ABRIL: Number(item.meses['ABRIL']) || 0,
+              MAYO: Number(item.meses['MAYO']) || 0,
+              JUNIO: Number(item.meses['JUNIO']) || 0,
+              JULIO: Number(item.meses['JULIO']) || 0,
+              AGOSTO: Number(item.meses['AGOSTO']) || 0,
+              SEPTIEMBRE: Number(item.meses['SEPTIEMBRE']) || 0,
+              OCTUBRE: Number(item.meses['OCTUBRE']) || 0,
+              NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
+              DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
+            },
+            orderItem: 1
+          };
+          // Validar que los campos requeridos estén presentes y correctos (permitir valores 0)
+          if (
+            payload.budgetItem.idBudgetItem === undefined || payload.budgetItem.idBudgetItem === null ||
+            payload.operationalActivity.idOperationalActivity === undefined || payload.operationalActivity.idOperationalActivity === null ||
+            !payload.expenseType
+          ) {
+            errores++;
+            console.error('Payload inválido, no se envía:', payload);
+            if (exitos + errores === total) {
+              alert(`Guardado finalizado. Éxitos: ${exitos}, Errores: ${errores}`);
+            }
+            continue;
+          }
+          let changed = false;
+          if (originalItem) {
+            // Compara meses y tipoGastoId
+            for (const mes of [
+              'ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE']) {
+              if (Number(item.meses[mes]) !== Number(originalItem.monthAmounts?.[mes] || 0)) {
+                changed = true;
+                break;
+              }
+            }
+            if (!changed && Number(item.tipoGastoId) !== Number(originalItem.expenseType?.idExpenseType)) {
+              changed = true;
+            }
+          }
+          // Si existe y cambió, PUT; si no existe, POST
+          if (originalItem && changed) {
+            // Actualizar
+            console.log('Enviando payload:', payload, 'con método', 'put');
+            this.operationalActivityBudgetItemService.update(payload).subscribe({
+              next: () => {
+                exitos++;
+                if (exitos + errores === total) {
+
+                    this.showSuccessAnimation = true;
+                    setTimeout(() => {
+                      this.showSuccessAnimation = false;
+                    }, 2500);
+
+                }
+              },
+              error: (err) => {
+                errores++;
+                console.error('Error al actualizar item:', err);
+                if (exitos + errores === total) {
+
+                    this.showSuccessAnimation = true;
+                    setTimeout(() => {
+                      this.showSuccessAnimation = false;
+                    }, 2500);
+                }
+              }
+            });
+          } else if (!originalItem) {
+            // Nuevo registro
+            console.log('Enviando payload:', payload, 'con método', 'post');
+            this.operationalActivityBudgetItemService.create(payload).subscribe({
+              next: () => {
+                exitos++;
+                if (exitos + errores === total) {
+
+
+                    this.showSuccessAnimation = true;
+                    setTimeout(() => {
+                      this.showSuccessAnimation = false;
+                    }, 2500);
+                }
+              },
+              error: (err) => {
+                errores++;
+                console.error('Error al guardar item:', err);
+                if (exitos + errores === total) {
+                    this.showSuccessAnimation = true;
+                    setTimeout(() => {
+                      this.showSuccessAnimation = false;
+                    }, 2500);
+                }
+              }
+            });
+          } else {
+            // No cambió, no hacer nada
+            exitos++;
+            if (exitos + errores === total) {
+                    this.showSuccessAnimation = true;
+                    setTimeout(() => {
+                      this.showSuccessAnimation = false;
+                    }, 2500);
+            }
           }
         }
-      });
-    }
+      },
+      error: (err) => {
+        alert('Error al obtener datos originales del backend.');
+        console.error(err);
+      }
+    });
   }
 }

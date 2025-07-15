@@ -36,6 +36,26 @@ interface Row {
   providers: [BudgetCategoryService, BudgetItemService, ExpenseTypeService]
 })
 export class Form9Component implements OnInit {
+  eliminarFila(row: Row) {
+    if (!row || !row.id) return;
+    if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
+    this.operationalActivityBudgetItemService.deleteById(14, row.id).subscribe({
+      next: () => {
+        // Eliminar la fila del árbol
+        if (row.parent && row.parent.children) {
+          row.parent.children = row.parent.children.filter(child => child !== row);
+          this.updateParentValues(row.parent);
+        }
+        // Actualizar datos en el servicio
+        this.updateForm9DataService();
+        alert('Registro eliminado correctamente.');
+      },
+      error: (err) => {
+        alert('Error al eliminar el registro.');
+        console.error(err);
+      }
+    });
+  }
   meses: string[] = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
     'MAYO', 'JUNIO', 'JULIO', 'AGOSTO',
@@ -57,7 +77,7 @@ export class Form9Component implements OnInit {
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
       this.expenseTypeService.getAll().toPromise(),
-      this.operationalActivityBudgetItemService.getByOperationalActivity(8).toPromise() // id fijo
+      this.operationalActivityBudgetItemService.getByOperationalActivity(14).toPromise() // id fijo
     ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
@@ -216,59 +236,6 @@ export class Form9Component implements OnInit {
     return this.meses.reduce((sum, mes) => sum + (row.meses[mes] || 0), 0);
   }
 
-  duplicarItem(row: Row) {
-    if (!row.parent) return;
-
-    const parent = row.parent;
-    parent.children = parent.children ?? [];
-
-    const index = parent.children.indexOf(row);
-    if (index === -1) return;
-
-    // Calcular el nuevo orden: máximo de los órdenes actuales + 1
-    const maxOrder = Math.max(...parent.children.filter(r => r.codPoFi === row.codPoFi).map(r => r.order || 1), 1);
-    const nuevoItem: Row = {
-      id: Date.now(),
-      codPoFi: row.codPoFi,
-      name: row.name,
-      tipoGasto: row.tipoGasto,
-      meses: { ...row.meses },
-      expanded: false,
-      editable: true,
-      parent: parent,
-      isOriginal: false,
-      order: maxOrder + 1
-    };
-
-    parent.children.splice(index + 1, 0, nuevoItem);
-    this.updateParentValues(parent);
-    this.updateForm9DataService(); // actualizar datos
-  }
-
-  eliminarItem(row: Row) {
-    if (row.isOriginal) {
-      alert('No se puede eliminar la fila original.');
-      return;
-    }
-
-    // Enviar petición DELETE al backend antes de eliminar de la UI
-    if (row.id && row.id < 1000000000) {
-      const url = `http://10.0.29.240:8081/operational-activity-budget-item/${row.id}`;
-      fetch(url, { method: 'DELETE' })
-        .then(() => console.log('Eliminado en backend:', row.id))
-        .catch(err => console.error('Error al eliminar en backend:', row.id, err));
-    }
-
-    const parent = row.parent;
-    if (!parent || !parent.children) return;
-
-    const index = parent.children.indexOf(row);
-    if (index !== -1) {
-      parent.children.splice(index, 1);
-      this.updateParentValues(parent);
-      this.updateForm9DataService(); // actualizar datos
-    }
-  }
   onInputValueChange(row: Row, mes: string) {
     if (row.meses[mes] < 0 || row.meses[mes] === null || row.meses[mes] === undefined) {
       row.meses[mes] = 0;
