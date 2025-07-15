@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
-import { LottieComponent } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
 import { DependencyService } from '../../core/services/logic/dependency.service';
 import { OperationalActivityService } from '../../core/services/logic/operational-activity.service';
@@ -13,7 +12,7 @@ import { OperationalActivity } from '../../models/logic/operationalActivity.mode
 @Component({
   selector: 'app-selectoract',
   standalone: true,
-  imports: [CommonModule, DropdownModule, FormsModule, ButtonModule, LottieComponent, InputTextModule],
+  imports: [CommonModule, DropdownModule, FormsModule, ButtonModule, InputTextModule],
   templateUrl: './selectoract.component.html',
   styleUrl: './selectoract.component.scss'
 })
@@ -25,7 +24,7 @@ export class SelectoractComponent implements OnInit {
   activityOptions: { label: string; value: number }[] = [];
   selectedActivityId: number | null = null;
 
-  @Output() actividadSeleccionada = new EventEmitter<number | null>();
+  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null }>();
 
   constructor(
     private dependencyService: DependencyService,
@@ -78,14 +77,12 @@ export class SelectoractComponent implements OnInit {
   actualizarActividades(): void {
     if (!this.selectedAno || !this.selectedDependency) {
       this.activityOptions = [];
-      this.actividadSeleccionada.emit(null);
       return;
     }
     this.formulationService.searchByDependencyAndYear(Number(this.selectedDependency), Number(this.selectedAno)).subscribe({
       next: formulaciones => {
         if (!formulaciones || formulaciones.length === 0) {
           this.activityOptions = [];
-          this.actividadSeleccionada.emit(null);
           return;
         }
         const formulacion = formulaciones[0];
@@ -93,25 +90,21 @@ export class SelectoractComponent implements OnInit {
           next: actividades => {
             if (!actividades || actividades.length === 0) {
               this.activityOptions = [];
-              this.actividadSeleccionada.emit(null);
             } else {
               this.activityOptions = actividades.map(act => ({
                 label: act.name,
                 value: act.idOperationalActivity!
               }));
               this.selectedActivityId = this.activityOptions[0]?.value || null;
-              this.actividadSeleccionada.emit(this.selectedActivityId);
             }
           },
           error: () => {
             this.activityOptions = [];
-            this.actividadSeleccionada.emit(null);
           }
         });
       },
       error: () => {
         this.activityOptions = [];
-        this.actividadSeleccionada.emit(null);
       }
     });
   }
@@ -122,8 +115,9 @@ export class SelectoractComponent implements OnInit {
   // <p-dropdown ... (onChange)="emitirActividadSeleccionada()" ...>
 
   emitirActividadSeleccionada() {
-    const id = typeof this.selectedActivityId === 'string' ? Number(this.selectedActivityId) : this.selectedActivityId;
-    this.actividadSeleccionada.emit(id);
+    this.buscar.emit({
+      idOperationalActivity: this.selectedActivityId
+    });
   }
 }
 // ...existing code...

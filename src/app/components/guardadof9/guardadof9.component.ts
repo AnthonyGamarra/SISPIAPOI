@@ -16,7 +16,8 @@ import { AnimationOptions } from 'ngx-lottie';
 })
 
 export class Guardadof9Component {
-  @Input() idOperationalActivity: string | null = null;
+  @Input() idOperationalActivity: number | null = null;
+  
   datosCapturados: any = null;
 
   constructor(

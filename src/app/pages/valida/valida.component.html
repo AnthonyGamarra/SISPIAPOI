@@ -1,4 +1,5 @@
 <app-menubar></app-menubar>
-<app-selectoract (actividadSeleccionada)="idActividad = $event"></app-selectoract>
-<app-guardadof9 [idOperationalActivity]="idActividad"></app-guardadof9>
-<app-form9 [idOperationalActivity]="idActividad"></app-form9>
+<app-selectoract (buscar)="manejarBusqueda($event)"></app-selectoract>
+<app-guardadof9 [idOperationalActivity]="idOperationalActivitySeleccionado"></app-guardadof9>
+<app-form9 [idOperationalActivity]="idOperationalActivitySeleccionado"></app-form9>
+<app-footer></app-footer>

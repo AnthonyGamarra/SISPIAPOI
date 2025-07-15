@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BudgetCategoryService } from '../../core/services/logic/budget-category.service';
@@ -36,6 +36,8 @@ interface Row {
   providers: [BudgetCategoryService, BudgetItemService, ExpenseTypeService]
 })
 export class Form9Component implements OnInit {
+  @Input() idOperationalActivity: number | null = null;
+
   eliminarFila(row: Row) {
     if (!row || !row.id) return;
     if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
@@ -78,11 +80,15 @@ export class Form9Component implements OnInit {
   ) {}
 
   ngOnInit() {
-    Promise.all([
+    if (this.idOperationalActivity) {
+      console.log(this.idOperationalActivity)
+          Promise.all([
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),
       this.expenseTypeService.getAll().toPromise(),
-      this.operationalActivityBudgetItemService.getByOperationalActivity(14).toPromise() // id fijo
+      
+        this.operationalActivityBudgetItemService.getByOperationalActivity(this.idOperationalActivity).toPromise() // id fijo
+           
     ]).then(([categories, items, expenseTypes, oaBudgetItems]) => {
       this.tiposGasto = expenseTypes || [];
       if (categories && items) {
@@ -93,6 +99,8 @@ export class Form9Component implements OnInit {
         this.form9DataService.setData([]);
       }
     });
+    } 
+
   }
 
   buildRows(categories: BudgetCategory[], items: BudgetItem[], oaBudgetItems: OperationalActivityBudgetItem[]): Row[] {
