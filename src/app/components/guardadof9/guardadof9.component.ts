@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Form9DataService } from '../../core/services/logic/form9-data.service';
 import { ButtonModule } from 'primeng/button';
@@ -16,6 +16,7 @@ import { AnimationOptions } from 'ngx-lottie';
 })
 
 export class Guardadof9Component {
+  @Input() idOperationalActivity: string | null = null;
   datosCapturados: any = null;
 
   constructor(
@@ -70,8 +71,12 @@ export class Guardadof9Component {
       alert('No hay datos para guardar.');
       return;
     }
+    if (!this.idOperationalActivity) {
+      alert('No se ha seleccionado una actividad operativa.');
+      return;
+    }
     // Obtener los datos originales del backend antes de guardar
-    this.operationalActivityBudgetItemService.getByOperationalActivity(14).subscribe({
+    this.operationalActivityBudgetItemService.getByOperationalActivity(Number(this.idOperationalActivity)).subscribe({
       next: (originalData: any[]) => {
         let exitos = 0;
         let errores = 0;

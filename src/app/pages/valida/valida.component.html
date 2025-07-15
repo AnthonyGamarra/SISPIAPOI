@@ -1,3 +1,4 @@
 <app-menubar></app-menubar>
-<app-guardadof9></app-guardadof9>
-<app-form9></app-form9>
+<app-selectoract (actividadSeleccionada)="idActividad = $event"></app-selectoract>
+<app-guardadof9 [idOperationalActivity]="idActividad"></app-guardadof9>
+<app-form9 [idOperationalActivity]="idActividad"></app-form9>

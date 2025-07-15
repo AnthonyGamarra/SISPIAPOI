@@ -41,12 +41,17 @@ export class Form9Component implements OnInit {
     if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
     this.operationalActivityBudgetItemService.deleteById(14, row.id).subscribe({
       next: () => {
-        // Eliminar la fila del árbol
-        if (row.parent && row.parent.children) {
-          row.parent.children = row.parent.children.filter(child => child !== row);
+        // Reiniciar la fila a valores predeterminados, pero no eliminar del visual
+        for (const mes of this.meses) {
+          row.meses[mes] = 0;
+        }
+        row.tipoGasto = '';
+        // Puedes limpiar otros campos si lo deseas
+        // row.order = 1;
+        // row.isOriginal = true;
+        if (row.parent) {
           this.updateParentValues(row.parent);
         }
-        // Actualizar datos en el servicio
         this.updateForm9DataService();
         alert('Registro eliminado correctamente.');
       },

@@ -1,0 +1,55 @@
+
+
+<div class="selector-bar grid align-items-center">
+  <div class="selector-group col-12 lg:col-4">
+    <label class="selector-label">Dependencia:</label>
+    <p-dropdown
+      [options]="dependencyOptions"
+      [(ngModel)]="selectedDependency"
+      (onChange)="actualizarActividades()"
+      placeholder="Seleccione"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+      [filter]="true"
+      filterBy="label">
+    </p-dropdown>
+  </div>
+
+  <div class="selector-group col-4 lg:col-2">
+    <label class="selector-label">Año:</label>
+    <p-dropdown
+      [options]="optionsAno"
+      [(ngModel)]="selectedAno"
+      (onChange)="actualizarActividades()"
+      placeholder="Seleccione"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value">
+    </p-dropdown>
+  </div>
+
+  <div class="selector-group col-5 lg:col-3 flex align-items-center">
+    <label class="selector-label">Actividad registrada:</label>
+    <p-dropdown
+      [options]="activityOptions"
+      [(ngModel)]="selectedActivityId"
+      (onChange)="emitirActividadSeleccionada()"
+      placeholder="Seleccione"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+      [disabled]="activityOptions.length === 0"
+      [filter]="true"
+      filterBy="label">
+    </p-dropdown>
+    <button
+      pButton
+      type="button"
+      label="Buscar"
+      class="p-button-sm ml-2"
+      (click)="emitirActividadSeleccionada()">
+    </button>
+  </div>
+</div>
+
