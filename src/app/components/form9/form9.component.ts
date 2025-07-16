@@ -102,8 +102,12 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   eliminarFila(row: Row) {
     if (!row || !row.id) return;
     if (!confirm('¿Está seguro que desea eliminar este registro?')) return;
-    // Assuming 14 is a fixed ID for deletion, consider making it dynamic if needed
-    this.operationalActivityBudgetItemService.deleteById(14, row.id).subscribe({
+    // Use idOperationalActivity dynamically for deletion
+    if (this.idOperationalActivity == null) {
+      alert('No se ha definido idOperationalActivity.');
+      return;
+    }
+    this.operationalActivityBudgetItemService.deleteById(this.idOperationalActivity, row.id).subscribe({
       next: () => {
         for (const mes of this.meses) {
           row.meses[mes] = 0;
