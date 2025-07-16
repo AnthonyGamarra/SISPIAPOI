@@ -126,6 +126,29 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
     });
   }
 
+  // Duplica una fila editable, asignando un order_item incremental
+  duplicarFila(row: Row) {
+    if (!row || !row.editable || !row.parent) return;
+    // Buscar el máximo order entre los hijos con el mismo id
+    const siblings = row.parent.children?.filter((child: Row) => child.id === row.id) || [];
+    const maxOrder = siblings.reduce((max: number, curr: Row) => curr.order && curr.order > max ? curr.order : max, 1);
+    // Clonar la fila, pero con order incrementado y meses en 0
+    const newRow: Row = {
+      ...row,
+      order: maxOrder + 1,
+      meses: this.initMeses(),
+      tipoGasto: '',
+      expanded: false,
+      editable: true,
+      parent: row.parent,
+      children: undefined
+    };
+    // Insertar debajo de la fila original
+    const idx = row.parent.children!.indexOf(row);
+    row.parent.children!.splice(idx + 1, 0, newRow);
+    this.updateForm9DataService();
+  }
+
   buildRows(categories: BudgetCategory[], items: BudgetItem[], oaBudgetItems: OperationalActivityBudgetItem[]): Row[] {
     const catMap = new Map<number, Row>();
     for (const cat of categories) {

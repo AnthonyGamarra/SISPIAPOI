@@ -38,6 +38,7 @@ export class Guardadof9Component {
       return;
     }
     // Recursivo para aplanar y filtrar solo editables con datos, omitiendo parent y children
+
     function extraerBudgetItemsConInfo(rows: any[]): any[] {
       let items: any[] = [];
       for (const row of rows) {
@@ -49,7 +50,8 @@ export class Guardadof9Component {
             id: row.id,
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
-            codPoFi: row.codPoFi
+            codPoFi: row.codPoFi,
+            order: row.order || 1
           });
         }
 
@@ -57,9 +59,8 @@ export class Guardadof9Component {
           items = items.concat(extraerBudgetItemsConInfo(row.children));
         }
       }
-      // Filtrar duplicados por id (solo uno por id)
-      const uniqueItems = items.filter((item, idx, arr) => arr.findIndex(x => x.id === item.id) === idx);
-      return uniqueItems;
+      // Permitir duplicados por id pero con distinto order
+      return items;
     }
 
     this.datosCapturados = extraerBudgetItemsConInfo(allRows);
@@ -90,8 +91,11 @@ export class Guardadof9Component {
             errores++;
             continue;
           }
-          // Buscar si existe en los datos originales del backend
-          const originalItem = originalData.find((orig: any) => orig.budgetItem?.idBudgetItem === idBudgetItem);
+          // Buscar si existe en los datos originales del backend (comparar idBudgetItem y orderItem)
+          const originalItem = originalData.find((orig: any) =>
+            orig.budgetItem?.idBudgetItem === idBudgetItem &&
+            (Number(orig.orderItem || 1) === Number(item.order || 1))
+          );
           // Construir el payload usando los objetos completos si existen
           const payload = {
             operationalActivity: originalItem?.operationalActivity || { idOperationalActivity: this.idOperationalActivity },
@@ -115,7 +119,7 @@ export class Guardadof9Component {
               NOVIEMBRE: Number(item.meses['NOVIEMBRE']) || 0,
               DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
             },
-            orderItem: 1,
+            orderItem: item.order || 1,
           };
           // Validar que los campos requeridos estén presentes y correctos (permitir valores 0)
           if (
@@ -145,68 +149,65 @@ export class Guardadof9Component {
             }
           }
           // Si existe y cambió, PUT; si no existe, POST
-          if (originalItem && changed) {
-            // Actualizar
-            console.log('Enviando payload:', payload, 'con método', 'put');
-            this.operationalActivityBudgetItemService.update(payload).subscribe({
-              next: () => {
-                exitos++;
-                if (exitos + errores === total) {
-
+          if (originalItem) {
+            if (changed) {
+              // Actualizar
+              console.log('Enviando payload:', payload, 'con método', 'put');
+              this.operationalActivityBudgetItemService.update(payload).subscribe({
+                next: () => {
+                  exitos++;
+                  if (exitos + errores === total) {
                     this.showSuccessAnimation = true;
                     setTimeout(() => {
                       this.showSuccessAnimation = false;
                     }, 2500);
-
-                }
-              },
-              error: (err) => {
-                errores++;
-                console.error('Error al actualizar item:', err);
-                if (exitos + errores === total) {
-
+                  }
+                },
+                error: (err) => {
+                  errores++;
+                  console.error('Error al actualizar item:', err);
+                  if (exitos + errores === total) {
                     this.showSuccessAnimation = true;
                     setTimeout(() => {
                       this.showSuccessAnimation = false;
                     }, 2500);
+                  }
                 }
+              });
+            } else {
+              // No cambió, no hacer nada
+              exitos++;
+              if (exitos + errores === total) {
+                this.showSuccessAnimation = true;
+                setTimeout(() => {
+                  this.showSuccessAnimation = false;
+                }, 2500);
               }
-            });
-          } else if (!originalItem) {
+            }
+          } else {
             // Nuevo registro
             console.log('Enviando payload:', payload, 'con método', 'post');
             this.operationalActivityBudgetItemService.create(payload).subscribe({
               next: () => {
                 exitos++;
                 if (exitos + errores === total) {
-
-
-                    this.showSuccessAnimation = true;
-                    setTimeout(() => {
-                      this.showSuccessAnimation = false;
-                    }, 2500);
+                  this.showSuccessAnimation = true;
+                  setTimeout(() => {
+                    this.showSuccessAnimation = false;
+                  }, 2500);
                 }
               },
               error: (err) => {
                 errores++;
                 console.error('Error al guardar item:', err);
                 if (exitos + errores === total) {
-                    this.showSuccessAnimation = true;
-                    setTimeout(() => {
-                      this.showSuccessAnimation = false;
-                    }, 2500);
+                  this.showSuccessAnimation = true;
+                  setTimeout(() => {
+                    this.showSuccessAnimation = false;
+                  }, 2500);
                 }
               }
             });
-          } else {
-            // No cambió, no hacer nada
-            exitos++;
-            if (exitos + errores === total) {
-                    this.showSuccessAnimation = true;
-                    setTimeout(() => {
-                      this.showSuccessAnimation = false;
-                    }, 2500);
-            }
           }
         }
       },
