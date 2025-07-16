@@ -37,9 +37,9 @@ export class OperationalActivityBudgetItemService {
       return this.http.put<void>(`${this.BASE_URL}`, data);
     }
 
-    // Eliminar por ambos IDs
-    deleteById(idOperationalActivity: number, idBudgetItem: number): Observable<void> {
-      return this.http.delete<void>(`${this.BASE_URL}/${idOperationalActivity}/${idBudgetItem}`);
+    // Eliminar por idOperationalActivity, idBudgetItem y orderItem
+    deleteById(idOperationalActivity: number, idBudgetItem: number, orderItem: number): Observable<void> {
+      return this.http.delete<void>(`${this.BASE_URL}/${idOperationalActivity}/${idBudgetItem}/${orderItem}`);
     }
 
     // Eliminar todos por idOperationalActivity

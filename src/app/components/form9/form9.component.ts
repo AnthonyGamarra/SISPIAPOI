@@ -107,7 +107,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       alert('No se ha definido idOperationalActivity.');
       return;
     }
-    this.operationalActivityBudgetItemService.deleteById(this.idOperationalActivity, row.id).subscribe({
+    const orderItem = row.order || 1;
+    this.operationalActivityBudgetItemService.deleteById(this.idOperationalActivity, row.id, orderItem).subscribe({
       next: () => {
         for (const mes of this.meses) {
           row.meses[mes] = 0;
