@@ -8,7 +8,7 @@
       label="Agregar Actividad"
       icon="pi pi-plus"
       (click)="agregarActividad()"
-      [disabled]="state === 2 || state === 4 || !year"
+      [disabled]="state === 2 || state === 4 || !year || !active"
       class="col-6 add-button ml-auto my-5">
     </button>
   </div>
@@ -29,9 +29,9 @@
       [rowHover]="true"
       [editingRowKeys]="editingRowKeys">
       
-      <ng-template pTemplate="header" class="table-header" #header>
+      <ng-template pTemplate="header" class="table-header" #header let-editing="editing">
         <tr class="cabecera">
-          <th style="min-width: 100px; max-width: 100px;" rowspan="2">Acciones</th>
+          <th style="min-width: 100px; max-width: 100px;" rowspan="2" *ngIf="!editing && (state === 1 || state === 3) && active">Acciones</th>
 
           <th style="min-width: 140px; max-width: 140px;" rowspan="2">Objetivo estratégico</th>
           <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acción estratégica</th>
@@ -45,7 +45,7 @@
           <th style="min-width: 220px; max-width: 220px;" rowspan="2">Unidad de medida</th>
 
 
-          <th style="min-width: 220px; max-width: 220px;" rowspan="2">Tipo de medida</th>
+          <th style="min-width: 350px; max-width: 350px;" rowspan="2">Tipo de medida</th>
           <th style="min-width: 150px; max-width: 150px;" rowspan="2">Prioridad</th>
 
           <th colspan="4">Trimestre</th>
@@ -68,10 +68,10 @@
       <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
         <tr [pEditableRow]="product">
                     
-          <td>
+          <td *ngIf="!editing && (state === 1 || state === 3) && active">
             <div class="flex items-center justify-center gap-2">
               <button
-                *ngIf="!editing && (state === 1 || state === 3)"
+                *ngIf="!editing && (state === 1 || state === 3) && active"
                 pButton
                 pRipple
                 type="button"
@@ -109,7 +109,7 @@
               </button>
 
               <button
-                *ngIf="!editing && (state === 1 || state === 3)" 
+                *ngIf="!editing && (state === 1 || state === 3) && active" 
                 pButton
                 pRipple
                 type="button"
@@ -134,7 +134,7 @@
                     icon="pi pi-search"
                     (click)="openOeAeSelectionModal(product)"
                     label=""
-                    [disabled]="state === 2 || state === 4"
+                    [disabled]="state === 2 || state === 4 || !active"
                     class="p-button-sm ml-2">
                   </button>
                 </div>
@@ -169,7 +169,7 @@
                   optionValue="idManagementCenter"
                   [(ngModel)]="product.managementCenter.idManagementCenter"
                   [style]="{ width: '100%' }"
-                  [disabled]="state === 2 || state === 4"
+                  [disabled]="state === 2 || state === 4 || !active"
                   appendTo="body"> </p-dropdown>
               </ng-template>
               <ng-template pTemplate="output">
@@ -187,7 +187,7 @@
                   optionValue="idCostCenter"
                   [(ngModel)]="product.costCenter.idCostCenter"
                   [style]="{ width: '100%' }"
-                  [disabled]="state === 2 || state === 4"
+                  [disabled]="state === 2 || state === 4 || !active"
                   appendTo="body"> </p-dropdown>
               </ng-template>
               <ng-template pTemplate="output">
@@ -205,7 +205,7 @@
                   optionValue="idFinancialFund"
                   [(ngModel)]="product.financialFund.idFinancialFund"
                   [style]="{ width: '100%' }"
-                  [disabled]="state === 2 || state === 4"
+                  [disabled]="state === 2 || state === 4 || !active"
                   appendTo="body"> </p-dropdown>
               </ng-template>
               <ng-template pTemplate="output">
@@ -226,7 +226,7 @@
           <td>
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4" style="resize: none"></textarea>
+                <textarea rows="3" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
               <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="40" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
             </p-cellEditor>
@@ -235,9 +235,9 @@
           <td>
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea pInputTextarea [(ngModel)]="product.measurementUnit" [disabled]="state === 2 || state === 4" rows="3"></textarea>
+                <textarea rows="3" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
-              <ng-template pTemplate="output" class="text-output">{{ product.measurementUnit }}</ng-template>
+              <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="21" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.measurementUnit }}</textarea></ng-template>
             </p-cellEditor>
           </td>
 
@@ -250,7 +250,7 @@
                   optionValue="idMeasurementType"
                   [(ngModel)]="product.measurementType.idMeasurementType"
                   [style]="{ width: '100%' }"
-                  [disabled]="state === 2 || state === 4"
+                  [disabled]="state === 2 || state === 4 || !active"
                   appendTo="body"> </p-dropdown>
               </ng-template>
               <ng-template pTemplate="output">
@@ -268,7 +268,7 @@
                   optionValue="idPriority"
                   [(ngModel)]="product.priority.idPriority"
                   [style]="{ width: '100%' }"
-                  [disabled]="state === 2 || state === 4"
+                  [disabled]="state === 2 || state === 4 || !active"
                   appendTo="body"> </p-dropdown>
               </ng-template>
               <ng-template pTemplate="output">
@@ -316,7 +316,7 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.goods" type="number" [disabled]="state === 2 || state === 4" />
+                <input pInputText [(ngModel)]="product.goods" type="number" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
               <ng-template pTemplate="output">{{ product.goods }}</ng-template>
             </p-cellEditor>
@@ -325,7 +325,7 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.remuneration" type="number" [disabled]="state === 2 || state === 4" />
+                <input pInputText [(ngModel)]="product.remuneration" type="number" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
               <ng-template pTemplate="output">{{ product.remuneration }}</ng-template>
             </p-cellEditor>
@@ -334,7 +334,7 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.services" type="number" [disabled]="state === 2 || state === 4" />
+                <input pInputText [(ngModel)]="product.services" type="number" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
               <ng-template pTemplate="output">{{ product.services }}</ng-template>
             </p-cellEditor>
@@ -350,7 +350,7 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="40" [autoResize]="true"  pTextarea [(ngModel)]="product.description" [disabled]="state === 2 || state === 4" style="resize: none"></textarea>
+                <textarea rows="3" cols="40" [autoResize]="true"  pTextarea [(ngModel)]="product.description" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
               <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="40" [autoResize]="true"  pTextarea [disabled]="true" style="resize: none">{{ product.description }}</textarea></ng-template>
             </p-cellEditor>

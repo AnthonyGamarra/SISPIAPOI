@@ -79,6 +79,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   quarter: number | null = null;
   state: number | null = null; // Stores the idFormulationState
+  active: boolean | null = null;
   stateName: string | null = null; // Stores the name of the formulation state for display/logic
   selectedSize: any = 'small';
   sizes!: any[];
@@ -160,6 +161,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.quarter = newFormulation.quarter || null;
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
+        this.active = newFormulation.active;
 
         this.updatePermissions(); // Update permissions based on the new state
 
@@ -203,9 +205,10 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   // Helper to update permissions based on the current state
   updatePermissions(): void {
-    if(this.state){
+    if(this.state && this.active){
       const allowedStates = [1, 3];
-      const hasPermission = allowedStates.includes(this.state);
+      const allowedActive = true;
+      const hasPermission = allowedStates.includes(this.state) && allowedActive === true;
       this.canEdit = hasPermission;
       this.canAdd = hasPermission;
       this.canDelete = hasPermission;
@@ -216,6 +219,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     this.quarter = null;
     this.state = null;
     this.stateName = null;
+    this.active = null;
     this.products = [];
     this.updatePermissions(); // Reset permissions to default/disabled
   }
@@ -229,6 +233,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           this.quarter = formulation.quarter || null;
           this.state = formulation.formulationState?.idFormulationState || null;
           this.stateName = formulation.formulationState?.name || null;
+          this.active = formulation.active || null;
           this.updatePermissions(); // Update permissions after loading state
         },
         error: (err) => {

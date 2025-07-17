@@ -3,14 +3,15 @@
     <div>
       <h2>Administración de Planificación</h2>
       <div class="grid">
-          <div class="col-6">
-              <span>Año:</span>
-              <p-dropdown [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
-                    placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
-          </div>
-          <div class="col-6 flex justify-content-end flex-wrap">
-              <button pButton label="Nueva Modificatoria" icon="pi pi-plus" class="add-button" (click)="openNewModificationDialog()"></button>
-          </div>            
+        <div class="col-6">
+          <span>Año:</span>
+          <p-dropdown [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
+            placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
+        </div>
+        <div class="col-6 flex justify-content-end flex-wrap">
+          <button pButton label="Nueva Modificatoria" icon="pi pi-plus" class="add-button"
+            (click)="openNewModificationDialog()"></button>
+        </div>
       </div>
     </div>
 
@@ -20,41 +21,32 @@
 
     <div *ngFor="let depTypeName of getDependencyTypeNames()">
       <p-fieldset [legend]="depTypeName" class="p-mt-4">
-        <div *ngIf="!groupedFormulations[depTypeName] || Object.keys(groupedFormulations[depTypeName]).length === 0 || 
-                    (getModificationNumbers(depTypeName).length === 1 && groupedFormulations[depTypeName][1]?.length === 0)" class="p-text-center p-my-3">
-            <p>No hay formulaciones para este tipo de dependencia para el año {{selectedYear}}.</p>
+        <div *ngIf="!groupedFormulations[depTypeName] || Object.keys(groupedFormulations[depTypeName]).length === 0 ||
+                    (getModificationNumbers(depTypeName).length === 1 && groupedFormulations[depTypeName][1]?.length === 0)"
+          class="p-text-center p-my-3">
+          <p>No hay formulaciones para este tipo de dependencia para el año {{selectedYear}}.</p>
         </div>
 
         <div *ngFor="let modificationNum of getModificationNumbers(depTypeName)" class="table-container">
-          <ng-container *ngIf="groupedFormulations[depTypeName][modificationNum]!.length > 0" >
+          <ng-container *ngIf="groupedFormulations[depTypeName][modificationNum]!.length > 0">
             <h4 class="p-mt-4 p-mb-2">{{ modificationLabels[modificationNum] || 'Modificatoria Desconocida' }}</h4>
-            <p-table
-              [value]="groupedFormulations[depTypeName][modificationNum]" 
-              [paginator]="true" 
-              [rows]="10"
-              [tableStyle]="{ 'max-width': '95vw' }"
-              stripedRows
-              showGridlines>
+            <p-table [value]="groupedFormulations[depTypeName][modificationNum]" [paginator]="true" [rows]="10"
+              [tableStyle]="{ 'max-width': '95vw' }" stripedRows showGridlines>
               <ng-template pTemplate="header">
                 <tr>
-                  <th>Dependencia</th>
-                  <th>Abierto desde</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
+                  <th class="centered">Dependencia</th>
+                  <th class="centered">Abierto desde</th>
+                  <th class="centered">Activo</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-formulation>
                 <tr>
                   <td>{{ formulation.dependency?.name }}</td>
-                  <td>{{ quarterLabels[formulation.quarter!] }}</td>
-                  <td>
-                    <p-dropdown [options]="formulationStates" [(ngModel)]="formulation.formulationState!.idFormulationState"
-                                optionLabel="name" optionValue="idFormulationState"
-                                (onChange)="onStateChange(formulation, $event.value)"
-                                [style]="{'width': '100%'}"
-                                appendTo="body"></p-dropdown>
+                  <td class="centered">{{ quarterLabels[formulation.quarter!] }}</td>
+                  <td class="centered">
+                    <p-checkbox [(ngModel)]="formulation.active" [binary]="true"
+                      (onChange)="onActiveChange(formulation, $event)"></p-checkbox>
                   </td>
-                  <td></td>
                 </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
@@ -69,28 +61,20 @@
     </div>
   </p-card>
 </div>
-<p-dialog header="Nueva Modificatoria" [(visible)]="displayNewModificationDialog" [modal]="true" [style]="{width: '35vw'}" [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false" [resizable]="false">
+<p-dialog header="Nueva Modificatoria" [(visible)]="displayNewModificationDialog" [modal]="true" [style]="{width: '35vw'}"
+  [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false" [resizable]="false">
   <div class="p-fluid">
     <div class="p-field">
       <label for="newQuarter" class="mr-8 lg:mr-8">Abierto desde:</label>
-      <p-dropdown 
-        id="newQuarter" 
-        [options]="quarterOptions" 
-        [(ngModel)]="newModificationQuarter"
-        optionLabel="label" 
-        optionValue="value" 
-        placeholder="Trimestre"
-        [showClear]="false"
-        appendTo="body"
-        class="ml-6 lg:ml-8">
+      <p-dropdown id="newQuarter" [options]="quarterOptions" [(ngModel)]="newModificationQuarter" optionLabel="label"
+        optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
       </p-dropdown>
     </div>
   </div>
   <ng-template pTemplate="footer">
-    <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text" (click)="displayNewModificationDialog = false" class="cancel-button"></button>
+    <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
+      (click)="displayNewModificationDialog = false" class="cancel-button"></button>
     <button pButton label="Crear" icon="pi pi-check" (click)="addNewModification()" class="add-button"></button>
   </ng-template>
 </p-dialog>
-
-<p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>

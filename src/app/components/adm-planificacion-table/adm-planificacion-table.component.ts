@@ -1,33 +1,29 @@
-// adm-planificacion-table.component.ts
-import { Component, OnInit, inject } from '@angular/core'; // Added 'inject'
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { InputNumberModule } from 'primeng/inputnumber'; // Still needed for other potential inputNumbers if any
-import { ToastModule } from 'primeng/toast'; // Still needed for PrimeNG Toast component if not fully removed
+import { InputNumberModule } from 'primeng/inputnumber';
+import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { MessageService } from 'primeng/api'; // Remove this if not needed elsewhere
 import { ConfirmationService } from 'primeng/api';
 import { CardModule } from 'primeng/card';
 import { FieldsetModule } from 'primeng/fieldset';
+import { CheckboxModule } from 'primeng/checkbox'; // Añadir CheckboxModule
 import { MinMaxYears } from '../../models/logic/min-max-years.model';
-import { ToastrService } from 'ngx-toastr'; // Added ToastrService
+import { ToastrService } from 'ngx-toastr';
 
 import { FormulationService } from '../../core/services/logic/formulation.service';
-// import { DependencyService } from '../../core/services/logic/dependency.service'; // Potentially needed for full Dependency object if not in Formulation
 import { FormulationStateService } from '../../core/services/logic/formulation-state.service';
 import { DependencyTypeService } from '../../core/services/logic/dependency-type.service';
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
 
-
 import { Formulation } from '../../models/logic/formulation.model';
-import { Dependency } from '../../models/logic/dependency.model';
-import { FormulationState } from '../../models/logic/formulationState.model';
 import { DependencyType } from '../../models/logic/dependencyType.model';
-import { Observable, forkJoin } from 'rxjs'; // For parallel service calls
+import { FormulationState } from '../../models/logic/formulationState.model'; // No se usará, pero se mantiene si se necesita para otros componentes.
+import { Observable, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-adm-planificacion-table',
@@ -40,14 +36,15 @@ import { Observable, forkJoin } from 'rxjs'; // For parallel service calls
     ButtonModule,
     DialogModule,
     InputNumberModule,
-    ToastModule, // Keep if you still want to use PrimeNG Toast for some reason, otherwise remove
+    ToastModule,
     ConfirmDialogModule,
     CardModule,
-    FieldsetModule
+    FieldsetModule,
+    CheckboxModule // Importar CheckboxModule
   ],
   templateUrl: './adm-planificacion-table.component.html',
   styleUrl: './adm-planificacion-table.component.scss',
-  providers: [MessageService, ConfirmationService] // Keep ConfirmationService, remove MessageService if not used
+  providers: [ConfirmationService]
 })
 export class AdmPlanificacionTableComponent implements OnInit {
 
@@ -55,8 +52,8 @@ export class AdmPlanificacionTableComponent implements OnInit {
   years: number[] = [];
   selectedYear: number;
   dependencyTypes: DependencyType[] = [];
-  formulationStates: FormulationState[] = [];
-  originalStateId?: number;
+  // formulationStates: FormulationState[] = []; // Ya no se necesita
+  originalActiveState?: boolean;
 
   groupedFormulations: { [key: string]: { [key: number]: Formulation[] } } = {};
   modificationLabels: { [key: number]: string } = {
@@ -94,7 +91,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   constructor(
     private formulationService: FormulationService,
     private dependencyTypeService: DependencyTypeService,
-    private formulationStateService: FormulationStateService,
+    // private formulationStateService: FormulationStateService, // Ya no se necesita
     private confirmationService: ConfirmationService,
     private yearsService: StrategicObjectiveService
   ) {
@@ -109,7 +106,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
         const minYear = yearsRange.minYear;
         const maxYear = yearsRange.maxYear;
         this.years = [];
-        for (let year = minYear; year! <= maxYear!; year!++) {
+        for (let year = minYear!; year! <= maxYear!; year!++) {
           this.years.push(year!);
         }
       },
@@ -123,20 +120,11 @@ export class AdmPlanificacionTableComponent implements OnInit {
   loadInitialData(): void {
     forkJoin({
       dependencyTypes: this.dependencyTypeService.getAll(),
-      formulationStates: this.formulationStateService.getAll(),
       formulations: this.formulationService.getAll()
     }).subscribe({
       next: (results) => {
         this.dependencyTypes = results.dependencyTypes;
-        this.formulationStates = results.formulationStates;
-        this.formulations = results.formulations.map(f => {
-          if (!f.formulationState) {
-            const defaultState = this.formulationStates.find(fs => fs.name === 'Pendiente') ||
-                                 { idFormulationState: undefined, name: 'Desconocido', active: true };
-            f.formulationState = defaultState;
-          }
-          return f;
-        });
+        this.formulations = results.formulations;
         this.groupAndFilterFormulations();
       },
       error: (err) => {
@@ -192,58 +180,44 @@ export class AdmPlanificacionTableComponent implements OnInit {
     }
   }
 
-  onStateChange(formulation: Formulation, newFormulationStateId: number): void {
-    // Store original state ID to revert if necessary
-    if (formulation.idFormulation){
-      this.formulationService.getById(formulation.idFormulation).subscribe({
-        next: (result) => {
-          if(result.formulationState.idFormulationState) {
-            this.originalStateId = result.formulationState.idFormulationState;
-          }          
-        },
-        error: (err) => {
-          this.toastr.error('Error al cargar datos iniciales.', 'Error');
-          console.error('Error loading initial data', err);
-        }
-      });
-    }    
-    const newFormulationState = this.formulationStates.find(state => state.idFormulationState === newFormulationStateId);
+  onActiveChange(formulation: Formulation, event: any): void {
+    const newActiveState = event.checked;
 
-    if (newFormulationState) {
-      this.confirmationService.confirm({
-        message: `¿Está seguro de cambiar el estado de la formulación de "${formulation.dependency?.name}" a "${newFormulationState.name}"?`,
-        header: 'Confirmar Cambio de Estado',
-        icon: 'pi pi-exclamation-triangle',
-        accept: () => {
-          // Update the state object directly
-          if (formulation.formulationState) {
-            formulation.formulationState = newFormulationState;
-          } else {
-            formulation.formulationState = newFormulationState; // Should not happen if initial load is correct
+    this.confirmationService.confirm({
+      message: `¿Está seguro de ${newActiveState ? 'activar' : 'desactivar'} la formulación de "${formulation.dependency?.name}"?`,
+      header: 'Confirmar Cambio de Estado',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        formulation.active = newActiveState;
+        this.formulationService.update(formulation).subscribe({
+          next: () => {
+            this.toastr.success(`Formulación ${newActiveState ? 'activada' : 'desactivada'}.`, 'Éxito');
+          },
+          error: (err) => {
+            this.toastr.error(`Error al ${newActiveState ? 'activar' : 'desactivar'} la formulación.`, 'Error');
+            console.error('Error updating formulation active state', err);
+            // Revert the state in case of an error
+            formulation.active = !newActiveState;
           }
-
-          this.formulationService.update(formulation).subscribe({
-            next: () => {
-              this.toastr.success('Estado de formulación actualizado.', 'Éxito');
-            },
-            error: (err) => {
-              this.toastr.error('Error al actualizar el estado de la formulación.', 'Error');
-              console.error('Error updating formulation state', err);
-              // Revert the state in case of an error
-              if (formulation.formulationState && this.originalStateId !== undefined) {
-                 formulation.formulationState = this.formulationStates.find(state => state.idFormulationState === this.originalStateId)!;
-              }
-            }
-          });
+        });
+      },
+      reject: () => {
+        // Revert the checkbox state on rejection
+        formulation.active = !newActiveState;
+        this.toastr.info('Cambio de estado cancelado.', 'Cancelado');
+      },
+        rejectButtonProps: {
+            label: 'No',
+            icon: 'pi pi-times',
+            variant: 'outlined',
+            size: 'small'
         },
-        reject: () => {
-          console.log(this.originalStateId)
-          // Explicitly revert the ID property that ngModel is bound to
-          formulation.formulationState.idFormulationState = this.originalStateId;
-          this.toastr.info('Cambio de estado cancelado.', 'Cancelado');
-        }
-      });
-    }
+        acceptButtonProps: {
+            label: 'Sí',
+            icon: 'pi pi-check',
+            size: 'small'
+        },
+    });
   }
 
   openNewModificationDialog(): void {
@@ -261,6 +235,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
       message: `¿Está seguro de crear una nueva modificatoria para el trimestre ${this.quarterLabels[this.newModificationQuarter]} para todas las formulaciones del año ${this.selectedYear} con la mayor modificación existente?`,
       header: 'Confirmar Nueva Modificatoria',
       icon: 'pi pi-exclamation-triangle',
+      
       accept: () => {
         this.processNewModification();
       },
@@ -285,9 +260,9 @@ export class AdmPlanificacionTableComponent implements OnInit {
     }
 
     if (maxModification >= 8) {
-        this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para el año ${this.selectedYear}.`, 'Advertencia');
-        this.displayNewModificationDialog = false;
-        return;
+      this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para el año ${this.selectedYear}.`, 'Advertencia');
+      this.displayNewModificationDialog = false;
+      return;
     }
 
 

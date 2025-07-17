@@ -38,6 +38,15 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
   --success-darker: #{$color-success-darker} !important;
   --warning-darker: #{$color-warning-darker} !important;
 
+  --p-button-primary-background: #{$color-primary} !important;
+  --p-button-primary-border-color: #{$color-primary-darker} !important;
+
+  --p-button-outlined-primary-border-color: #{$color-primary-light} !important;
+  --p-button-outlined-primary-color: #{$color-primary} !important;
+
+  --p-checkbox-checked-border-color: #{$color-primary} !important;
+  --p-checkbox-checked-background: #{$color-primary} !important;
+
   --p-floatlabel-focus-color: #{$color-primary} !important;
   --p-floatlabel-active-color: #{$color-primary} !important;
   --p-floatlabel-invalid-color: #{$color-warning-light} !important;
