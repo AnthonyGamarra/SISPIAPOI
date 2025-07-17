@@ -8,7 +8,7 @@ import { ExpenseType } from '../../../models/logic/expenseType.model';
 })
 export class ExpenseTypeService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/expense-type';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/expense-type';
 
   constructor(private http: HttpClient) { }
 

@@ -8,7 +8,7 @@ import { Formulation } from '../../../models/logic/formulation.model';
 })
 export class FormulationService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/formulation';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/formulation';
   
     constructor(private http: HttpClient) { }
   

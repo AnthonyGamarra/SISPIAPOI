@@ -8,7 +8,7 @@ import { DependencyType } from '../../../models/logic/dependencyType.model';
 })
 export class DependencyTypeService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/dependency-type';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/dependency-type';
 
   constructor(private http: HttpClient) { }
 

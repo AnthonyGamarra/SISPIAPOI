@@ -8,7 +8,7 @@ import { MinMaxYears } from '../../../models/logic/min-max-years.model';
   providedIn: 'root'
 })
 export class StrategicObjectiveService {
-  private readonly BASE_URL = 'http://10.0.29.240:8081/strategic-objective';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/strategic-objective';
 
   constructor(private http: HttpClient) { }
 

@@ -8,7 +8,7 @@ import { FormulationState } from '../../../models/logic/formulationState.model';
 })
 export class FormulationStateService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/formulation-state';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/formulation-state';
   
     constructor(private http: HttpClient) { }
   

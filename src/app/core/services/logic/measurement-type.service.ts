@@ -8,7 +8,7 @@ import { MeasurementType } from '../../../models/logic/measurementType.model';
 })
 export class MeasurementTypeService {
 
-  private readonly BASE_URL = 'http://10.0.29.240:8081/measurement-type';
+  private readonly BASE_URL = 'http://10.0.29.117:8081/measurement-type';
   
     constructor(private http: HttpClient) { }
   
