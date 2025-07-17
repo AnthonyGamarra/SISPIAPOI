@@ -25,8 +25,12 @@
   font-size: 0.78rem;
 }
 
+
 .matrix-table thead {
   background-color: var(--primary);
+}
+
+.matrix-table thead th {
   color: white;
 }
 
@@ -116,7 +120,10 @@ button.toggle-btn:hover {
 }
 
 .nivel-0-row {
-  background-color: #1976d2;
+  background-color: #005fa3;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
 }
 .nivel-1-row {
   background-color: #42a5f5;
