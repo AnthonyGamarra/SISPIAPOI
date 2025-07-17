@@ -171,8 +171,8 @@ label {
   color: var(--primary) !important;
   border: none !important;
   border: 1px solid transparent !important;
-  min-width: 25%;
-  max-width: 30%;
+  min-width: 15%;
+  max-width: 20%;
 }
 
 .cancel-button:hover {
@@ -336,4 +336,12 @@ label {
   .p-datatable-scrollable-body-table {
     table-layout: fixed !important; 
   }
+}
+
+.montos-cabecera {
+  text-align: center;
+}
+
+.montos {
+  text-align: end;
 }

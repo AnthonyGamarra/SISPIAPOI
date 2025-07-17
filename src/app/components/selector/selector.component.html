@@ -60,7 +60,7 @@
   </div>
 
   <div
-    class="selector-group col-7 lg:col-3"
+    class="selector-group col-6 lg:col-3"
     *ngIf="
       formulationExists &&
       quarterLabel &&
@@ -77,7 +77,7 @@
   </div>
 
   <div
-    class="selector-group col-7 lg:col-3"
+    class="selector-group col-6 lg:col-3"
     *ngIf="formulationExists && currentFormulationStateLabel"
   >
     <label class="selector-label">Estado:</label>
@@ -89,7 +89,7 @@
     />
   </div>
 
-  <div class="col-12 lg:col-12 flex align-items-center justify-content-end gap-6 file-actions">
+  <div class="col-12 lg:col-9 flex align-items-center justify-content-end gap-6 file-actions">
     <div class="flex gap-6" *ngIf="formulationExists && hasSupportFile">
       <button
         pButton

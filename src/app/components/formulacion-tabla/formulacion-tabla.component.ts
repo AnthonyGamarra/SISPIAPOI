@@ -13,6 +13,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { AnimationOptions } from 'ngx-lottie';
 import { LottieComponent } from 'ngx-lottie';
 import { TextareaModule } from 'primeng/textarea';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
 import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
@@ -63,7 +64,8 @@ interface Accion {
     DialogModule,
     SelectButtonModule,
     LottieComponent,
-    TextareaModule
+    TextareaModule,
+    TooltipModule
   ]
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {
@@ -238,38 +240,67 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     }
   }
 
-  loadCombos(): void {
+// En tu componente, dentro de la clase
+
+  // En tu componente, dentro de la clase
+
+loadCombos(): void {
     const dependencyId = this.idDependency ? Number(this.idDependency) : null;
 
     forkJoin({
-      strategicActions: this.strategicActionService.getAll(),
-      financialFunds: this.financialFundService.getAll(),
-      measurementTypes: this.measurementTypeService.getAll(),
-      priorities: this.priorityService.getAll(),
-      managementCenters: this.managementCenterService.getAll(),
-      costCenters: this.costCenterService.getAll(),
-      // Strategic objectives are handled by cargarDatos, no need to load here again
+        strategicObjectives: this.strategicObjectiveService.getAll(),
+        strategicActions: this.strategicActionService.getAll(),
+        financialFunds: this.financialFundService.getAll(),
+        measurementTypes: this.measurementTypeService.getAll(),
+        priorities: this.priorityService.getAll(),
+        managementCenters: this.managementCenterService.getAll(),
+        costCenters: this.costCenterService.getAll(),
     }).subscribe({
-      next: ({ strategicActions, financialFunds, measurementTypes, priorities, managementCenters, costCenters }) => {
-        this.strategicActions = strategicActions;
-        this.financialFunds = financialFunds;
-        this.measurementTypes = measurementTypes;
-        this.priorities = priorities;
+        next: ({ strategicObjectives, strategicActions, financialFunds, measurementTypes, priorities, managementCenters, costCenters }) => {
+            
+            // 1. Formatear los Objetivos Estratégicos
+            this.strategicObjectives = strategicObjectives.map(obj => ({
+                ...obj,
+                name: `O.E.${obj.code} :: ${obj.name}`
+            }));
 
-        this.managementCenters = dependencyId
-          ? managementCenters.filter(mc => mc.dependency?.idDependency === dependencyId)
-          : managementCenters;
+            // 2. Formatear las Acciones Estratégicas
+            this.strategicActions = strategicActions.map(action => ({
+                ...action,
+                name: `A.E.${action.code} :: ${action.name}`
+            }));
 
-        this.costCenters = dependencyId
-          ? costCenters.filter(cc => cc.dependency?.idDependency === dependencyId)
-          : costCenters;
-      },
-      error: (err) => {
-        this.toastr.error('Error al cargar combos de la tabla.', 'Error de Carga');
-        console.error('Error loading table combos:', err);
-      }
+            // 3. Formatear los Fondos Financieros (FF)
+            this.financialFunds = financialFunds.map(ff => ({
+                ...ff,
+                name: `${ff.name}`
+                // name: `${ff.code} :: ${ff.name}`
+            }));
+            
+            this.measurementTypes = measurementTypes;
+            this.priorities = priorities;
+
+            // 4. Formatear los Centros de Costo (CC) y filtrar por dependencia
+            const filteredCostCenters = dependencyId 
+                ? costCenters.filter(cc => cc.dependency?.idDependency === dependencyId)
+                : costCenters;
+
+            this.costCenters = filteredCostCenters.map(cc => ({
+                ...cc,
+                name: `${cc.costCenterCode} :: ${cc.name}`
+            }));
+            
+            // 5. Los Centros de Gestión (MC) se filtran y asignan como estaban, ya que no se pidió formatearlos
+            this.managementCenters = dependencyId
+                ? managementCenters.filter(mc => mc.dependency?.idDependency === dependencyId)
+                : managementCenters;
+        },
+        error: (err) => {
+            this.toastr.error('Error al cargar combos de la tabla.', 'Error de Carga');
+            console.error('Error loading table combos:', err);
+        }
     });
-  }
+}
 
   loadOperationalActivities(): void {
     if (!this.idFormulation) {
@@ -690,7 +721,7 @@ onRowEditSave(product: OperationalActivity) {
     this.products = [...this.products]; // Force change detection
     delete this.clonedProducts[product.idOperationalActivity as any];
     delete this.editingRowKeys[product.idOperationalActivity as any]; // Remove from editing statea
-    this.toastr.info('Actividad no guardada eliminada.', 'Información');
+    this.toastr.info('Actividad no guardada.', 'Información');
   }
 
   // --- Helper Getters for Display ---
@@ -862,5 +893,5 @@ onRowEditSave(product: OperationalActivity) {
       })
     );
   }
-  
+
 }

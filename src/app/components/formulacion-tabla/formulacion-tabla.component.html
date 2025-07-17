@@ -54,21 +54,20 @@
           <th style="min-width: 370px; max-width: 370px;" rowspan="2">Detalle de actividad</th>
         </tr>
         <tr class="cabecera">
-          <th style="min-width: 160px; max-width: 160px;">I</th>
-          <th style="min-width: 160px; max-width: 160px;">II</th>
-          <th style="min-width: 160px; max-width: 160px;">III</th>
-          <th style="min-width: 160px; max-width: 160px;">IV</th>
-          <th style="min-width: 160px; max-width: 160px;">Bienes</th>
-          <th style="min-width: 160px; max-width: 160px;">Remuneraciones</th>
-          <th style="min-width: 160px; max-width: 160px;">Servicios</th>
-          <th style="min-width: 180px; max-width: 180px;">Total</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">I</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">II</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">III</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">IV</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Bienes</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Remuneraciones</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Servicios</th>
+          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Total</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
         <tr [pEditableRow]="product">
-
-          
+                    
           <td>
             <div class="flex items-center justify-center gap-2">
               <button
@@ -141,7 +140,9 @@
                 </div>
               </ng-template>
               <ng-template pTemplate="output" class="text-output">
-                {{ getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective) }}
+                <span [pTooltip]="getStrategicObjectiveName(product.strategicAction?.strategicObjective?.idStrategicObjective)">
+                  {{ getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective) }}
+                </span>
               </ng-template>
             </p-cellEditor>
           </td>
@@ -152,7 +153,9 @@
                 <input pInputText [ngModel]="getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction)" type="text" [disabled]="true" />
               </ng-template>
               <ng-template pTemplate="output" class="text-output">
-                {{ getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction) }}
+                <span [pTooltip]="getStrategicActionName(product.strategicAction?.idStrategicAction)">
+                  {{ getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction) }}
+                </span>
               </ng-template>
             </p-cellEditor>
           </td>
@@ -274,7 +277,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.goals[0].value" type="number" [disabled]="state === 2 || state === 4 || (quarter !== null && 1 < quarter)" />
@@ -283,7 +286,7 @@
             </p-cellEditor>
           </td>
           
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.goals[1].value" type="number" [disabled]="state === 2 || state === 4 || (quarter !== null && 2 < quarter)" />
@@ -292,7 +295,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.goals[2].value" type="number" [disabled]="state === 2 || state === 4 || (quarter !== null && 3 < quarter)" />
@@ -301,7 +304,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.goals[3].value" type="number" [disabled]="state === 2 || state === 4 || (quarter !== null && 4 < quarter)" />
@@ -310,7 +313,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.goods" type="number" [disabled]="state === 2 || state === 4" />
@@ -319,7 +322,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.remuneration" type="number" [disabled]="state === 2 || state === 4" />
@@ -328,7 +331,7 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <input pInputText [(ngModel)]="product.services" type="number" [disabled]="state === 2 || state === 4" />
@@ -337,14 +340,14 @@
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">{{ product.goods + product.remuneration + product.services }}</ng-template>
               <ng-template pTemplate="output">{{ product.goods + product.remuneration + product.services }}</ng-template>
             </p-cellEditor>
           </td>
 
-          <td>
+          <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
                 <textarea rows="3" cols="40" [autoResize]="true"  pTextarea [(ngModel)]="product.description" [disabled]="state === 2 || state === 4" style="resize: none"></textarea>
