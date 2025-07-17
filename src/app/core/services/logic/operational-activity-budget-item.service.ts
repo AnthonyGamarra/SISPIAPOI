@@ -8,7 +8,7 @@ import { OperationalActivityBudgetItem } from '../../../models/logic/operational
 })
 export class OperationalActivityBudgetItemService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/operational-activity-budget-item';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/operational-activity-budget-item';
   
     constructor(private http: HttpClient) { }
   

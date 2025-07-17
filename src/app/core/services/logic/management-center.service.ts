@@ -8,7 +8,7 @@ import { ManagementCenter } from '../../../models/logic/managementCenter.model';
 })
 export class ManagementCenterService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/management-center';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/management-center';
     
       constructor(private http: HttpClient) { }
     

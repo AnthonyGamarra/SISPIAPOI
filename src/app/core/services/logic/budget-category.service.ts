@@ -8,7 +8,7 @@ import { BudgetCategory } from '../../../models/logic/budgetCategory.model';
 })
 export class BudgetCategoryService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/budget-category';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/budget-category';
 
   constructor(private http: HttpClient) { }
 

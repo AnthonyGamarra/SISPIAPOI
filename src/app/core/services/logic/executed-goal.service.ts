@@ -8,7 +8,7 @@ import { ExecutedGoal } from '../../../models/logic/executedGoal.model';
 })
 export class ExecutedGoalService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/executed-goal';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/executed-goal';
 
   constructor(private http: HttpClient) { }
 
