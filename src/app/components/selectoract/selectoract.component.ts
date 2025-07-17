@@ -1,3 +1,4 @@
+import { ManagementCenterService } from '../../core/services/logic/management-center.service';
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +26,10 @@ export class SelectoractComponent implements OnInit {
   activityOptions: { label: string; value: number }[] = [];
   selectedActivityId: number | null = null;
 
+  // Management Center
+  managementCenterOptions: { label: string; value: number }[] = [];
+  selectedManagementCenterId: number | null = null;
+
   // Modificación
   formulationExists: boolean = false;
   foundFormulations: any[] = [];
@@ -36,7 +41,8 @@ export class SelectoractComponent implements OnInit {
   constructor(
     private dependencyService: DependencyService,
     private operationalActivityService: OperationalActivityService,
-    private formulationService: FormulationService
+    private formulationService: FormulationService,
+    private managementCenterService: ManagementCenterService
   ) {}
 
   ngOnInit(): void {
@@ -60,6 +66,7 @@ export class SelectoractComponent implements OnInit {
         this.activityOptions = [];
 
       }
+
     });
   }
 
@@ -105,6 +112,8 @@ export class SelectoractComponent implements OnInit {
 
         if (!formulaciones || formulaciones.length === 0) {
           this.activityOptions = [];
+          this.managementCenterOptions = [];
+          this.selectedManagementCenterId = null;
           return;
         }
         // Usar la formulación seleccionada en el dropdown de modificación
@@ -113,21 +122,40 @@ export class SelectoractComponent implements OnInit {
           next: actividades => {
             if (!actividades || actividades.length === 0) {
               this.activityOptions = [];
+              this.managementCenterOptions = [];
+              this.selectedManagementCenterId = null;
             } else {
               this.activityOptions = actividades.map(act => ({
                 label: act.name,
                 value: act.idOperationalActivity!
               }));
               this.selectedActivityId = this.activityOptions[0]?.value || null;
+              // Obtener management centers únicos de las actividades
+              const uniqueCenters: { [id: number]: { label: string; value: number } } = {};
+              actividades.forEach(act => {
+                if (act.managementCenter && act.managementCenter.idManagementCenter != null) {
+                  uniqueCenters[act.managementCenter.idManagementCenter] = {
+                    label: act.managementCenter.name,
+                    value: act.managementCenter.idManagementCenter
+                  };
+                }
+              });
+              this.managementCenterOptions = Object.values(uniqueCenters);
+              this.selectedManagementCenterId = this.managementCenterOptions[0]?.value || null;
             }
           },
           error: () => {
             this.activityOptions = [];
+            this.managementCenterOptions = [];
+            this.selectedManagementCenterId = null;
           }
         });
       },
+
       error: () => {
         this.activityOptions = [];
+        this.managementCenterOptions = [];
+        this.selectedManagementCenterId = null;
         this.modificationOptions = [];
         this.formulationExists = false;
         this.foundFormulations = [];
@@ -135,34 +163,22 @@ export class SelectoractComponent implements OnInit {
     });
   }
 
-  // Si quieres que el selector de actividad se actualice al cambiar año o dependencia
-  // puedes usar (onChange) en los dropdowns para llamar a actualizarActividades
-  // Además, puedes emitir el id seleccionado en el evento (change) del dropdown de actividad si quieres emitir cada vez que el usuario cambie manualmente:
-  // <p-dropdown ... (onChange)="emitirActividadSeleccionada()" ...>
-
-  emitirActividadSeleccionada() {
-    this.buscar.emit({
-      idOperationalActivity: this.selectedActivityId,
-      modificationId: this.selectedModificationOption
-    });
-  }
-
-  onActivityChange(event: any) {
-    this.selectedActivityId = event.value;
-    this.emitirActividadSeleccionada();
-  }
-
-  onModificationChange() {
-    // Al cambiar la modificación, recargar actividades para esa formulación
-    if (this.selectedModificationOption) {
+  onManagementCenterChange(event: any): void {
+    this.selectedManagementCenterId = event && event.value !== undefined ? event.value : null;
+    // Filtrar actividades según el centro de gestión seleccionado
+    if (this.selectedManagementCenterId) {
+      // Buscar la formulación seleccionada
       const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption);
       if (formulacion) {
         this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
           next: actividades => {
             if (!actividades || actividades.length === 0) {
               this.activityOptions = [];
+              this.selectedActivityId = null;
             } else {
-              this.activityOptions = actividades.map(act => ({
+              // Filtrar actividades por centro de gestión
+              const filtradas = actividades.filter(act => act.managementCenter && act.managementCenter.idManagementCenter === this.selectedManagementCenterId);
+              this.activityOptions = filtradas.map(act => ({
                 label: act.name,
                 value: act.idOperationalActivity!
               }));
@@ -171,10 +187,66 @@ export class SelectoractComponent implements OnInit {
           },
           error: () => {
             this.activityOptions = [];
+            this.selectedActivityId = null;
+          }
+        });
+      }
+    } else {
+      // Si no hay centro de gestión seleccionado, mostrar todas las actividades de la modificación
+      this.onModificationChange();
+    }
+  }
+
+  emitirActividadSeleccionada(): void {
+    this.buscar.emit({
+      idOperationalActivity: this.selectedActivityId,
+      modificationId: this.selectedModificationOption
+    });
+  }
+
+  onActivityChange(event: any): void {
+    this.selectedActivityId = event && event.value !== undefined ? event.value : null;
+    this.emitirActividadSeleccionada();
+  }
+
+  onModificationChange(): void {
+    // Al cambiar la modificación, recargar actividades y filtrar centros de gestión para esa formulación
+    if (this.selectedModificationOption) {
+      const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption);
+      if (formulacion) {
+        this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
+          next: actividades => {
+            if (!actividades || actividades.length === 0) {
+              this.activityOptions = [];
+              this.managementCenterOptions = [];
+              this.selectedManagementCenterId = null;
+            } else {
+              this.activityOptions = actividades.map(act => ({
+                label: act.name,
+                value: act.idOperationalActivity!
+              }));
+              this.selectedActivityId = this.activityOptions[0]?.value || null;
+              // Filtrar centros de gestión asociados a las actividades de la modificación
+              const uniqueCenters: { [id: number]: { label: string; value: number } } = {};
+              actividades.forEach(act => {
+                if (act.managementCenter && act.managementCenter.idManagementCenter != null) {
+                  uniqueCenters[act.managementCenter.idManagementCenter] = {
+                    label: act.managementCenter.name,
+                    value: act.managementCenter.idManagementCenter
+                  };
+                }
+              });
+              this.managementCenterOptions = Object.values(uniqueCenters);
+              this.selectedManagementCenterId = this.managementCenterOptions[0]?.value || null;
+            }
+          },
+          error: () => {
+            this.activityOptions = [];
+            this.managementCenterOptions = [];
+            this.selectedManagementCenterId = null;
           }
         });
       }
     }
   }
 }
-// ...existing code...
