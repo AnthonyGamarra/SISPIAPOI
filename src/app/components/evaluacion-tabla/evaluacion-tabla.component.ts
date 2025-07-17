@@ -71,6 +71,8 @@ export class EvaluacionTablaComponent implements OnChanges {
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
   @Input() idDependency: string | null = null;
+  // This is the key input for reacting to state changes
+  @Input() currentFormulation: Formulation | null = null;
 
   quarter: number | null = null;
   state: number | null = null;
@@ -237,6 +239,7 @@ export class EvaluacionTablaComponent implements OnChanges {
       sapCode: '',
       correlativeCode: '',
       name: '',
+      description: '',
       measurementUnit: '',
       strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction,
       financialFund: {} as FinancialFund,
@@ -317,6 +320,10 @@ export class EvaluacionTablaComponent implements OnChanges {
   private validateActivity(product: OperationalActivity): boolean {
     if (!product.name || product.name.trim() === '') {
       this.toastr.error('El campo "Nombre de actividad" no puede estar vacío.', 'Error de validación');
+      return false;
+    }
+    if (!product.description || product.description.trim() === '') {
+      this.toastr.error('El campo "El detalle de la actividad" no puede estar vacío.', 'Error de validación');
       return false;
     }
     if (!product.measurementUnit || product.measurementUnit.trim() === '') {

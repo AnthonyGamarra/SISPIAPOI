@@ -1,5 +1,5 @@
 <div class="selector-bar grid align-items-center">
-  <div class="selector-group col-12 lg:col-4">
+  <div class="selector-group col-12 lg:col-5">
     <label class="selector-label">Dependencia:</label>
     <p-dropdown
       *ngIf="isSingleDependency; else multipleDeps"
@@ -39,7 +39,7 @@
   </div>
 
   <div
-    class="col-3 lg:col-5"
+    class="col-3 lg:col-4"
     *ngIf="!formulationExists && foundFormulations.length == 0"
   ></div>
 
@@ -60,20 +60,7 @@
   </div>
 
   <div
-    class="selector-group col-7 lg:col-2"
-    *ngIf="formulationExists && currentFormulationStateLabel"
-  >
-    <label class="selector-label">Estado:</label>
-    <input
-      pInputText
-      [(ngModel)]="currentFormulationStateLabel"
-      [disabled]="true"
-      class="selector-dropdown"
-    />
-  </div>
-
-  <div
-    class="selector-group col-7 lg:col-2"
+    class="selector-group col-7 lg:col-3"
     *ngIf="
       formulationExists &&
       quarterLabel &&
@@ -89,12 +76,64 @@
     />
   </div>
 
-  <div class="col-5 lg:col-1 flex align-items-center justify-content-center">
+  <div
+    class="selector-group col-7 lg:col-3"
+    *ngIf="formulationExists && currentFormulationStateLabel"
+  >
+    <label class="selector-label">Estado:</label>
+    <input
+      pInputText
+      [(ngModel)]="currentFormulationStateLabel"
+      [disabled]="true"
+      class="selector-dropdown"
+    />
+  </div>
+
+  <div class="col-12 lg:col-12 flex align-items-center justify-content-end gap-6 file-actions">
+    <div class="flex gap-6" *ngIf="formulationExists && hasSupportFile">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-eye"
+        label="Ver documento sustento"
+        class="selector p-button-success"
+        (click)="viewFile()"
+        [disabled]="!hasSupportFile"
+      ></button>
+      
+      <p-fileUpload
+        #fileUpdate
+        mode="basic"
+        chooseLabel="Actualizar archivo"
+        icon="pi pi-upload"
+        [auto]="true"
+        [customUpload]="true"
+        (onSelect)="onFileUpdate($event)"
+        [disabled]="fileUploading || !hasSupportFile"
+        [accept]="'.pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png'"
+      ></p-fileUpload>
+    </div>
+
+    <div *ngIf="formulationExists && !hasSupportFile">
+      <p-fileUpload
+        #fileUpload
+        mode="basic"
+        chooseLabel="Subir Archivo"
+        icon="pi pi-cloud-upload"
+        [auto]="true"
+        [customUpload]="true"
+        (onSelect)="onFileSelect($event)"
+        [disabled]="fileUploading || hasSupportFile"
+        [accept]="'.pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif'"
+      ></p-fileUpload>
+    </div>
+
     <button
+      *ngIf="!formulationExists"
       type="button"
       pButton
       class="selector"
-      [label]="formulationExists ? 'Mostrar formulación' : 'Iniciar formulación'"
+      [label]="'Iniciar formulación'"
       [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
       [disabled]="
         checkingFormulation ||
@@ -104,23 +143,37 @@
       "
       (click)="onBuscar()"
     ></button>
-  </div>
 
-  <div
-    class="col-5 lg:col-1 flex align-items-center justify-content-center"
-    *ngIf="formulationExists && isAdmin"
-  >
-    <button
-      type="button"
-      pButton
-      class="p-button-secondary"
-      label="Cambiar estado"
-      icon="pi pi-pencil"
-      (click)="showChangeStateModal = true"
-      [disabled]="!idFormulation"
-    ></button>
+    <div
+      *ngIf="formulationExists && isAdmin"
+    >
+      <button
+        type="button"
+        pButton
+        class="selector"
+        label="Cambiar estado"
+        icon="pi pi-pencil"
+        (click)="showChangeStateModal = true"
+        [disabled]="!idFormulation"
+      ></button>
+    </div>
   </div>
 </div>
+
+<p-dialog
+  header="Documento de Sustento"
+  [(visible)]="showDocumentViewer"
+  [modal]="true"
+  [style]="{ width: '90vw', height: '90vh' }"
+  [resizable]="true"
+  (onHide)="onDocumentViewerHide()"
+  class="document-viewer-dialog"
+>
+  <div class="document-content" style="height: 100%; width: 100%;">
+    <iframe [src]="documentUrl | safeUrl" style="width: 100%; height: 100%; border: none;"></iframe>
+  </div>
+</p-dialog>
+
 
 <div class="success-animation" *ngIf="showSuccessAnimation">
   <ng-lottie [options]="options"></ng-lottie>

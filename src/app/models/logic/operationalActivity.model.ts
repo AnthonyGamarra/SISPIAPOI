@@ -27,4 +27,5 @@ export interface OperationalActivity {
   goods: number;
   remuneration: number;
   services: number;
+  description: string;
 }

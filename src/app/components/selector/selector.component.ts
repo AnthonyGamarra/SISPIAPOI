@@ -1,4 +1,6 @@
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+// selector.component.ts
+
+import { Component, EventEmitter, OnInit, Output, inject, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
@@ -7,17 +9,25 @@ import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
 import { LottieComponent } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
-import { DialogModule } from 'primeng/dialog'; // New import
+import { DialogModule } from 'primeng/dialog';
+import { FileUploadModule } from 'primeng/fileupload';
+import { FileUpload } from 'primeng/fileupload'; // Importante para ViewChild
 
 import { AuthService } from '../../core/services/authentication/auth.service';
 import { DependencyService } from '../../core/services/logic/dependency.service';
 import { FormulationService } from '../../core/services/logic/formulation.service';
 import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
-import { FormulationStateService } from '../../core/services/logic/formulation-state.service'; // New import
+import { FormulationStateService } from '../../core/services/logic/formulation-state.service';
+import { FormulationSupportFileService } from '../../core/services/logic/formulation-support-file.service';
+
 import { Formulation } from '../../models/logic/formulation.model';
 import { Dependency } from '../../models/logic/dependency.model';
 import { FormulationState } from '../../models/logic/formulationState.model';
 import { MinMaxYears } from '../../models/logic/min-max-years.model';
+import { FormulationSupportFile } from '../../models/logic/formulationSupportFile.model';
+
+import { SafeUrlPipe } from '../../safe-url.pipe'; // Asegúrate de la ruta correcta
+
 
 @Component({
   selector: 'app-selector',
@@ -29,7 +39,9 @@ import { MinMaxYears } from '../../models/logic/min-max-years.model';
     ButtonModule,
     LottieComponent,
     InputTextModule,
-    DialogModule, // Add DialogModule
+    DialogModule,
+    FileUploadModule,
+    SafeUrlPipe 
   ],
   templateUrl: './selector.component.html',
   styleUrls: ['./selector.component.scss'],
@@ -42,17 +54,24 @@ export class SelectorComponent implements OnInit {
   }>();
   @Output() cambioAno = new EventEmitter<string | null>();
 
+  @Output() formulationSelected = new EventEmitter<Formulation>();
+  @Output() formulationUpdated = new EventEmitter<Formulation>();
+
   private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private strategicObjectiveService = inject(StrategicObjectiveService);
   private authService = inject(AuthService);
-  private formulationStateService = inject(FormulationStateService); // Inject new service
+  private formulationStateService = inject(FormulationStateService);
+  private fileService = inject(FormulationSupportFileService);
+
+  @ViewChild('fileUpload') fileUploadRef!: FileUpload;
 
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
   selectedAno: string | null = null;
   idFormulation: number | null = null;
+  private activeFormulation: Formulation | null = null;
 
   isSingleDependency = false;
   formulationExists = false;
@@ -63,7 +82,7 @@ export class SelectorComponent implements OnInit {
   modificationOptions: { label: string; value: number }[] = [];
   selectedModificationOption: { label: string; value: number } | null = null;
   quarterLabel: string | null = null;
-  currentFormulationStateLabel: string | null = null; // New property for state display
+  currentFormulationStateLabel: string | null = null;
 
   optionsAno: { label: string; value: string }[] = [];
 
@@ -73,15 +92,27 @@ export class SelectorComponent implements OnInit {
 
   isAdmin: boolean = false;
 
-  // New properties for modal and state management
   showChangeStateModal: boolean = false;
   formulationStateOptions: FormulationState[] = [];
   selectedFormulationState: number | null = null;
+  allowedRolesForEvaluacion: string[] = ["ADMIN", "UPLANEAMIENTO", "GPLANEAMIENTO"];
+
+  hasSupportFile = false;
+  supportFileMetadata: FormulationSupportFile | null = null;
+  fileUploading = false;
+
+  // NUEVO: Variables para la visualización del documento
+  showDocumentViewer = false;
+  documentUrl: any = '';
+
+  canSeeEvaluacionComponent(): boolean {
+    return this.authService.hasRole(this.allowedRolesForEvaluacion);
+  }
 
   ngOnInit(): void {
-    this.isAdmin = this.authService.hasRole(['ADMIN']);
+    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
     this.loadYearsAndDependencies();
-    this.loadFormulationStates(); // Load formulation states on init
+    this.loadFormulationStates();
   }
 
   loadYearsAndDependencies(): void {
@@ -192,7 +223,10 @@ export class SelectorComponent implements OnInit {
     this.modificationOptions = [];
     this.selectedModificationOption = null;
     this.quarterLabel = null;
-    this.currentFormulationStateLabel = null; // Reset state label
+    this.currentFormulationStateLabel = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
@@ -218,7 +252,6 @@ export class SelectorComponent implements OnInit {
             value: f.modification!,
           }));
 
-          // Automatically select the latest modification
           this.selectedModificationOption =
             this.modificationOptions[0] || null;
           this.onModificationChange();
@@ -238,6 +271,9 @@ export class SelectorComponent implements OnInit {
         this.selectedModificationOption = null;
         this.quarterLabel = null;
         this.currentFormulationStateLabel = null;
+        this.activeFormulation = null;
+        this.hasSupportFile = false;
+        this.supportFileMetadata = null;
       },
     });
   }
@@ -250,26 +286,183 @@ export class SelectorComponent implements OnInit {
       if (selectedFormulation) {
         this.idFormulation = selectedFormulation.idFormulation ?? null;
         this.quarterLabel = this.getQuarterLabel(selectedFormulation.quarter);
-        // Set the state label
         this.currentFormulationStateLabel =
           selectedFormulation.formulationState?.name ?? null;
-        // Pre-select the current state in the modal's dropdown
         this.selectedFormulationState =
           selectedFormulation.formulationState?.idFormulationState ?? null;
+        this.activeFormulation = selectedFormulation;
+
+        this.checkSupportFile(this.idFormulation);
+
+        this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.idFormulation = null;
         this.quarterLabel = null;
         this.currentFormulationStateLabel = null;
         this.selectedFormulationState = null;
+        this.activeFormulation = null;
+        this.hasSupportFile = false;
+        this.supportFileMetadata = null;
       }
     } else {
       this.idFormulation = null;
       this.quarterLabel = null;
       this.currentFormulationStateLabel = null;
       this.selectedFormulationState = null;
+      this.activeFormulation = null;
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
     }
   }
 
+  checkSupportFile(idFormulation: number | null): void {
+    if (idFormulation === null) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      return;
+    }
+    this.fileService.getById(idFormulation).subscribe({
+      next: (file) => {
+        if (file && file.idFormulationSupportFile) {
+          this.hasSupportFile = true;
+          this.supportFileMetadata = file;
+        } else {
+          this.hasSupportFile = false;
+          this.supportFileMetadata = null;
+        }
+      },
+      error: (err) => {
+        if (err.status === 404) {
+          this.hasSupportFile = false;
+          this.supportFileMetadata = null;
+        } else {
+          this.toastr.error('Error al verificar el archivo de soporte.', 'Error');
+          this.hasSupportFile = false;
+          this.supportFileMetadata = null;
+          console.error('Error fetching support file:', err);
+        }
+      }
+    });
+  }
+
+  onFileSelect(event: any) {
+    const file = event.files[0];
+    if (file && this.idFormulation !== null) {
+      this.fileUploading = true;
+      this.fileService.updateFile(this.idFormulation, file).subscribe({
+        next: () => {
+          this.toastr.success('Archivo subido correctamente.', 'Éxito');
+          this.fileUploading = false;
+          this.checkSupportFile(this.idFormulation);
+          if (this.fileUploadRef) {
+            this.fileUploadRef.clear();
+          }
+        },
+        error: (err) => {
+          this.toastr.error('Error al subir el archivo.', 'Error');
+          this.fileUploading = false;
+          console.error('Error uploading file:', err);
+          if (this.fileUploadRef) {
+            this.fileUploadRef.clear();
+          }
+        },
+      });
+    } else {
+      this.toastr.warning('No se seleccionó ningún archivo o no hay formulación activa.', 'Advertencia');
+    }
+  }
+
+  onFileUpdate(event: any) {
+    const file = event.files[0];
+    if (file && this.idFormulation !== null) {
+      this.fileUploading = true;
+      this.fileService.updateFile(this.idFormulation, file).subscribe({
+        next: () => {
+          this.toastr.success('Archivo actualizado correctamente.', 'Éxito');
+          this.fileUploading = false;
+          this.checkSupportFile(this.idFormulation);
+          if (this.fileUploadRef) {
+            this.fileUploadRef.clear();
+          }
+        },
+        error: (err) => {
+          this.toastr.error('Error al actualizar el archivo.', 'Error');
+          this.fileUploading = false;
+          console.error('Error updating file:', err);
+          if (this.fileUploadRef) {
+            this.fileUploadRef.clear();
+          }
+        },
+      });
+    } else {
+      this.toastr.warning('No se seleccionó ningún archivo o no hay formulación activa.', 'Advertencia');
+    }
+  }
+
+  // NUEVO: Método para ver el archivo en un modal
+viewFile(): void {
+  if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+    this.toastr.warning('No hay un archivo para ver.', 'Advertencia');
+    return;
+  }
+
+  const fileId = this.supportFileMetadata.idFormulationSupportFile;
+
+  this.fileService.getById(fileId).subscribe({
+    next: (fileDto) => {
+      if (fileDto && fileDto.file && fileDto.fileExtension) {
+        try {
+          // Paso 1: Decodificar la cadena Base64 a una cadena binaria
+          const binaryString = window.atob(fileDto.file);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+
+          // Paso 2: Convertir la cadena binaria en un Uint8Array
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          
+          // Paso 3: Crear el Blob a partir del Uint8Array y el tipo de archivo
+          const blob = new Blob([bytes.buffer], { type: fileDto.fileExtension });
+          
+          const isViewable = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'].includes(fileDto.fileExtension);
+
+          if (isViewable) {
+            this.documentUrl = window.URL.createObjectURL(blob);
+            this.showDocumentViewer = true;
+            this.toastr.info('Cargando documento...', 'Información');
+          } else {
+            const fileName = fileDto.name || 'archivo';
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+            this.toastr.success('Archivo descargado correctamente.', 'Éxito');
+          }
+        } catch (e) {
+          console.error("Error al decodificar Base64 o crear Blob:", e);
+          this.toastr.error('Error al procesar el archivo. El formato es incorrecto.', 'Error de Archivo');
+        }
+      } else {
+        this.toastr.warning('Los datos del archivo están incompletos.', 'Advertencia');
+      }
+    },
+    error: (err) => {
+      this.toastr.error('Error al cargar el documento.', 'Error');
+      console.error('Error fetching file DTO:', err);
+    },
+  });
+}
+
+  // NUEVO: Limpiar la URL de objeto cuando el modal se cierra
+  onDocumentViewerHide(): void {
+    if (this.documentUrl) {
+      window.URL.revokeObjectURL(this.documentUrl);
+      this.documentUrl = '';
+    }
+  }
+  
   getModificationLabel(modification?: number): string {
     if (modification === undefined || modification === null) return '';
     if (modification === 1) return 'Formulación Inicial';
@@ -303,12 +496,8 @@ export class SelectorComponent implements OnInit {
     }
 
     if (this.formulationExists) {
-      if (this.idFormulation) {
-        this.buscar.emit({
-          ano: this.selectedAno,
-          dependencia: this.selectedDependency,
-          idFormulation: this.idFormulation,
-        });
+      if (this.idFormulation && this.activeFormulation) {
+        this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.toastr.warning(
           'Por favor, seleccione una modificación para la formulación existente.',
@@ -321,7 +510,7 @@ export class SelectorComponent implements OnInit {
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
-      formulationState: { idFormulationState: 1 } as FormulationState, // Default to initial state
+      formulationState: { idFormulationState: 1 } as FormulationState,
       active: true,
       modification: 1,
       quarter: 1,
@@ -331,17 +520,15 @@ export class SelectorComponent implements OnInit {
       next: (nueva) => {
         this.formulationExists = true;
         this.idFormulation = nueva.idFormulation ?? null;
+        this.activeFormulation = nueva;
         this.verificarFormulacion();
 
         this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
-          this.toastr.success('Formulación iniciada correctamente.', 'Éxito'); // Add toastr success message
-          this.buscar.emit({
-            ano: this.selectedAno,
-            dependencia: this.selectedDependency,
-            idFormulation: this.idFormulation,
-          });
+          this.toastr.success('Formulación iniciada correctamente.', 'Éxito');
+          if (this.activeFormulation)
+            this.formulationSelected.emit(this.activeFormulation);
         }, 2500);
       },
       error: (err) => {
@@ -351,11 +538,8 @@ export class SelectorComponent implements OnInit {
     });
   }
 
-  /**
-   * Handles changing the formulation state.
-   */
   changeFormulationState(): void {
-    if (!this.idFormulation || !this.selectedFormulationState) {
+    if (!this.idFormulation || !this.selectedFormulationState || !this.activeFormulation) {
       this.toastr.warning('Seleccione un estado válido.', 'Advertencia');
       return;
     }
@@ -369,34 +553,20 @@ export class SelectorComponent implements OnInit {
       return;
     }
 
-    const currentFormulation = this.foundFormulations.find(
-      (f) => f.idFormulation === this.idFormulation
-    );
-
-    if (!currentFormulation) {
-      this.toastr.error(
-        'No se encontró la formulación actual.',
-        'Error Interno'
-      );
-      return;
-    }
-
-    // *** MODIFICATION START ***
-    // Create a NEW object to avoid direct mutation of foundFormulations if not desired
     const formulationToUpdate: Formulation = {
-      ...currentFormulation, // Copy all existing properties
-      formulationState: selectedState // Update the specific property
+      ...this.activeFormulation,
+      formulationState: selectedState,
     };
-    // *** MODIFICATION END ***
 
-
-    // Call the update method with the full Formulation object
-    this.formulationService.update(formulationToUpdate).subscribe({ // <--- Pass the full object here
-      next: () => {
+    this.formulationService.update(formulationToUpdate).subscribe({
+      next: (updatedEntity) => {
         this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
         this.showChangeStateModal = false;
-        // Refresh the formulation data to reflect the change
+
+        this.activeFormulation = updatedEntity;
         this.verificarFormulacion();
+
+        this.formulationUpdated.emit(this.activeFormulation);
       },
       error: (err) => {
         this.toastr.error('Error al cambiar el estado de formulación.', 'Error');

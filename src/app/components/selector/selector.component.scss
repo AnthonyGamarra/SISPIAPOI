@@ -132,3 +132,22 @@
   color: var(--primary-darker) !important;
   border: 1px solid white !important;
 }
+
+::ng-deep .p-fileupload-choose-button {
+  background-color: white !important;
+  color: var(--primary) !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+}
+
+::ng-deep .p-fileupload-choose-button:hover {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+::ng-deep .p-fileupload-choose-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}

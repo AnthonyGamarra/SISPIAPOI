@@ -298,3 +298,42 @@ label {
 ::ng-deep .p-select-list-container {
   max-width: 85vw;
 }
+
+:host ::ng-deep {
+  .p-datatable-body,
+  .p-datatable-thead,
+  .p-datatable-tfoot {
+    .p-datatable-thead, .p-datatable-tbody {
+        > tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed; /* <-- CLAVE: Esto asegura que el ancho sea fijo */
+        }
+    }
+    
+    td, th {
+      // Forzar que el contenido de las celdas no se desborde y se envuelva.
+      white-space: normal !important; 
+      word-break: break-word !important; 
+      overflow-wrap: break-word !important;
+    }
+  }
+
+  // Estilos específicos para los textareas en modo de edición
+  textarea.p-inputtextarea {
+    width: 100%;
+    min-height: 80px;
+    height: auto; // Se ajustará automáticamente
+    resize: vertical; // Permite al usuario redimensionar verticalmente
+  }
+
+  // Asegura que el contenedor de la celda no tenga un ancho mínimo que rompa el layout
+  .p-cell-editor {
+    width: 100%;
+  }
+
+  // Forzar que el p-datatable-wrapper o p-datatable-scrollable-body-table tenga un layout fijo
+  .p-datatable-scrollable-body-table {
+    table-layout: fixed !important; 
+  }
+}
