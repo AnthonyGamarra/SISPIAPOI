@@ -6,10 +6,12 @@
 </app-selector>
 
 <app-evaluacion-tabla
-  [ano]="anoSeleccionado"
-  [idFormulation]="idFormulation"
+[ano]="currentFormulation?.year?.toString() || null"
+  [idFormulation]="currentFormulation?.idFormulation || null"
+  [idDependency]="currentFormulation?.dependency?.idDependency?.toString() || null"
+  [currentFormulation]="currentFormulation"
   [mostrar]="mostrarTabla"
-  [idDependency]="idDependencySeleccionado"  (seleccionCambio)="onSeleccionAccion($event)">
+  (seleccionCambio)="onSeleccionAccion($event)">
 </app-evaluacion-tabla>
 
 <app-footer></app-footer>
