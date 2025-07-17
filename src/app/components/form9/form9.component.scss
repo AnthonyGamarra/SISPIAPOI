@@ -65,16 +65,16 @@
 /* Segunda columna más ancha */
 .matrix-table thead th:nth-child(2),
 .matrix-table tbody td:nth-child(2) {
-  width: 100px;
-  max-width: 100px;
-  min-width: 100px;
+  width: 85px;
+  max-width: 85px;
+  min-width: 85px;
   text-align: center;
 }
 .matrix-table thead th:nth-child(3),
 .matrix-table tbody td:nth-child(3) {
-  width: 130px;
-  max-width: 130px;
-  min-width: 130px;
+  width: 150px;
+  max-width: 150px;
+  min-width: 150px;
   text-align: center;
 }
 /* Resto de columnas igual */

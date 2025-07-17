@@ -94,8 +94,8 @@ export class SelectoractComponent implements OnInit {
         this.foundFormulations = formulaciones || [];
         this.formulationExists = this.foundFormulations.length > 0;
         // Modificación dropdown
-        this.modificationOptions = this.foundFormulations.map(f => ({
-          label: f.quarter ? `${['I', 'II', 'III', 'IV'][f.quarter - 1]} Trimestre` : `Formulación ${f.idFormulation}`,
+        this.modificationOptions = this.foundFormulations.map((f, idx) => ({
+          label: f.modification != null ? `Modificación ${f.modification}` : `Formulación ${f.idFormulation}`,
           value: f.idFormulation
         }));
         // Si no hay modificación seleccionada, seleccionar la primera
