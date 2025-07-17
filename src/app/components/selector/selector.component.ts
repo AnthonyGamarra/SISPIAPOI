@@ -538,6 +538,8 @@ viewFile(): void {
     });
   }
 
+  // selector.component.ts
+
   changeFormulationState(): void {
     if (!this.idFormulation || !this.selectedFormulationState || !this.activeFormulation) {
       this.toastr.warning('Seleccione un estado válido.', 'Advertencia');
@@ -563,10 +565,21 @@ viewFile(): void {
         this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
         this.showChangeStateModal = false;
 
+        // === CORRECCIÓN AQUÍ: ACTUALIZAR DIRECTAMENTE LAS PROPIEDADES ===
         this.activeFormulation = updatedEntity;
-        this.verificarFormulacion();
+        this.currentFormulationStateLabel = updatedEntity.formulationState?.name ?? null;
 
+        // También actualiza la formulación en la lista `foundFormulations`
+        const index = this.foundFormulations.findIndex(f => f.idFormulation === updatedEntity.idFormulation);
+        if (index !== -1) {
+          this.foundFormulations[index] = updatedEntity;
+        }
+        
+        // Emite el evento con la formulación actualizada
         this.formulationUpdated.emit(this.activeFormulation);
+
+        // NO SE NECESITA llamar a verificarFormulacion() aquí
+        // ya que los datos de la UI se han actualizado manualmente
       },
       error: (err) => {
         this.toastr.error('Error al cambiar el estado de formulación.', 'Error');

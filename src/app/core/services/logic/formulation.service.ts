@@ -29,7 +29,7 @@ export class FormulationService {
 
     // Actualizar formulación existente
     update(data: Formulation): Observable<Formulation> {
-      return this.http.put<Formulation>(`${this.BASE_URL}`, data);
+      return this.http.post<Formulation>(`${this.BASE_URL}`, data);
     }
 
     // Eliminar por ID
