@@ -8,7 +8,7 @@ import { CostCenter } from '../../../models/logic/costCenter.model';
 })
 export class CostCenterService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/cost-center';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/cost-center';
   
     constructor(private http: HttpClient) { }
   

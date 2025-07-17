@@ -8,7 +8,7 @@ import { FinancialFund } from '../../../models/logic/financialFund.model';
 })
 export class FinancialFundService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/financial-fund';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/financial-fund';
 
   constructor(private http: HttpClient) { }
 

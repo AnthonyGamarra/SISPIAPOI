@@ -10,7 +10,7 @@ To start a local development server, run:
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://10.0.29.117:4200/`. The application will automatically reload whenever you modify any of the source files.
+Once the server is running, open your browser and navigate to `http://10.0.2.144:4200/`. The application will automatically reload whenever you modify any of the source files.
 
 ## Code scaffolding
 

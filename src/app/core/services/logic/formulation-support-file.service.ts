@@ -8,7 +8,7 @@ import { FormulationSupportFile } from '../../../models/logic/formulationSupport
 })
 export class FormulationSupportFileService {
 
-  private readonly BASE_URL = 'http://10.0.29.117:8081/formulation-support-file';
+  private readonly BASE_URL = 'http://10.0.2.144:8081/formulation-support-file';
 
   constructor(private http: HttpClient) { }
 

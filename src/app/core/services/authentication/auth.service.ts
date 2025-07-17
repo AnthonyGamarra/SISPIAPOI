@@ -14,7 +14,7 @@ export class AuthService {
   private router = inject(Router);
   private toastr = inject(ToastrService);
 
-  private readonly BASE_URL = 'http://10.0.29.117:8080';
+  private readonly BASE_URL = 'http://10.0.2.144:8080';
 
   // Signals para estado de login
   tokens = signal<AuthTokens | null>(null);
