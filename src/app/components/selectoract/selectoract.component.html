@@ -1,7 +1,7 @@
 
 
 <div class="selector-bar grid align-items-center">
-  <div class="selector-group col-12 lg:col-4">
+  <div class="selector-group col-12 lg:col-3">
     <label class="selector-label">Dependencia:</label>
     <p-dropdown
       [options]="dependencyOptions"
@@ -16,7 +16,8 @@
     </p-dropdown>
   </div>
 
-  <div class="selector-group col-2 lg:col-2">
+
+  <div class="selector-group col-1 lg:col-1">
     <label class="selector-label">Año:</label>
     <p-dropdown
       [options]="optionsAno"
@@ -28,6 +29,7 @@
       optionValue="value">
     </p-dropdown>
   </div>
+
 
   <div class="selector-group col-8 lg:col-2">
     <label class="selector-label">Modificación:</label>
@@ -41,6 +43,20 @@
       optionValue="value"
       [disabled]="foundFormulations.length <= 1"
     ></p-dropdown>
+  </div>
+
+  <div class="selector-group col-2 lg:col-2">
+    <label class="selector-label">Centro de gestión:</label>
+    <p-dropdown
+      [options]="managementCenterOptions"
+      [(ngModel)]="selectedManagementCenterId"
+      (onChange)="onManagementCenterChange($event)"
+      placeholder="Seleccione"
+      class="selector-dropdown"
+      optionLabel="label"
+      optionValue="value"
+      [disabled]="managementCenterOptions.length === 0">
+    </p-dropdown>
   </div>
 
   <div class="selector-group col-6 lg:col-3">
