@@ -266,20 +266,23 @@ loadCombos(): void {
             // 1. Formatear los Objetivos Estratégicos
             this.strategicObjectives = strategicObjectives.map(obj => ({
                 ...obj,
-                name: `O.E.${obj.code} :: ${obj.name}`
+                name: `O.E.${obj.code}: ${obj.name}`
             }));
 
             // 2. Formatear las Acciones Estratégicas
             this.strategicActions = strategicActions.map(action => ({
                 ...action,
-                name: `A.E.${action.code} :: ${action.name}`
+                name: `A.E.${action.code}: ${action.name}`
             }));
 
             // 3. Formatear los Fondos Financieros (FF)
-            this.financialFunds = financialFunds.map(ff => ({
+            const filteredFinancialFunds = dependencyId 
+                ? financialFunds.filter(ff => ff.dependency?.idDependency === dependencyId)
+                : financialFunds;
+            this.financialFunds = filteredFinancialFunds.map(ff => ({
                 ...ff,
-                name: `${ff.name}`
-                // name: `${ff.code} :: ${ff.name}`
+                // name: `${ff.name}`
+                name: `${ff.codFofi}: ${ff.name}`
             }));
             
             this.measurementTypes = measurementTypes;
@@ -292,7 +295,7 @@ loadCombos(): void {
 
             this.costCenters = filteredCostCenters.map(cc => ({
                 ...cc,
-                name: `${cc.costCenterCode} :: ${cc.name}`
+                name: `${cc.costCenterCode}: ${cc.name}`
             }));
             
             // 5. Los Centros de Gestión (MC) se filtran y asignan como estaban, ya que no se pidió formatearlos
@@ -307,44 +310,52 @@ loadCombos(): void {
     });
 }
 
-  loadOperationalActivities(): void {
-    if (!this.idFormulation) {
-      this.products = []; // Clear products if no formulation ID
-      return;
-    }
-
-    this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
-      next: (data) => {
-        this.products = data.map(activity => {
-          // Initialize goals if missing or incomplete, and map existing ones
-          const loadedGoals = activity.goals || [];
-          activity.goals = Array.from({ length: 4 }, (_, i) => {
-            const existingGoal = loadedGoals.find(g => g.goalOrder === i + 1);
-            return existingGoal
-              ? { ...existingGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
-              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as Goal;
-          });
-          activity.goals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
-
-          // Initialize executedGoals if missing or incomplete, and map existing ones
-          const loadedExecutedGoals = activity.executedGoals || [];
-          activity.executedGoals = Array.from({ length: 4 }, (_, i) => {
-            const existingExecutedGoal = loadedExecutedGoals.find(eg => eg.goalOrder === i + 1);
-            return existingExecutedGoal
-              ? { ...existingExecutedGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
-              : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as ExecutedGoal;
-          });
-          activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder); // Ensure correct order
-
-          return activity;
-        });
-      },
-      error: () => {
-        this.toastr.error('Error al cargar actividades operativas.', 'Error');
-        this.products = []; // Clear products on error
-      }
-    });
+loadOperationalActivities(): void {
+  if (!this.idFormulation) {
+    this.products = []; // Clear products if no formulation ID
+    return;
   }
+
+  this.operationalActivityService.searchByFormulation(this.idFormulation).subscribe({
+    next: (data) => {
+      // Ordenar por activity.correlativeCode (ascendente)
+      data.sort((a, b) => {
+        const codeA = a.correlativeCode?.toString() || '';
+        const codeB = b.correlativeCode?.toString() || '';
+        return codeA.localeCompare(codeB, undefined, { numeric: true });
+      });
+
+      this.products = data.map(activity => {
+        // Initialize goals
+        const loadedGoals = activity.goals || [];
+        activity.goals = Array.from({ length: 4 }, (_, i) => {
+          const existingGoal = loadedGoals.find(g => g.goalOrder === i + 1);
+          return existingGoal
+            ? { ...existingGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+            : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as Goal;
+        });
+        activity.goals.sort((a, b) => a.goalOrder - b.goalOrder);
+
+        // Initialize executedGoals
+        const loadedExecutedGoals = activity.executedGoals || [];
+        activity.executedGoals = Array.from({ length: 4 }, (_, i) => {
+          const existingExecutedGoal = loadedExecutedGoals.find(eg => eg.goalOrder === i + 1);
+          return existingExecutedGoal
+            ? { ...existingExecutedGoal, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } as OperationalActivity }
+            : { goalOrder: i + 1, value: 0, operationalActivity: { idOperationalActivity: activity.idOperationalActivity } } as ExecutedGoal;
+        });
+        activity.executedGoals.sort((a, b) => a.goalOrder - b.goalOrder);
+
+        return activity;
+      });
+    },
+    error: () => {
+      this.toastr.error('Error al cargar actividades operativas.', 'Error');
+      this.products = []; // Clear products on error
+    }
+  });
+}
+
 
   cargarDatos() {
     const year = parseInt(this.ano!, 10);

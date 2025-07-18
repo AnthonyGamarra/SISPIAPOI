@@ -8,5 +8,10 @@ import { CommonModule } from '@angular/common';
   styleUrl: './footer.component.scss'
 })
 export class FooterComponent {
+  year: number | null = null;
 
+  constructor() {
+    this.year = new Date().getFullYear();
+  }
 }
+

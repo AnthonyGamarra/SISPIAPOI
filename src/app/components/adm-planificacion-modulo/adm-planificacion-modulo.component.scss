@@ -8,14 +8,13 @@
 
 /* Estilo del botón cuadrado */
 .modulop-btn {
-  width: 160px;
-  height: 160px;
+  width: 200px;
+  height: 150px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   font-size: 1rem;
   color: var(--primary-color, #007ad9);
   border: 2px solid #ccc;

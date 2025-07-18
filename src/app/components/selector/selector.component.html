@@ -112,7 +112,7 @@
         [customUpload]="true"
         (onSelect)="onFileUpdate($event)"
         [disabled]="fileUploading || !hasSupportFile"
-        [accept]="'.pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png'"
+        [accept]="'.pdf'"
       ></p-fileUpload>
     </div>
 
@@ -135,7 +135,7 @@
       ></p-fileUpload>
     </div>
 
-    <button
+    <!-- <button
       *ngIf="!formulationExists"
       type="button"
       pButton
@@ -149,7 +149,7 @@
         (formulationExists && !selectedModificationOption)
       "
       (click)="onBuscar()"
-    ></button>
+    ></button> -->
 
     <div
       *ngIf="formulationExists && isAdmin"

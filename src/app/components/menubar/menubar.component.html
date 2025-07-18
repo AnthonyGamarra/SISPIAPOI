@@ -9,10 +9,10 @@
 
   <div class="menu-actions p-d-flex p-ai-center">
 
-    <button pButton icon="pi pi-home" class="p-button-text p-ml-2" (click)="goToLogin()"></button>
+    <button pButton icon="pi pi-home" class="p-button-text" (click)="goToLogin()"></button>
 
-    <p-tieredMenu [model]="settingsMenuItems" #settingsMenu popup></p-tieredMenu>
-    <button pButton icon="pi pi-cog" class="p-button-text p-mr-2" (click)="settingsMenu.toggle($event)"></button>
+    <!-- <p-tieredMenu [model]="settingsMenuItems" #settingsMenu popup></p-tieredMenu>
+    <button pButton icon="pi pi-cog" class="p-button-text" (click)="settingsMenu.toggle($event)"></button> -->
 
     <p-tieredMenu [model]="userMenuItems" #userMenu popup></p-tieredMenu>
     <button pButton icon="pi pi-user" class="p-button-text" (click)="userMenu.toggle($event)"></button>

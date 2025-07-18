@@ -8,14 +8,8 @@
   position: relative;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
 .logo img {
-  height: 30px;
+  height: 33px;
   margin-top: 0;
   margin-bottom: 0;
   padding-top: 0;
@@ -29,7 +23,7 @@
   transform: translateX(-50%);
   text-align: center;
   .logo-sispoi {
-      max-width: 34%;
+      max-width: 35%;
       filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
   }
 }
@@ -37,7 +31,7 @@
 .menu-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;  /* esto ya crea separación entre botones */
+  gap: 0.2rem;  /* esto ya crea separación entre botones */
   flex: 0 0 auto;
 }
 
@@ -53,4 +47,23 @@
   background-color: var(--primary);
   color: white;
   border: 1px solid white;
+}
+
+@media (max-width: 768px) {
+
+  .logo img {
+    height: 25px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: block; /* elimina espacios en línea que generan gaps verticales */
+  }
+
+  .system-name {
+    .logo-sispoi {
+        max-width: 55%;
+    }
+  }
+  
 }

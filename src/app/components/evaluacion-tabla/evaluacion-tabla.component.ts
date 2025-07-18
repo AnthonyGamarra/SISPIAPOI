@@ -172,11 +172,16 @@ export class EvaluacionTablaComponent implements OnChanges {
   loadCombos(): void {
     const dependencyId = this.idDependency ? Number(this.idDependency) : null;
 
-    this.strategicActionService.getAll().subscribe(data => this.strategicActions = data);
-    this.financialFundService.getAll().subscribe(data => this.financialFunds = data);
+    this.strategicActionService.getAll().subscribe(data => this.strategicActions = data);    
     this.measurementTypeService.getAll().subscribe(data => this.measurementTypes = data);
     this.priorityService.getAll().subscribe(data => this.priorities = data);
     this.strategicObjectiveService.getAll().subscribe(data => this.strategicObjectives = data);
+
+    this.financialFundService.getAll().subscribe(data => {
+      this.financialFunds = dependencyId
+        ? data.filter(ff => ff.dependency?.idDependency === dependencyId)
+        : data;
+    });
 
     this.managementCenterService.getAll().subscribe(data => {
       this.managementCenters = dependencyId
