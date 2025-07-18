@@ -19,10 +19,14 @@ export enum MonthEnum {
 }
 
 // Interfaz del modelo principal
+// Puedes definir el modelo FundSource si no existe, o importar el correcto
+// import { FundSource } from "./fundSource.model";
+
 export interface OperationalActivityBudgetItem {
   operationalActivity: OperationalActivity;
   budgetItem: BudgetItem;
   orderItem: number;
-  monthAmounts: Partial<Record<MonthEnum, number>>
+  monthAmounts: Partial<Record<MonthEnum, number>>;
   expenseType?: ExpenseType | null;
+  fundSource?: any | null; // Cambia 'any' por el tipo correcto si existe el modelo FundSource
 }

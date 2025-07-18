@@ -7,6 +7,7 @@
         <th style="width: 60px; display: none;">ORDEN</th>
         <th style="width: 120px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
         <th style="width: 180px;">TIPO DE GASTO</th>
+        <th style="width: 180px;">FONDO FINANCIERO</th>
         <th *ngFor="let mes of meses">{{ mes }}</th>
         <th>TOTAL</th>
       </tr>
@@ -113,12 +114,24 @@
               </ng-container>
             </td>
 
+
             <td>
               <ng-container *ngIf="row.editable">
                 <select [(ngModel)]="row.tipoGasto">
                   <option [value]="null"></option>
                   <option *ngFor="let tipo of tiposGasto" [value]="tipo.idExpenseType">
                     {{ tipo.name }}
+                  </option>
+                </select>
+              </ng-container>
+            </td>
+
+            <td>
+              <ng-container *ngIf="row.editable">
+                <select [(ngModel)]="row.fundSource" [ngModelOptions]="{standalone: true}">
+                  <option [ngValue]="null">Seleccione fondo</option>
+                  <option *ngFor="let fondo of fondosFinancieros" [ngValue]="fondo">
+                    {{ fondo.codFofi }} - {{ fondo.name }}
                   </option>
                 </select>
               </ng-container>

@@ -36,7 +36,7 @@ export class SelectoractComponent implements OnInit {
   modificationOptions: { label: string; value: number }[] = [];
   selectedModificationOption: number | null = null;
 
-  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null, modificationId?: number | null }>();
+  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null, idDependency?: number | null, modificationId?: number | null }>();
 
   constructor(
     private dependencyService: DependencyService,
@@ -212,6 +212,7 @@ export class SelectoractComponent implements OnInit {
   emitirActividadSeleccionada(): void {
     this.buscar.emit({
       idOperationalActivity: this.selectedActivityId,
+      idDependency: this.selectedDependency ? Number(this.selectedDependency) : null,
       modificationId: this.selectedModificationOption
     });
   }

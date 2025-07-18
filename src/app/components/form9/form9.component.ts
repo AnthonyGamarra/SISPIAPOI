@@ -11,8 +11,10 @@ import { BudgetItem } from '../../models/logic/budgetItem.model';
 import { ButtonModule } from 'primeng/button';
 import { Form9DataService } from '../../core/services/logic/form9-data.service';
 import { OperationalActivityBudgetItem } from '../../models/logic/operationalActivityBudgetItem.model';
+import { FinancialFundService } from '../../core/services/logic/financial-fund.service';
 
 
+import { FinancialFund } from '../../models/logic/financialFund.model';
 interface Row {
   id: number;
   codPoFi: string;
@@ -21,6 +23,7 @@ interface Row {
   meses: { [key: string]: number };
   expanded: boolean;
   editable: boolean;
+  fundSource?: FinancialFund | null; // Fondo financiero seleccionado
   children?: Row[];
   parent?: Row;
   isOriginal?: boolean;  // <-- flag para fila original
@@ -37,6 +40,7 @@ interface Row {
 })
 export class Form9Component implements OnInit, OnChanges { // Implement OnChanges
   @Input() idOperationalActivity: number | null = null;
+  @Input() idDependency: number | null = null; // Recibe la dependencia seleccionada
 
   meses: string[] = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
@@ -45,13 +49,15 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   ];
   tiposGasto: ExpenseType[] = [];
   data: Row[] = [];
+  fondosFinancieros: FinancialFund[] = [];
 
   constructor(
     private budgetCategoryService: BudgetCategoryService,
     private budgetItemService: BudgetItemService,
     private expenseTypeService: ExpenseTypeService,
     private form9DataService: Form9DataService,
-    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService
+    private operationalActivityBudgetItemService: OperationalActivityBudgetItemService,
+    private financialFundService: FinancialFundService
   ) {}
 
   ngOnInit() {
@@ -62,6 +68,12 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
 
   // --- ngOnChanges Implementation ---
   ngOnChanges(changes: SimpleChanges): void {
+    // Siempre que haya idDependency, cargar fondos financieros
+    if ((changes['idDependency'] && this.idDependency) || (changes['idOperationalActivity'] && this.idDependency)) {
+      this.financialFundService.getAll().subscribe(fondos => {
+        this.fondosFinancieros = fondos.filter(f => f.dependency?.idDependency === this.idDependency);
+      });
+    }
     if (changes['idOperationalActivity']) {
       // Limpia los datos antes de cargar nuevos
       this.data = [];
