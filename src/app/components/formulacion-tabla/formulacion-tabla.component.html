@@ -34,19 +34,19 @@
           <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acciones</th>
 
           <th style="min-width: 140px; max-width: 140px;" rowspan="2">Objetivo estratégico</th>
-          <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acción estratégica</th>
+          <th style="min-width: 130px; max-width: 130px;" rowspan="2">Acción estratégica</th>
 
-          <th style="min-width: 150px; max-width: 150px;" rowspan="2">Centro gestor</th>
-          <th style="min-width: 450px; max-width: 450px;" rowspan="2">Centro de costos</th>          
-          <th style="min-width: 250px; max-width: 250px;" rowspan="2">Fondo financiero</th>
+          <th style="min-width: 170px; max-width: 170px;" rowspan="2">Centro gestor</th>
+          <th style="min-width: 600px; max-width: 600px;" rowspan="2">Centro de costos</th>          
+          <th style="min-width: 500px; max-width: 500px;" rowspan="2">Fondo financiero</th>
           
           <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>
           <th style="min-width: 370px; max-width: 370px;" rowspan="2">Nombre de actividad</th>
           <th style="min-width: 220px; max-width: 220px;" rowspan="2">Unidad de medida</th>
 
 
-          <th style="min-width: 350px; max-width: 350px;" rowspan="2">Tipo de medida</th>
-          <th style="min-width: 150px; max-width: 150px;" rowspan="2">Prioridad</th>
+          <th style="min-width: 300px; max-width: 300px;" rowspan="2">Tipo de medida</th>
+          <th style="min-width: 120px; max-width: 120px;" rowspan="2">Prioridad</th>
 
           <th colspan="4">Trimestre</th>
           <th colspan="4">Presupuesto S/.</th>
@@ -54,14 +54,14 @@
           <th style="min-width: 370px; max-width: 370px;" rowspan="2">Detalle de actividad</th>
         </tr>
         <tr class="cabecera">
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">I</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">II</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">III</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">IV</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Bienes</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Remuneraciones</th>
-          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Servicios</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Total</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">I</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">II</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">III</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">IV</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Bienes</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Remuneraciones</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Servicios</th>
+          <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Total</th>
         </tr>
       </ng-template>
 
@@ -235,7 +235,7 @@
           <td>
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                <textarea rows="3" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
               <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="21" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.measurementUnit }}</textarea></ng-template>
             </p-cellEditor>

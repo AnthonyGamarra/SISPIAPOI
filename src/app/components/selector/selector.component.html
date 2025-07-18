@@ -38,10 +38,6 @@
     ></p-dropdown>
   </div>
 
-  <!-- <div class="col-3 lg:col-4"
-    *ngIf="!formulationExists && foundFormulations.length == 0"
-  ></div> -->
-
   <div class="selector-group col-8 lg:col-3"
     *ngIf="formulationExists && foundFormulations.length > 0"
   >
@@ -85,39 +81,41 @@
     />
   </div>
 
-  <div class="col-12 lg:col-12 flex align-items-center justify-content-end gap-6 file-actions">
+  <div class="col-12 lg:col-12 flex align-items-center justify-content-end gap-2 file-actions">
+    <i *ngIf="isLoadingFileMetadata" class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+
     <div 
-      class="flex gap-6" 
-      *ngIf="formulationExists && hasSupportFile && 
-             activeFormulation?.formulationState?.idFormulationState !== 2 && 
-             activeFormulation?.formulationState?.idFormulationState !== 4 && 
-             activeFormulation?.active"
+      class="flex gap-2" 
+      *ngIf="!isLoadingFileMetadata && hasSupportFile"
     >
       <button
         pButton
         type="button"
         icon="pi pi-eye"
-        label="Ver documento sustento"
+        label="Ver sustento"
         class="selector p-button-success"
         (click)="viewFile()"
         [disabled]="!hasSupportFile"
       ></button>
       
       <p-fileUpload
+        *ngIf="activeFormulation?.formulationState?.idFormulationState !== 2 && 
+            activeFormulation?.formulationState?.idFormulationState !== 4 && 
+            activeFormulation?.active"
         #fileUpdate
         mode="basic"
         chooseLabel="Actualizar archivo"
-        icon="pi pi-upload"
         [auto]="true"
         [customUpload]="true"
         (onSelect)="onFileUpdate($event)"
-        [disabled]="fileUploading || !hasSupportFile"
+        [disabled]="fileUploading"
         [accept]="'.pdf'"
+        chooseIcon="pi pi-cloud-upload"
       ></p-fileUpload>
     </div>
 
     <div 
-      *ngIf="formulationExists && !hasSupportFile &&
+      *ngIf="!isLoadingFileMetadata && formulationExists && !hasSupportFile &&
              activeFormulation?.formulationState?.idFormulationState !== 2 &&
              activeFormulation?.formulationState?.idFormulationState !== 4 &&
              activeFormulation?.active"
@@ -126,30 +124,14 @@
         #fileUpload
         mode="basic"
         chooseLabel="Subir Archivo"
-        icon="pi pi-cloud-upload"
         [auto]="true"
         [customUpload]="true"
         (onSelect)="onFileSelect($event)"
-        [disabled]="fileUploading || hasSupportFile"
-        [accept]="'.pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif'"
+        [disabled]="fileUploading"
+        [accept]="'.pdf'"
+        chooseIcon="pi pi-cloud-upload"
       ></p-fileUpload>
     </div>
-
-    <!-- <button
-      *ngIf="!formulationExists"
-      type="button"
-      pButton
-      class="selector"
-      [label]="'Iniciar formulación'"
-      [icon]="formulationExists ? 'pi pi-eye' : 'pi pi-file-plus'"
-      [disabled]="
-        checkingFormulation ||
-        !selectedAno ||
-        !selectedDependency ||
-        (formulationExists && !selectedModificationOption)
-      "
-      (click)="onBuscar()"
-    ></button> -->
 
     <div
       *ngIf="formulationExists && isAdmin"

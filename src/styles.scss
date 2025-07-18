@@ -51,11 +51,11 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
   --p-floatlabel-active-color: #{$color-primary} !important;
   --p-floatlabel-invalid-color: #{$color-warning-light} !important;
 
-  --p-select-option-selected-background: #{$color-secondary-light} !important;
-  --p-select-option-selected-color: #{$color-primary-darker} !important;
-
   --p-select-option-selected-focus-background: #{$color-secondary-light} !important;
   --p-select-option-selected-focus-color: #{$color-primary-darker} !important;
+
+  --p-select-option-selected-background: #{$color-secondary-light} !important;
+  --p-select-option-selected-color: #{$color-primary-darker} !important;
 
   --p-form-field-border-color: #{$color-secondary-light} !important;
 

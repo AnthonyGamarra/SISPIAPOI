@@ -72,6 +72,7 @@ export class SelectorComponent implements OnInit {
   selectedAno: string | null = null;
   idFormulation: number | null = null;
   public activeFormulation: Formulation | null = null;
+  public isLoadingFileMetadata: boolean = false; // <-- AGREGAR ESTA LÍNEA
 
   isSingleDependency = false;
   formulationExists = false;
@@ -278,32 +279,34 @@ export class SelectorComponent implements OnInit {
     });
   }
 
-  onModificationChange(): void {
-    if (this.selectedModificationOption) {
-      const selectedFormulation = this.foundFormulations.find(
-        (f) => f.modification === this.selectedModificationOption!.value
-      );
-      if (selectedFormulation) {
-        this.idFormulation = selectedFormulation.idFormulation ?? null;
-        this.quarterLabel = this.getQuarterLabel(selectedFormulation.quarter);
-        this.currentFormulationStateLabel =
-          selectedFormulation.formulationState?.name ?? null;
-        this.selectedFormulationState =
-          selectedFormulation.formulationState?.idFormulationState ?? null;
-        this.activeFormulation = selectedFormulation;
+onModificationChange(): void {
+  // Inicializa las variables para evitar parpadeos
+  this.isLoadingFileMetadata = false;
+  this.hasSupportFile = false;
+  this.supportFileMetadata = null;
 
-        this.checkSupportFile(this.idFormulation);
+  if (this.selectedModificationOption) {
+    const selectedFormulation = this.foundFormulations.find(
+      (f) => f.modification === this.selectedModificationOption!.value
+    );
+    if (selectedFormulation) {
+      this.idFormulation = selectedFormulation.idFormulation ?? null;
+      this.quarterLabel = this.getQuarterLabel(selectedFormulation.quarter);
+      this.currentFormulationStateLabel =
+        selectedFormulation.formulationState?.name ?? null;
+      this.activeFormulation = selectedFormulation;
 
-        this.formulationSelected.emit(this.activeFormulation);
+      // === AQUÍ ESTÁ LA VERIFICACIÓN CORRECTA ===
+      // Usa la información que ya tienes en el objeto "selectedFormulation"
+      if (selectedFormulation.formulationSupportFile) {
+        this.hasSupportFile = true;
+        this.supportFileMetadata = selectedFormulation.formulationSupportFile;
       } else {
-        this.idFormulation = null;
-        this.quarterLabel = null;
-        this.currentFormulationStateLabel = null;
-        this.selectedFormulationState = null;
-        this.activeFormulation = null;
         this.hasSupportFile = false;
         this.supportFileMetadata = null;
       }
+      
+      this.formulationSelected.emit(this.activeFormulation);
     } else {
       this.idFormulation = null;
       this.quarterLabel = null;
@@ -313,14 +316,26 @@ export class SelectorComponent implements OnInit {
       this.hasSupportFile = false;
       this.supportFileMetadata = null;
     }
+  } else {
+    this.idFormulation = null;
+    this.quarterLabel = null;
+    this.currentFormulationStateLabel = null;
+    this.selectedFormulationState = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
   }
-
+}
   checkSupportFile(idFormulation: number | null): void {
+    this.isLoadingFileMetadata = true; // <-- INICIAR LA CARGA
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+
     if (idFormulation === null) {
-      this.hasSupportFile = false;
-      this.supportFileMetadata = null;
+      this.isLoadingFileMetadata = false; // <-- DETENER CARGA SI NO HAY FORMULACIÓN
       return;
     }
+
     this.fileService.getById(idFormulation).subscribe({
       next: (file) => {
         if (file && file.idFormulationSupportFile) {
@@ -330,6 +345,7 @@ export class SelectorComponent implements OnInit {
           this.hasSupportFile = false;
           this.supportFileMetadata = null;
         }
+        this.isLoadingFileMetadata = false; // <-- DETENER CARGA EN EL ÉXITO
       },
       error: (err) => {
         if (err.status === 404) {
@@ -341,7 +357,8 @@ export class SelectorComponent implements OnInit {
           this.supportFileMetadata = null;
           console.error('Error fetching support file:', err);
         }
-      }
+        this.isLoadingFileMetadata = false; // <-- DETENER CARGA EN EL ERROR
+      },
     });
   }
 
@@ -349,7 +366,7 @@ export class SelectorComponent implements OnInit {
     const file = event.files[0];
     if (file && this.idFormulation !== null) {
       this.fileUploading = true;
-      this.fileService.updateFile(this.idFormulation, file).subscribe({
+      this.fileService.uploadFile(file, this.idFormulation).subscribe({
         next: () => {
           this.toastr.success('Archivo subido correctamente.', 'Éxito');
           this.fileUploading = false;
@@ -425,7 +442,7 @@ viewFile(): void {
           // Paso 3: Crear el Blob a partir del Uint8Array y el tipo de archivo
           const blob = new Blob([bytes.buffer], { type: fileDto.fileExtension });
           
-          const isViewable = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'].includes(fileDto.fileExtension);
+          const isViewable = ['application/pdf'].includes(fileDto.fileExtension);
 
           if (isViewable) {
             this.documentUrl = window.URL.createObjectURL(blob);

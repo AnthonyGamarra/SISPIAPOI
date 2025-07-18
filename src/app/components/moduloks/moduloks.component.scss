@@ -8,8 +8,8 @@
 
 /* Estilo del botón cuadrado */
 .modulop-btn {
-  width: 200px;
-  height: 150px;
+  width: 250px;
+  height: 160px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -27,10 +27,15 @@
   box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2 );
 
   /* Transiciones suaves */
-  transition: 
+  transition:
     background-color 0.6s ease, 
     box-shadow 0.6s ease, 
     transform 0.5s ease;
+
+  @media screen and (max-width: 768px) {
+    width: 220px;
+    height: 140px;
+  }
 }
 
 .modulop-btn:hover {
