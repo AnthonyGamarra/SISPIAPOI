@@ -1,5 +1,5 @@
 <div class="selector-bar grid align-items-center">
-  <div class="selector-group col-12 lg:col-5">
+  <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Dependencia:</label>
     <p-dropdown
       *ngIf="isSingleDependency; else multipleDeps"
@@ -25,7 +25,7 @@
     </ng-template>
   </div>
 
-  <div class="selector-group col-4 lg:col-2">
+  <div class="selector-group col-4 lg:col-1">
     <label class="selector-label">Año:</label>
     <p-dropdown
       [options]="optionsAno"
@@ -38,13 +38,11 @@
     ></p-dropdown>
   </div>
 
-  <div
-    class="col-3 lg:col-4"
+  <!-- <div class="col-3 lg:col-4"
     *ngIf="!formulationExists && foundFormulations.length == 0"
-  ></div>
+  ></div> -->
 
-  <div
-    class="selector-group col-8 lg:col-2"
+  <div class="selector-group col-8 lg:col-3"
     *ngIf="formulationExists && foundFormulations.length > 0"
   >
     <label class="selector-label">Etapa:</label>
@@ -59,8 +57,7 @@
     ></p-dropdown>
   </div>
 
-  <div
-    class="selector-group col-6 lg:col-3"
+  <div class="selector-group col-6 lg:col-2"
     *ngIf="
       formulationExists &&
       quarterLabel &&
@@ -76,8 +73,7 @@
     />
   </div>
 
-  <div
-    class="selector-group col-6 lg:col-3"
+  <div class="selector-group col-6 lg:col-2"
     *ngIf="formulationExists && currentFormulationStateLabel"
   >
     <label class="selector-label">Estado:</label>
@@ -89,8 +85,14 @@
     />
   </div>
 
-  <div class="col-12 lg:col-9 flex align-items-center justify-content-end gap-6 file-actions">
-    <div class="flex gap-6" *ngIf="formulationExists && hasSupportFile">
+  <div class="col-12 lg:col-12 flex align-items-center justify-content-end gap-6 file-actions">
+    <div 
+      class="flex gap-6" 
+      *ngIf="formulationExists && hasSupportFile && 
+             activeFormulation?.formulationState?.idFormulationState !== 2 && 
+             activeFormulation?.formulationState?.idFormulationState !== 4 && 
+             activeFormulation?.active"
+    >
       <button
         pButton
         type="button"
@@ -114,7 +116,12 @@
       ></p-fileUpload>
     </div>
 
-    <div *ngIf="formulationExists && !hasSupportFile">
+    <div 
+      *ngIf="formulationExists && !hasSupportFile &&
+             activeFormulation?.formulationState?.idFormulationState !== 2 &&
+             activeFormulation?.formulationState?.idFormulationState !== 4 &&
+             activeFormulation?.active"
+    >
       <p-fileUpload
         #fileUpload
         mode="basic"

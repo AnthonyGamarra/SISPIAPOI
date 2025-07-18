@@ -71,7 +71,7 @@ export class SelectorComponent implements OnInit {
   selectedDependency: string | null = null;
   selectedAno: string | null = null;
   idFormulation: number | null = null;
-  private activeFormulation: Formulation | null = null;
+  public activeFormulation: Formulation | null = null;
 
   isSingleDependency = false;
   formulationExists = false;
