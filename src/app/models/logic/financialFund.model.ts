@@ -5,5 +5,6 @@ export interface FinancialFund {
   name: string;
   active?: boolean;
   dependency: Dependency;
+  codFofi: string;
 }
 

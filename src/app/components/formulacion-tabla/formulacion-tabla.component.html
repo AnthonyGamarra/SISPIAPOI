@@ -29,9 +29,9 @@
       [rowHover]="true"
       [editingRowKeys]="editingRowKeys">
       
-      <ng-template pTemplate="header" class="table-header" #header let-editing="editing">
+      <ng-template pTemplate="header" class="table-header" #header>
         <tr class="cabecera">
-          <th style="min-width: 100px; max-width: 100px;" rowspan="2" *ngIf="!editing && (state === 1 || state === 3) && active">Acciones</th>
+          <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acciones</th>
 
           <th style="min-width: 140px; max-width: 140px;" rowspan="2">Objetivo estratégico</th>
           <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acción estratégica</th>
@@ -68,7 +68,7 @@
       <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
         <tr [pEditableRow]="product">
                     
-          <td *ngIf="!editing && (state === 1 || state === 3) && active">
+          <td>
             <div class="flex items-center justify-center gap-2">
               <button
                 *ngIf="!editing && (state === 1 || state === 3) && active"
