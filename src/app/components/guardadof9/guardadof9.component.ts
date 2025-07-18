@@ -51,7 +51,8 @@ export class Guardadof9Component {
             meses: row.meses,
             tipoGastoId: row.tipoGasto,
             codPoFi: row.codPoFi,
-            order: row.order || 1
+            order: row.order || 1,
+            fundSourceId: row.fundSource?.idFinancialFund || null
           });
         }
 
@@ -84,10 +85,15 @@ export class Guardadof9Component {
         let total = this.datosCapturados.length;
         for (const item of this.datosCapturados) {
           const idBudgetItem = Number(item.id);
-          // Validar tipo de gasto si hay valores en meses
+          // Validar tipo de gasto y fondo financiero si hay valores en meses
           const tieneValores = Object.values(item.meses).some((v: any) => Number(v) > 0);
           if (tieneValores && (!item.tipoGastoId || item.tipoGastoId === '' || item.tipoGastoId === null)) {
             alert('Seleccione el tipo de gasto para los items con valores.');
+            errores++;
+            continue;
+          }
+          if (tieneValores && (!item.fundSourceId || item.fundSourceId === null)) {
+            alert('Seleccione el fondo financiero para los items con valores.');
             errores++;
             continue;
           }
@@ -105,6 +111,7 @@ export class Guardadof9Component {
                   ? originalItem.expenseType
                   : { idExpenseType: Number(item.tipoGastoId) })
               : null,
+            fundSource: item.fundSourceId ? { idFinancialFund: item.fundSourceId } : null,
             monthAmounts: {
               ENERO: Number(item.meses['ENERO']) || 0,
               FEBRERO: Number(item.meses['FEBRERO']) || 0,

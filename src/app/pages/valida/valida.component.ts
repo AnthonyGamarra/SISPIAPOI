@@ -13,8 +13,10 @@ import {SelectoractComponent} from '../../components/selectoract/selectoract.com
 })
 export class ValidaComponent {
   idOperationalActivitySeleccionado: number | null = null;
+  idDependencySeleccionada: number | null = null;
 
-  manejarBusqueda(event: { idOperationalActivity: number | null }) {
+  manejarBusqueda(event: { idOperationalActivity: number | null, idDependency?: number | null }) {
     this.idOperationalActivitySeleccionado = event?.idOperationalActivity ?? null;
+    this.idDependencySeleccionada = event?.idDependency ?? null;
   }
 }

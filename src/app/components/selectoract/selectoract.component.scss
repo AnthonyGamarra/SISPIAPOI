@@ -1,6 +1,15 @@
 // ...existing code...
 .buscar-btn-mt {
   margin-top: 1.4rem;
+  background-color: #43a047 !important; /* verde */
+  border-color: #388e3c !important;
+  color: #fff !important;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.buscar-btn-mt:hover {
+  background-color: #66bb6a !important; /* verde más claro */
+  border-color: #43a047 !important;
+  color: #fff !important;
 }
 .actividad-grande {
   flex: 2 1 0%;
