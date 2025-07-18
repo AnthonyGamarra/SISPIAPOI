@@ -232,7 +232,7 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
               parent: parent,
               isOriginal: order === 1,
               order: order,
-              financialFund: oaItem.financialFund || null // Asignar el fondo financiero si existe
+              financialFund: this.fondosFinancieros.find(f => f.idFinancialFund === (oaItem.financialFund?.idFinancialFund || oaItem.financialFund)) || null
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
