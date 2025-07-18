@@ -101,10 +101,22 @@ export class SelectoractComponent implements OnInit {
         this.foundFormulations = formulaciones || [];
         this.formulationExists = this.foundFormulations.length > 0;
         // Modificación dropdown
-        this.modificationOptions = this.foundFormulations.map((f, idx) => ({
-          label: f.modification != null ? `Modificación ${f.modification}` : `Formulación ${f.idFormulation}`,
-          value: f.idFormulation
-        }));
+        this.modificationOptions = this.foundFormulations
+          .slice() // copiar
+          .sort((a, b) => (b.modification ?? 0) - (a.modification ?? 0)) // mayor a menor
+          .map(f => {
+            let label = '';
+            if (f.modification === 1) label = 'Formulación inicial';
+            else if (f.modification === 2) label = 'Primera modificación';
+            else if (f.modification === 3) label = 'Segunda modificación';
+            else if (f.modification === 4) label = 'Tercera modificación';
+            else if (f.modification > 4) label = `Modificación ${f.modification}`;
+            else label = `Formulación ${f.idFormulation}`;
+            return {
+              label,
+              value: f.idFormulation
+            };
+          });
         // Si no hay modificación seleccionada, seleccionar la primera
         if (!this.selectedModificationOption || !this.modificationOptions.some(opt => opt.value === this.selectedModificationOption)) {
           this.selectedModificationOption = this.modificationOptions[0]?.value || null;

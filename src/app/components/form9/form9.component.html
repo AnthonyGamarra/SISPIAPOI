@@ -2,6 +2,7 @@
   <table class="matrix-table" border="1" cellpadding="5" cellspacing="0">
     <thead>
       <tr>
+        <th>COD. PO/FI</th>
         <th>POSICIÓN PRESUPUESTARIA</th>
         <th style="width: 60px; display: none;">ORDEN</th>
         <th style="width: 120px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
@@ -22,6 +23,9 @@
             [class.nivel-2-row]="!row.editable && (nivel === 2)"
             [class.nivel-3-row]="!row.editable && (nivel === 3)"
           >
+            <td style="text-align: center;">
+              <ng-container *ngIf="row.editable">{{ row.codPoFi }}</ng-container>
+            </td>
             <td style="text-align: left;">
               <span [style.paddingLeft.px]="nivel * 30"></span>
               <button
