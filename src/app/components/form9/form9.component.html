@@ -128,8 +128,8 @@
 
             <td>
               <ng-container *ngIf="row.editable">
-                <select [(ngModel)]="row.fundSource" [ngModelOptions]="{standalone: true}">
-                  <option [ngValue]="null">Seleccione fondo</option>
+                <select [(ngModel)]="row.financialFund">
+                  <option [ngValue]="null"></option>
                   <option *ngFor="let fondo of fondosFinancieros" [ngValue]="fondo">
                     {{ fondo.codFofi }} - {{ fondo.name }}
                   </option>

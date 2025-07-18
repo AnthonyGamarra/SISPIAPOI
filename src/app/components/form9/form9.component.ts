@@ -23,7 +23,7 @@ interface Row {
   meses: { [key: string]: number };
   expanded: boolean;
   editable: boolean;
-  fundSource?: FinancialFund | null; // Fondo financiero seleccionado
+  financialFund?: FinancialFund | null; // Fondo financiero seleccionado
   children?: Row[];
   parent?: Row;
   isOriginal?: boolean;  // <-- flag para fila original
@@ -231,7 +231,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
               editable: true,
               parent: parent,
               isOriginal: order === 1,
-              order: order
+              order: order,
+              financialFund: oaItem.financialFund || null // Asignar el fondo financiero si existe
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
@@ -247,7 +248,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
             editable: true,
             parent: parent,
             isOriginal: true,
-            order: 1
+            order: 1,
+            financialFund: null
           };
           parent.children = parent.children || [];
           parent.children.push(itemRow);

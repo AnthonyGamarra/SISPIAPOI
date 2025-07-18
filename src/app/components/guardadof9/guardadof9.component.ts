@@ -6,6 +6,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { OperationalActivityBudgetItemService } from '../../core/services/logic/operational-activity-budget-item.service';
 import { LottieComponent } from 'ngx-lottie';
 import { AnimationOptions } from 'ngx-lottie';
+import { FinancialFund } from '../../models/logic/financialFund.model';
 
 @Component({
   selector: 'app-guardadof9',
@@ -52,7 +53,7 @@ export class Guardadof9Component {
             tipoGastoId: row.tipoGasto,
             codPoFi: row.codPoFi,
             order: row.order || 1,
-            fundSourceId: row.fundSource?.idFinancialFund || null
+            financialFundId: row.financialFund?.idFinancialFund || null
           });
         }
 
@@ -92,9 +93,8 @@ export class Guardadof9Component {
             errores++;
             continue;
           }
-          if (tieneValores && (!item.fundSourceId || item.fundSourceId === null)) {
-            alert('Seleccione el fondo financiero para los items con valores.');
-            errores++;
+          // Si no hay fondo financiero, simplemente no guardar este item
+          if (tieneValores && (!item.financialFundId || item.financialFundId === null)) {
             continue;
           }
           // Buscar si existe en los datos originales del backend (comparar idBudgetItem y orderItem)
@@ -111,7 +111,7 @@ export class Guardadof9Component {
                   ? originalItem.expenseType
                   : { idExpenseType: Number(item.tipoGastoId) })
               : null,
-            fundSource: item.fundSourceId ? { idFinancialFund: item.fundSourceId } : null,
+            financialFund: { idFinancialFund: item.financialFundId } as FinancialFund,
             monthAmounts: {
               ENERO: Number(item.meses['ENERO']) || 0,
               FEBRERO: Number(item.meses['FEBRERO']) || 0,

@@ -1,6 +1,7 @@
 import { OperationalActivity } from "./operationalActivity.model";
 import { BudgetItem } from "./budgetItem.model";
 import { ExpenseType } from "./expenseType.model";
+import { FinancialFund } from "./financialFund.model";
 
 // Representación del enum MonthEnum en TS
 export enum MonthEnum {
@@ -28,5 +29,5 @@ export interface OperationalActivityBudgetItem {
   orderItem: number;
   monthAmounts: Partial<Record<MonthEnum, number>>;
   expenseType?: ExpenseType | null;
-  fundSource?: any | null; // Cambia 'any' por el tipo correcto si existe el modelo FundSource
+  financialFund?: FinancialFund; // Cambia 'any' por el tipo correcto si existe el modelo FinancialFund
 }
