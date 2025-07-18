@@ -1,3 +1,5 @@
+/* Overlay para mostrar solo el codFofi seleccionado encima del select */
+
 :root {
   --primary: #005fa3;
 }
@@ -54,14 +56,30 @@
 }
 
 
-/* Primera columna (Cod. PO/FI) pequeña */
-.matrix-table thead th:first-child {
-  width: 80px;
-  max-width: 80px;
-  min-width: 70px;
+
+
+/* Primera columna (Fondo financiero) */
+.matrix-table thead th:first-child,
+.matrix-table tbody td:first-child {
+  width: 90px;
+  max-width: 90px;
+  min-width: 80px;
   text-align: center;
 }
-.matrix-table tbody td:first-child {
+
+/* Select de fondo financiero más pequeño */
+.matrix-table tbody td:first-child select {
+  width: 80px;
+  min-width: 70px;
+  max-width: 90px;
+  font-size: 0.85em;
+  padding: 2px 4px;
+  height: 28px;
+}
+
+/* Segunda columna (Cod. PO/FI) */
+.matrix-table thead th:nth-child(2),
+.matrix-table tbody td:nth-child(2) {
   width: 80px;
   max-width: 80px;
   min-width: 70px;
@@ -69,27 +87,36 @@
   font-size: 0.7rem;
 }
 
-/* Segunda columna (Posición presupuestaria) igual que antes */
-.matrix-table thead th:nth-child(2),
-.matrix-table tbody td:nth-child(2) {
+/* Tercera columna (Posición presupuestaria) */
+.matrix-table thead th:nth-child(3),
+.matrix-table tbody td:nth-child(3) {
   width: 360px;
   max-width: 360px;
   min-width: 360px;
   text-align: left;
 }
 
-/* Tercera columna (Acciones) igual que antes */
-.matrix-table thead th:nth-child(3),
-.matrix-table tbody td:nth-child(3) {
+/* Cuarta columna (Acciones) */
+.matrix-table thead th:nth-child(4),
+.matrix-table tbody td:nth-child(4) {
   width: 150px;
   max-width: 150px;
   min-width: 150px;
   text-align: center;
 }
 
+/* Quinta columna (Tipo de gasto) */
+.matrix-table thead th:nth-child(5),
+.matrix-table tbody td:nth-child(5) {
+  width: 185px;
+  max-width: 185px;
+  min-width: 185px;
+  text-align: center;
+}
+
 /* Resto de columnas igual */
-.matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)),
-.matrix-table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)) {
+.matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)),
+.matrix-table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)) {
   width: 110px;
   max-width: 110px;
   min-width: 110px;
