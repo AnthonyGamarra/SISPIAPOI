@@ -55,12 +55,18 @@
 
 
 /* Primera columna (Cod. PO/FI) pequeña */
-.matrix-table thead th:first-child,
+.matrix-table thead th:first-child {
+  width: 80px;
+  max-width: 80px;
+  min-width: 70px;
+  text-align: center;
+}
 .matrix-table tbody td:first-child {
   width: 80px;
   max-width: 80px;
   min-width: 70px;
   text-align: center;
+  font-size: 0.7rem;
 }
 
 /* Segunda columna (Posición presupuestaria) igual que antes */
