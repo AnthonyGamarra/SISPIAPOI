@@ -41,6 +41,7 @@ interface Row {
 export class Form9Component implements OnInit, OnChanges { // Implement OnChanges
   @Input() idOperationalActivity: number | null = null;
   @Input() idDependency: number | null = null; // Recibe la dependencia seleccionada
+  @Input() selectedYear: number | null = null; // Año seleccionado (opcional, para el header)
 
   meses: string[] = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
@@ -50,6 +51,7 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   tiposGasto: ExpenseType[] = [];
   data: Row[] = [];
   fondosFinancieros: FinancialFund[] = [];
+  estimadoHeader: string = '';
 
   constructor(
     private budgetCategoryService: BudgetCategoryService,
@@ -68,6 +70,17 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
 
   // --- ngOnChanges Implementation ---
   ngOnChanges(changes: SimpleChanges): void {
+    // Calcular header de estimado
+    let year = this.selectedYear;
+    if (!year && this.idOperationalActivity) {
+      // Si no se pasa selectedYear, intentar deducirlo de la actividad (no implementado aquí)
+      // year = ...
+    }
+    if (year) {
+      this.estimadoHeader = `Estimado ${Number(year) - 1}`;
+    } else {
+      this.estimadoHeader = 'Estimado';
+    }
     // Siempre que haya idDependency, cargar fondos financieros
     if ((changes['idDependency'] && this.idDependency) || (changes['idOperationalActivity'] && this.idDependency)) {
       this.financialFundService.getAll().subscribe(fondos => {
@@ -271,6 +284,7 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
 
   initMeses(values: Partial<{ [key: string]: number }> = {}): { [key: string]: number } {
     const mesesObj: { [key: string]: number } = {};
+    mesesObj['ESTIMADO'] = values['ESTIMADO'] || 0;
     for (const mes of this.meses) {
       mesesObj[mes] = values[mes] || 0;
     }
@@ -315,6 +329,11 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       this.updateParentValues(row.parent);
     }
     this.updateForm9DataService();
+  }
+
+  // Nuevo: obtener el estimado para el payload
+  getEstimado(row: Row): number {
+    return row.meses['ESTIMADO'] || 0;
   }
 
   replicarEnero(row: Row) {

@@ -6,8 +6,9 @@
         <th>COD. PO/FI</th>
         <th>POSICIÓN PRESUPUESTARIA</th>
         <th style="width: 60px; display: none;">ORDEN</th>
-        <th style="width: 120px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
-        <th style="width: 185px;">TIPO DE GASTO</th>
+        <th style="width: 100px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
+        <th style="width: 240px;">TIPO DE GASTO</th>
+        <th>{{ estimadoHeader }}</th>
         <th *ngFor="let mes of meses">{{ mes }}</th>
         <th>TOTAL</th>
       </tr>
@@ -127,7 +128,7 @@
 
             <td>
               <ng-container *ngIf="row.editable">
-                <select [(ngModel)]="row.tipoGasto">
+                <select [(ngModel)]="row.tipoGasto" class="tipo-gasto-select">
                   <option [value]="null"></option>
                   <option *ngFor="let tipo of tiposGasto" [value]="tipo.idExpenseType">
                     {{ tipo.name }}
@@ -138,6 +139,21 @@
 
 
 
+            <td>
+              <ng-container *ngIf="row.editable; else noeditEstimado">
+                <input
+                  type="number"
+                  min="0"
+                  max="999999999"
+                  [(ngModel)]="row.meses['ESTIMADO']"
+                  (input)="onInputValueChange(row, 'ESTIMADO')"
+                  style="width: 80px;"
+                />
+              </ng-container>
+              <ng-template #noeditEstimado>
+                {{ row.meses?.['ESTIMADO'] || 0 | number }}
+              </ng-template>
+            </td>
             <td *ngFor="let mes of meses">
               <ng-container *ngIf="row.editable; else noedit">
                 <input

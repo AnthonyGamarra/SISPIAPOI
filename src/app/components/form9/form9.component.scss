@@ -1,3 +1,23 @@
+.matrix-table tbody td:nth-child(5) select,
+.tipo-gasto-select {
+  width: 135px !important;
+  min-width: 50px !important;
+  max-width: 135px !important;
+  font-size: 1em !important;
+  padding: 0 22px 0 2px !important;
+  height: 22px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background: white url('data:image/svg+xml;utf8,<svg fill="%23333" height="30" viewBox="0 0 15 15" width="30" xmlns="http://www.w3.org/2000/svg"><path d="M7.293 7.293a1 1 0 011.414 0L10 8.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z"/></svg>') no-repeat right 6px center/16px 16px !important;
+  background-color: #fff !important;
+  background-position: right 6px center !important;
+  background-repeat: no-repeat !important;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
 /* Overlay para mostrar solo el codFofi seleccionado encima del select */
 
 :root {
@@ -99,18 +119,18 @@
 /* Cuarta columna (Acciones) */
 .matrix-table thead th:nth-child(4),
 .matrix-table tbody td:nth-child(4) {
-  width: 150px;
-  max-width: 150px;
-  min-width: 150px;
+  width: 100px;
+  max-width: 100px;
+  min-width: 100px;
   text-align: center;
 }
 
 /* Quinta columna (Tipo de gasto) */
 .matrix-table thead th:nth-child(5),
 .matrix-table tbody td:nth-child(5) {
-  width: 185px;
-  max-width: 185px;
-  min-width: 185px;
+  width: 240px;
+  max-width: 240px;
+  min-width: 240px;
   text-align: center;
 }
 

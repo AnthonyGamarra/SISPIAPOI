@@ -30,4 +30,5 @@ export interface OperationalActivityBudgetItem {
   monthAmounts: Partial<Record<MonthEnum, number>>;
   expenseType?: ExpenseType | null;
   financialFund?: FinancialFund; // Cambia 'any' por el tipo correcto si existe el modelo FinancialFund
+  estimation: number;
 }
