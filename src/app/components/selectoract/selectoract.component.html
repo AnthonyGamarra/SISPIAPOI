@@ -74,12 +74,15 @@
       filterBy="label">
     </p-dropdown>
   </div>
-  <div><button
+  <div>
+    <button
       pButton
       type="button"
-      label="Buscar"
+      icon="pi pi-search"
       class="p-button-sm buscar-btn-mt"
-      (click)="emitirActividadSeleccionada()">
-    </button></div>
+      (click)="emitirActividadSeleccionada()"
+      aria-label="Buscar">
+    </button>
+  </div>
 </div>
 
