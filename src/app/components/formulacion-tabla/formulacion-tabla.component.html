@@ -1,6 +1,6 @@
 <div>
-  <div class="grid mx-auto">
-    <div class="col-6 flex justify-center mr-auto my-5">
+  <div class="grid mx-auto my-3">
+    <div class="col-6 flex justify-center mr-auto">
       <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false" optionLabel="name" optionValue="value" />
     </div>
     <button
@@ -9,7 +9,7 @@
       icon="pi pi-plus"
       (click)="agregarActividad()"
       [disabled]="state === 2 || state === 4 || !year || !active"
-      class="col-6 add-button ml-auto my-5">
+      class="col-6 add-button ml-auto">
     </button>
   </div>
   <div class="table-container">
@@ -24,8 +24,8 @@
       columnResizeMode="expand"
       dataKey="idOperationalActivity"
       editMode="row"
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]"
+      [paginator]="true" 
+      [rows]="5"
       [rowHover]="true"
       [editingRowKeys]="editingRowKeys">
       
@@ -37,7 +37,7 @@
           <th style="min-width: 130px; max-width: 130px;" rowspan="2">Acción estratégica</th>
 
           <th style="min-width: 170px; max-width: 170px;" rowspan="2">Centro gestor</th>
-          <th style="min-width: 600px; max-width: 600px;" rowspan="2">Centro de costos</th>          
+          <th style="min-width: 550px; max-width: 550px;" rowspan="2">Centro de costos</th>          
           <th style="min-width: 500px; max-width: 500px;" rowspan="2">Fondo financiero</th>
           
           <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>

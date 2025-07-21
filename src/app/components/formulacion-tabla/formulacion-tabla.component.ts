@@ -320,8 +320,8 @@ loadOperationalActivities(): void {
     next: (data) => {
       // Ordenar por activity.correlativeCode (ascendente)
       data.sort((a, b) => {
-        const codeA = a.correlativeCode?.toString() || '';
-        const codeB = b.correlativeCode?.toString() || '';
+        const codeA = a.idOperationalActivity?.toString() || '';
+        const codeB = b.idOperationalActivity?.toString() || '';
         return codeA.localeCompare(codeB, undefined, { numeric: true });
       });
 

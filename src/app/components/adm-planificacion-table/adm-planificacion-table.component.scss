@@ -91,3 +91,55 @@
 .centered {
   text-align: center;
 }
+
+.success-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8); // semitransparente
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  ng-lottie {
+    width: 250px;
+    height: 250px;
+  }
+
+  .message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2e7d32;
+    margin-top: 1rem;
+  }
+}
+
+::ng-deep .p-confirmdialog-reject-button {
+  background-color: white;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+::ng-deep .p-confirmdialog-reject-button:hover {
+  background-color: var(--secondary-light) !important;
+  color: var(--primary-darker) !important;
+  border: 1px solid white !important;
+}
+
+::ng-deep .p-confirmdialog-accept-button {
+  background-color: var(--primary) !important;
+  color: white !important;  
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+::ng-deep .p-confirmdialog-accept-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}

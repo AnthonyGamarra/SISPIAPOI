@@ -61,6 +61,12 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
 
   --p-form-field-focus-border-color: #{$color-primary} !important;
 
+  --p-button-primary-hover-background: #{$color-secondary-light} !important;
+  --p-button-primary-active-background: #{$color-secondary-light} !important;
+  --p-button-primary-border-color: #{$color-secondary-light} !important;
+  --p-button-primary-hover-border-color: #{$color-secondary-light} !important;
+  --p-button-primary-active-border-color: #{$color-secondary-light} !important;
+  
 }
 
 body {
