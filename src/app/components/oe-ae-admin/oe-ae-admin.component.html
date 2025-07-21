@@ -2,8 +2,8 @@
 <div class="oe-ae-admin-container mx-auto">
   <div class="p-mb-4 flex flex-column gap-3">
     <div class="flex align-items-center gap-2">
-      <p-dropdown [options]="years" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)" [showClear]="false" placeholder="Filtrar por año" optionLabel="label" [style]="{width: '150px'}"></p-dropdown>
-      <button pButton label="Replicar" icon="pi pi-copy" class="p-button-outlined" (click)="openReplicateDialog()"></button>
+      <p-dropdown [options]="years" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)" [showClear]="false" optionLabel="label" [style]="{width: '150px'}"></p-dropdown>
+      <button pButton label="Replicar" icon="pi pi-copy" class="add-button" (click)="openReplicateDialog()"></button>
     </div>
 
     <p-card header="Objetivos Estratégicos" class="mb-3 shadow-lg">
@@ -33,7 +33,7 @@
       </p-table>
     </p-card>
 
-    <p-dialog header="{{ editingObjective ? 'Editar Objetivo' : 'Nuevo Objetivo' }}" [(visible)]="showObjectiveForm" [modal]="true"  [style]="{width: '35vw'}"
+    <p-dialog header="{{ editingObjective ? 'Editar Objetivo' : 'Nuevo Objetivo' }}" [(visible)]="showObjectiveForm" [modal]="true"  [style]="{width: '35vw'}"
       [breakpoints]="{ '960px': '80vw', '640px': '95vw' }">
       <form (ngSubmit)="saveObjective()">
         <div class="p-field my-3">
@@ -48,7 +48,7 @@
           <label>Año inicio</label>
           <input type="number" [(ngModel)]="objectiveForm.startYear" name="startYear" required class="p-inputtext w-full" />
         </div>
-        <div class="p-mt-3 flex justify-content-end gap-2">          
+        <div class="p-mt-3 flex justify-content-end gap-2">          
           <button pButton type="button" label="Cancelar" icon="pi pi-times" class="cancel-button" (click)="showObjectiveForm=false"></button>
           <button pButton type="submit" label="Guardar" icon="pi pi-check" class="add-button"></button>
         </div>
@@ -92,7 +92,7 @@
             <label>Nombre</label>
             <textarea pTextarea [(ngModel)]="actionForm.name" name="name_ae" required class="p-inputtext w-full" rows="4" [autoResize]="true" style="resize: none"></textarea>
           </div>
-          <div class="p-mt-3 flex justify-content-end gap-2">            
+          <div class="p-mt-3 flex justify-content-end gap-2">            
             <button pButton type="button" label="Cancelar" icon="pi pi-times" class="cancel-button" (click)="showActionForm=false"></button>
             <button pButton type="submit" label="Guardar" icon="pi pi-check" class="add-button"></button>
           </div>
@@ -108,15 +108,18 @@
       </p-card>
     </ng-template>
 
-    <p-dialog header="Replicar OE y AE" [(visible)]="showReplicateDialog" [modal]="true" [style]="{width: '350px'}">
-      <div class="p-field">
-        <label>Selecciona el año destino</label>
-        <p-calendar [(ngModel)]="replicateYear" view="year" dateFormat="yy" yearNavigator="true" yearRange="2020:2100" [showIcon]="true" [inputStyle]="{width: '100%'}"></p-calendar>
+    <p-dialog header="Replicar OE y AE" [(visible)]="showReplicateDialog" [modal]="true" [style]="{width: '35vw'}"
+      [breakpoints]="{ '960px': '80vw', '640px': '95vw' }">
+      <div class="p-field my-3">
+        <label>Selecciona el año destino: </label>
+        <p-datePicker *ngIf="replicateYear" [(ngModel)]="replicateYear" view="year" dateFormat="yy" yearNavigator="true" [showIcon]="true" [inputStyle]="{width: '100%'}" appendTo="body" [minDate]="minDate" [maxDate]="maxDate"></p-datePicker>
+        <input *ngIf="!replicateYear" type="text" pInputText value="Cargando año..." disabled class="w-full">
       </div>
-      <div class="p-mt-3 flex justify-content-end gap-2">
+      <div class="p-mt-3 flex justify-content-end gap-2 my-3">
         <button pButton label="Replicar" icon="pi pi-copy" (click)="replicateObjectivesAndActions()" [disabled]="!replicateYear" class="p-button-warning"></button>
         <button pButton label="Cancelar" icon="pi pi-times" class="p-button-text" (click)="showReplicateDialog=false"></button>
       </div>
     </p-dialog>
+
   </div>
 </div>

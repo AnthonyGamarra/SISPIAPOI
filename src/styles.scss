@@ -75,6 +75,8 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
 
   --p-button-text-primary-color: #{$color-primary-darker} !important;
 
+  --p-datepicker-date-selected-background: #{$color-primary} !important;
+
 }
 
 body {

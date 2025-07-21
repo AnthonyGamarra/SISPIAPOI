@@ -10,19 +10,21 @@ import { FormulacionModuloComponent } from '../../components/formulacion-modulo/
 import { EvaluacionModuloComponent } from '../../components/evaluacion-modulo/evaluacion-modulo.component'
 import { AdmPlanificacionModuloComponent } from '../../components/adm-planificacion-modulo/adm-planificacion-modulo.component'
 import { ModuloksComponent } from '../../components/moduloks/moduloks.component';
+import { AdmOEAEModuloComponent } from "../../components/adm-oe-ae-modulo/adm-oe-ae-modulo.component";
 
 @Component({
   selector: 'app-menu',
   standalone: true,
   imports: [
-    CommonModule, 
-    FooterComponent, 
-    MenubarComponent, 
-    FormulacionModuloComponent, 
+    CommonModule,
+    FooterComponent,
+    MenubarComponent,
+    FormulacionModuloComponent,
     EvaluacionModuloComponent,
     AdmPlanificacionModuloComponent,
-    ModuloksComponent
-  ],
+    ModuloksComponent,
+    AdmOEAEModuloComponent
+],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
 })

@@ -29,7 +29,7 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'admin-poi', // ✅ nueva ruta para el componente Formu1
+    path: 'admin-oe-ae', // ✅ nueva ruta para el componente Formu1
     component: AdminOeAeComponent,
     canActivate: [authGuard],
     data: {
