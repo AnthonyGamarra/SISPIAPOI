@@ -8,7 +8,7 @@
         <th style="width: 60px; display: none;">ORDEN</th>
         <th style="width: 100px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
         <th style="width: 240px;">TIPO DE GASTO</th>
-        <th>{{ estimadoHeader }}</th>
+        <th>ESTIMADO AÑO ANT.</th>
         <th *ngFor="let mes of meses">{{ mes }}</th>
         <th>TOTAL</th>
       </tr>
@@ -151,7 +151,7 @@
                 />
               </ng-container>
               <ng-template #noeditEstimado>
-                {{ row.meses?.['ESTIMADO'] || 0 | number }}
+                {{ row.estimation || 0 | number }}
               </ng-template>
             </td>
             <td *ngFor="let mes of meses">
