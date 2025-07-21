@@ -1,0 +1,18 @@
+<div class="matrix-table-wrapper">
+  <table class="matrix-table" border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th style="width: 200px;">Categoría</th>
+        <th *ngFor="let mes of meses">{{ mes }}</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of resumen">
+        <td style="font-weight: bold; text-align: left;">{{ row.categoria }}</td>
+        <td *ngFor="let val of row.valores">{{ val | number:'1.0-0' }}</td>
+        <td style="font-weight: bold;">{{ row.total | number:'1.0-0' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div><p>f9resume works!</p>
