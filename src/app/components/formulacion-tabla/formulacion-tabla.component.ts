@@ -262,12 +262,20 @@ loadCombos(): void {
         costCenters: this.costCenterService.getAll(),
     }).subscribe({
         next: ({ strategicObjectives, strategicActions, financialFunds, measurementTypes, priorities, managementCenters, costCenters }) => {
-            
-            // 1. Formatear los Objetivos Estratégicos
-            this.strategicObjectives = strategicObjectives.map(obj => ({
-                ...obj,
-                name: `O.E.${obj.code}: ${obj.name}`
-            }));
+            // 1. Filtrar, ordenar y formatear los Objetivos Estratégicos SOLO por startYear === año de la formulación
+            const year = this.year || (this.ano ? parseInt(this.ano, 10) : null);
+            this.strategicObjectives = strategicObjectives
+                .filter(obj => year !== null && obj.startYear === year)
+                .sort((a, b) => {
+                    // Si code es numérico, ordenar como número; si es string, ordenar como string
+                    const codeA = a.code?.toString() || '';
+                    const codeB = b.code?.toString() || '';
+                    return codeA.localeCompare(codeB, undefined, { numeric: true });
+                })
+                .map(obj => ({
+                    ...obj,
+                    name: `O.E.${obj.code}: ${obj.name}`
+                }));
 
             // 2. Formatear las Acciones Estratégicas
             this.strategicActions = strategicActions.map(action => ({
@@ -281,10 +289,9 @@ loadCombos(): void {
                 : financialFunds;
             this.financialFunds = filteredFinancialFunds.map(ff => ({
                 ...ff,
-                // name: `${ff.name}`
                 name: `${ff.codFofi}: ${ff.name}`
             }));
-            
+
             this.measurementTypes = measurementTypes;
             this.priorities = priorities;
 
@@ -297,7 +304,7 @@ loadCombos(): void {
                 ...cc,
                 name: `${cc.costCenterCode}: ${cc.name}`
             }));
-            
+
             // 5. Los Centros de Gestión (MC) se filtran y asignan como estaban, ya que no se pidió formatearlos
             this.managementCenters = dependencyId
                 ? managementCenters.filter(mc => mc.dependency?.idDependency === dependencyId)
@@ -362,8 +369,9 @@ loadOperationalActivities(): void {
     this.year = year;
 
     this.strategicObjectiveService.getAll().subscribe((objectives: StrategicObjective[]) => {
+      // Solo mostrar los OE cuyo startYear coincide exactamente con el año de la formulación
       this.strategicObjectives = objectives.filter(
-        obj => year >= obj.startYear && year <= obj.endYear
+        obj => obj.startYear === year
       );
     });
   }

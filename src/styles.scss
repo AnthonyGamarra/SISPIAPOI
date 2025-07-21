@@ -46,6 +46,8 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
 
   --p-checkbox-checked-border-color: #{$color-primary} !important;
   --p-checkbox-checked-background: #{$color-primary} !important;
+  --p-checkbox-checked-hover-background: #{$color-primary-darker} !important;
+  --p-checkbox-checked-hover-border-color: #{$color-primary-darker} !important;
 
   --p-floatlabel-focus-color: #{$color-primary} !important;
   --p-floatlabel-active-color: #{$color-primary} !important;
@@ -66,7 +68,13 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
   --p-button-primary-border-color: #{$color-secondary-light} !important;
   --p-button-primary-hover-border-color: #{$color-secondary-light} !important;
   --p-button-primary-active-border-color: #{$color-secondary-light} !important;
-  
+
+  --p-datatable-row-selected-background: #{$color-secondary-light} !important;
+  --p-datatable-row-selected-color: #{$color-primary-darker} !important;
+  --p-datatable-body-cell-selected-border-color: #{$color-primary-darker} !important;
+
+  --p-button-text-primary-color: #{$color-primary-darker} !important;
+
 }
 
 body {

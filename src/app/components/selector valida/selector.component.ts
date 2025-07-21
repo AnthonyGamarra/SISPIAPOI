@@ -282,7 +282,7 @@ export class SelectorComponent implements OnInit {
             dependencia: this.selectedDependency,
             idFormulation: this.idFormulation
           });
-        }, 2500);
+        }, 1000);
       },
       error: () => {
         this.toastr.error('Error al crear la formulación.', 'Error');

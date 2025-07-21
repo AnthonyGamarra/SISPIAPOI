@@ -5,6 +5,7 @@ import { FormulationComponent } from './pages/formulation/formulation.component'
 import { EvaluacionComponent } from './pages/evaluacion/evaluacion.component';
 import { ValidaComponent } from './pages/valida/valida.component';
 import { AdminPlanificacionComponent } from './pages/admin-planificacion/admin-planificacion.component';
+import { AdminOeAeComponent } from './pages/admin-oe-ae/admin-oe-ae.component';
 
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -22,6 +23,14 @@ export const routes: Routes = [
   {
     path: 'admin-planificacion', // ✅ nueva ruta para el componente Formu1
     component: AdminPlanificacionComponent,
+    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "GPLANEAMIENTO"],
+    },
+  },
+  {
+    path: 'admin-poi', // ✅ nueva ruta para el componente Formu1
+    component: AdminOeAeComponent,
     canActivate: [authGuard],
     data: {
       roles: ["ADMIN", "GPLANEAMIENTO"],

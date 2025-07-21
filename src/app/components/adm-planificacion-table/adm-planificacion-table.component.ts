@@ -195,26 +195,34 @@ options: AnimationOptions = {
   const newActiveState = event.checked;
 
   this.confirmationService.confirm({
-   message: `¿Está seguro de ${newActiveState ? 'activar' : 'desactivar'} la formulación de "${formulation.dependency?.name}"?`,
-   header: 'Confirmar Cambio de Estado',
-   icon: 'pi pi-exclamation-triangle',
-   accept: () => {
-    formulation.active = newActiveState;
-    this.formulationService.update(formulation).subscribe({
-     next: () => {
-      this.toastr.success(`Formulación ${newActiveState ? 'activada' : 'desactivada'}.`, 'Éxito');
-     },
-     error: (err) => {
-      this.toastr.error(`Error al ${newActiveState ? 'activar' : 'desactivar'} la formulación.`, 'Error');
-      console.error('Error updating formulation active state', err);
+    message: `¿Está seguro de ${newActiveState ? 'activar' : 'desactivar'} la formulación de "${formulation.dependency?.name}"?`,
+    header: 'Confirmar Cambio de Estado',
+    icon: 'pi pi-exclamation-triangle',
+    accept: () => {
+      formulation.active = newActiveState;
+      // Solo cambiar el estado a idFormulationState 4 si se desactiva
+      if (!newActiveState) {
+        if (formulation.formulationState) {
+          formulation.formulationState.idFormulationState = 4;
+        } else {
+          formulation.formulationState = { idFormulationState: 4 } as FormulationState;
+        }
+      }
+      this.formulationService.update(formulation).subscribe({
+        next: () => {
+          this.toastr.success(`Formulación ${newActiveState ? 'activada' : 'desactivada'}.`, 'Éxito');
+        },
+        error: (err) => {
+          this.toastr.error(`Error al ${newActiveState ? 'activar' : 'desactivar'} la formulación.`, 'Error');
+          console.error('Error updating formulation active state', err);
+          formulation.active = !newActiveState;
+        }
+      });
+    },
+    reject: () => {
       formulation.active = !newActiveState;
-     }
-    });
-   },
-   reject: () => {
-    formulation.active = !newActiveState;
-    this.toastr.info('Cambio de estado cancelado.', 'Cancelado');
-   },
+      this.toastr.info('Cambio de estado cancelado.', 'Cancelado');
+    },
     rejectButtonProps: {
       label: 'No',
       icon: 'pi pi-times',

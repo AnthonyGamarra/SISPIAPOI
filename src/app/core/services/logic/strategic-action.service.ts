@@ -24,8 +24,8 @@ export class StrategicActionService {
       return this.http.post<StrategicAction>(this.BASE_URL, objective);
     }
   
-    update(id: number, objective: StrategicAction): Observable<StrategicAction> {
-      return this.http.put<StrategicAction>(`${this.BASE_URL}/${id}`, objective);
+    update(objective: StrategicAction): Observable<StrategicAction> {
+      return this.http.put<StrategicAction>(`${this.BASE_URL}`, objective);
     }
   
     delete(id: number): Observable<void> {

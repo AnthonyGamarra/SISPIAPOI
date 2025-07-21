@@ -1,0 +1,56 @@
+.oe-ae-admin-container {
+  padding: 2rem 0.5rem;
+  max-width: 90rem;
+  @media screen and (max-width: 768px) {
+    max-width: 90vw;    
+  }
+}
+.shadow-lg {
+  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.08), 0 1.5px 6px 0 rgba(0,0,0,0.12);
+  border-radius: 12px;
+}
+.font-bold {
+  font-weight: bold;
+}
+.p-card {
+  margin-bottom: 1.5rem;
+}
+.p-table th {
+  background: #f4f4f4;
+  font-weight: 600;
+}
+.p-table td {
+  vertical-align: middle;
+}
+
+.add-button {
+  background-color: var(--primary) !important;
+  color: white !important;  
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+.add-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.cancel-button {
+  background-color: white;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+.cancel-button:hover {
+  background-color: var(--secondary-light) !important;
+  color: var(--primary-darker) !important;
+  border: 1px solid white !important;
+}

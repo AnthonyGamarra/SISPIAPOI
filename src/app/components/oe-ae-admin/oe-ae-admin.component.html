@@ -1,0 +1,122 @@
+<p-confirmDialog></p-confirmDialog>
+<div class="oe-ae-admin-container mx-auto">
+  <div class="p-mb-4 flex flex-column gap-3">
+    <div class="flex align-items-center gap-2">
+      <p-dropdown [options]="years" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)" [showClear]="false" placeholder="Filtrar por año" optionLabel="label" [style]="{width: '150px'}"></p-dropdown>
+      <button pButton label="Replicar" icon="pi pi-copy" class="p-button-outlined" (click)="openReplicateDialog()"></button>
+    </div>
+
+    <p-card header="Objetivos Estratégicos" class="mb-3 shadow-lg">
+      <div class="flex justify-content-end mb-2">
+        <button pButton label="Nuevo OE" icon="pi pi-plus" class="add-button" (click)="openNewObjectiveForm()"></button>
+      </div>
+      <p-table [value]="displayObjectives" selectionMode="single" [(selection)]="selectedObjective" (selectionChange)="onSelectObjective($event)" [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Año Inicio</th>
+            <th style="width: 90px">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+          <tr [pSelectableRow]="row">
+            <td><span class="font-bold">{{ row.code }}</span></td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.startYear }}</td>
+            <td>
+              <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm" (click)="$event.stopPropagation(); openEditObjectiveForm(row)"></button>
+              <button pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-sm" (click)="$event.stopPropagation(); deleteObjective(row)"></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <p-dialog header="{{ editingObjective ? 'Editar Objetivo' : 'Nuevo Objetivo' }}" [(visible)]="showObjectiveForm" [modal]="true"  [style]="{width: '35vw'}"
+      [breakpoints]="{ '960px': '80vw', '640px': '95vw' }">
+      <form (ngSubmit)="saveObjective()">
+        <div class="p-field my-3">
+          <label>Código</label>
+          <input type="number" [(ngModel)]="objectiveForm.code" name="code" required class="p-inputtext w-full" />
+        </div>
+        <div class="p-field my-3">
+          <label>Nombre</label>
+          <textarea pTextarea [(ngModel)]="objectiveForm.name" name="name" required class="p-inputtext w-full" rows="4" [autoResize]="true" style="resize: none"></textarea>
+        </div>
+        <div class="p-field my-3">
+          <label>Año inicio</label>
+          <input type="number" [(ngModel)]="objectiveForm.startYear" name="startYear" required class="p-inputtext w-full" />
+        </div>
+        <div class="p-mt-3 flex justify-content-end gap-2">          
+          <button pButton type="button" label="Cancelar" icon="pi pi-times" class="cancel-button" (click)="showObjectiveForm=false"></button>
+          <button pButton type="submit" label="Guardar" icon="pi pi-check" class="add-button"></button>
+        </div>
+      </form>
+    </p-dialog>
+
+    <ng-container *ngIf="selectedObjective; else selectObjectiveMsg">
+      <p-card [header]="'Acciones Estratégicas de ' + selectedObjective.name" class="shadow-lg">
+        <div class="flex justify-content-end mb-2">
+          <button pButton label="Nueva AE" icon="pi pi-plus" class="add-button" (click)="openNewActionForm()"></button>
+        </div>
+        <p-table [value]="actions" [tableStyle]="{ 'min-width': '100%' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th style="width: 90px">Acciones</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td><span class="font-bold">{{ row.code }}</span></td>
+              <td>{{ row.name }}</td>
+              <td>
+                <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm" (click)="openEditActionForm(row)"></button>
+                <button pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-sm" (click)="deleteAction(row)"></button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+
+      <p-dialog header="{{ editingAction ? 'Editar Acción' : 'Nueva Acción' }}" [(visible)]="showActionForm" [modal]="true" [style]="{width: '35vw'}"
+      [breakpoints]="{ '960px': '80vw', '640px': '95vw' }">
+        <form (ngSubmit)="saveAction()">
+          <div class="p-field my-3">
+            <label>Código</label>
+            <input type="number" [(ngModel)]="actionForm.code" name="code_ae" required class="p-inputtext w-full" />
+          </div>
+          <div class="p-field my-3">
+            <label>Nombre</label>
+            <textarea pTextarea [(ngModel)]="actionForm.name" name="name_ae" required class="p-inputtext w-full" rows="4" [autoResize]="true" style="resize: none"></textarea>
+          </div>
+          <div class="p-mt-3 flex justify-content-end gap-2">            
+            <button pButton type="button" label="Cancelar" icon="pi pi-times" class="cancel-button" (click)="showActionForm=false"></button>
+            <button pButton type="submit" label="Guardar" icon="pi pi-check" class="add-button"></button>
+          </div>
+        </form>
+      </p-dialog>
+    </ng-container>
+    <ng-template #selectObjectiveMsg>
+      <p-card class="shadow-lg">
+        <div class="p-text-center p-m-4">
+          <i class="pi pi-info-circle p-mr-2" style="font-size: 2rem; color: var(--primary)"></i>
+          <span>Selecciona un Objetivo Estratégico para ver y gestionar sus Acciones Estratégicas.</span>
+        </div>
+      </p-card>
+    </ng-template>
+
+    <p-dialog header="Replicar OE y AE" [(visible)]="showReplicateDialog" [modal]="true" [style]="{width: '350px'}">
+      <div class="p-field">
+        <label>Selecciona el año destino</label>
+        <p-calendar [(ngModel)]="replicateYear" view="year" dateFormat="yy" yearNavigator="true" yearRange="2020:2100" [showIcon]="true" [inputStyle]="{width: '100%'}"></p-calendar>
+      </div>
+      <div class="p-mt-3 flex justify-content-end gap-2">
+        <button pButton label="Replicar" icon="pi pi-copy" (click)="replicateObjectivesAndActions()" [disabled]="!replicateYear" class="p-button-warning"></button>
+        <button pButton label="Cancelar" icon="pi pi-times" class="p-button-text" (click)="showReplicateDialog=false"></button>
+      </div>
+    </p-dialog>
+  </div>
+</div>
