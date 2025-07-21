@@ -68,6 +68,9 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
     if (row.estimation == null || isNaN(row.estimation) || row.estimation < 0) {
       row.estimation = 0;
     }
+    if (row.parent) {
+      this.updateParentValues(row.parent);
+    }
     this.updateForm9DataService();
   }
 
@@ -311,6 +314,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       for (const mes of this.meses) {
         parent.meses[mes] = parent.children.reduce((sum, child) => sum + (child.meses[mes] || 0), 0);
       }
+      // Sumar estimations de los hijos
+      parent.estimation = parent.children.reduce((sum, child) => sum + (typeof child.estimation === 'number' ? child.estimation : 0), 0);
       if (parent.parent) {
         this.updateParentValues(parent.parent);
       }

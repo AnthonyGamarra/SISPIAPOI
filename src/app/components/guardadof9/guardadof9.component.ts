@@ -74,6 +74,7 @@ export class Guardadof9Component {
   }
 
   guardarDatos() {
+    this.capturarDatosForm9();
     if (!this.datosCapturados || this.datosCapturados.length === 0) {
       alert('No hay datos para guardar.');
       return;
@@ -160,6 +161,10 @@ export class Guardadof9Component {
               }
             }
             if (!changed && Number(item.tipoGastoId) !== Number(originalItem.expenseType?.idExpenseType)) {
+              changed = true;
+            }
+            // Detectar cambio en estimation
+            if (!changed && Number(item.estimation) !== Number(originalItem.estimation || 0)) {
               changed = true;
             }
           }
