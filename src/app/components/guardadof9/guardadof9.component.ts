@@ -116,6 +116,7 @@ export class Guardadof9Component {
               : null,
             financialFund: { idFinancialFund: item.financialFundId } as FinancialFund,
             monthAmounts: {
+              ESTIMADO: Number(item.meses['ESTIMADO']) || 0,
               ENERO: Number(item.meses['ENERO']) || 0,
               FEBRERO: Number(item.meses['FEBRERO']) || 0,
               MARZO: Number(item.meses['MARZO']) || 0,
@@ -130,6 +131,7 @@ export class Guardadof9Component {
               DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
             },
             orderItem: item.order || 1,
+            estimation: Number(item.meses['ESTIMADO']) || 0
           };
           // Validar que los campos requeridos estén presentes y correctos (permitir valores 0)
           if (
