@@ -2,12 +2,12 @@
   <table class="matrix-table" border="1" cellpadding="5" cellspacing="0">
     <thead>
       <tr>
+        <th style="width: 180px;">FONDO FINANCIA</th>
         <th>COD. PO/FI</th>
         <th>POSICIÓN PRESUPUESTARIA</th>
         <th style="width: 60px; display: none;">ORDEN</th>
         <th style="width: 120px;">ACCIONES</th> <!-- Segunda columna, ancho reducido -->
-        <th style="width: 180px;">TIPO DE GASTO</th>
-        <th style="width: 180px;">FONDO FINANCIERO</th>
+        <th style="width: 185px;">TIPO DE GASTO</th>
         <th *ngFor="let mes of meses">{{ mes }}</th>
         <th>TOTAL</th>
       </tr>
@@ -24,6 +24,16 @@
             [class.nivel-2-row]="!row.editable && (nivel === 2)"
             [class.nivel-3-row]="!row.editable && (nivel === 3)"
           >
+            <td>
+              <ng-container *ngIf="row.editable">
+                <select [(ngModel)]="row.financialFund">
+                  <option [ngValue]="null"></option>
+                  <option *ngFor="let fondo of fondosFinancieros" [ngValue]="fondo">
+                    {{ row.financialFund === fondo ? fondo.codFofi : (fondo.codFofi + ' - ' + fondo.name) }}
+                  </option>
+                </select>
+              </ng-container>
+            </td>
             <td style="text-align: center;">
               <ng-container *ngIf="row.editable">{{ row.codPoFi }}</ng-container>
             </td>
@@ -126,16 +136,7 @@
               </ng-container>
             </td>
 
-            <td>
-              <ng-container *ngIf="row.editable">
-                <select [(ngModel)]="row.financialFund">
-                  <option [ngValue]="null"></option>
-                  <option *ngFor="let fondo of fondosFinancieros" [ngValue]="fondo">
-                    {{ fondo.codFofi }} - {{ fondo.name }}
-                  </option>
-                </select>
-              </ng-container>
-            </td>
+
 
             <td *ngFor="let mes of meses">
               <ng-container *ngIf="row.editable; else noedit">
