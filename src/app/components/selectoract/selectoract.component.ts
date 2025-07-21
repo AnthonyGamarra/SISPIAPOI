@@ -1,5 +1,6 @@
 import { ManagementCenterService } from '../../core/services/logic/management-center.service';
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { AuthService } from '../../core/services/authentication/auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
@@ -21,6 +22,8 @@ import { OperationalActivity } from '../../models/logic/operationalActivity.mode
 export class SelectoractComponent implements OnInit {
   dependencyOptions: { label: string; value: string }[] = [];
   selectedDependency: string | null = null;
+  isAdmin: boolean = false;
+  isSingleDependency: boolean = false;
   optionsAno: { label: string; value: string }[] = [];
   selectedAno: string | null = null;
   activityOptions: { label: string; value: number }[] = [];
@@ -36,37 +39,62 @@ export class SelectoractComponent implements OnInit {
   modificationOptions: { label: string; value: number }[] = [];
   selectedModificationOption: number | null = null;
 
-  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null, idDependency?: number | null, modificationId?: number | null }>();
+  @Output() buscar = new EventEmitter<{ idOperationalActivity: number | null, idDependency?: number | null, modificationId?: number | null, actividad?: OperationalActivity | null }>();
 
   constructor(
     private dependencyService: DependencyService,
     private operationalActivityService: OperationalActivityService,
     private formulationService: FormulationService,
-    private managementCenterService: ManagementCenterService
+    private managementCenterService: ManagementCenterService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
     this.cargarDependencias();
     this.cargarAnios();
   }
 
   cargarDependencias(): void {
     this.dependencyService.getAll().subscribe({
-      next: deps => {
-        this.dependencyOptions = deps.map(dep => ({
+      next: dependencies => {
+        let filteredDependencies: any[];
+        if (this.isAdmin) {
+          filteredDependencies = dependencies;
+        } else {
+          const dependencyIds: number[] = JSON.parse(localStorage.getItem('dependencies') || '[]');
+          if (dependencyIds.length === 0) {
+            // Si tienes toastr, descomenta la siguiente línea:
+            // this.toastr.warning('No se encontraron dependencias para el usuario.', 'Acceso Restringido');
+            this.dependencyOptions = [];
+            this.selectedDependency = null;
+            this.activityOptions = [];
+            return;
+          }
+          filteredDependencies = dependencies.filter(dep => dependencyIds.includes(dep.idDependency!));
+        }
+
+        this.isSingleDependency = filteredDependencies.length === 1;
+        this.dependencyOptions = filteredDependencies.map(dep => ({
           label: dep.name,
           value: dep.idDependency!.toString()
         }));
-        // No se debe setear selectedActivityId aquí, solo en el dropdown de actividad
-        this.actualizarActividades();
+
+        if (this.isSingleDependency) {
+          this.selectedDependency = this.dependencyOptions[0]?.value;
+        } else if (this.isAdmin && this.dependencyOptions.length > 0) {
+          this.selectedDependency = null;
+        }
+
+        if (this.selectedAno && this.selectedDependency) {
+          this.actualizarActividades();
+        }
       },
       error: () => {
         this.dependencyOptions = [];
         this.selectedDependency = null;
         this.activityOptions = [];
-
       }
-
     });
   }
 
@@ -209,11 +237,45 @@ export class SelectoractComponent implements OnInit {
     }
   }
 
+  selectedActivity: OperationalActivity | null = null;
+
   emitirActividadSeleccionada(): void {
+    // Buscar la actividad seleccionada en el array de actividades cargadas
+    if (this.selectedActivityId && Array.isArray(this.activityOptions)) {
+      // Buscar en el último fetch de actividades
+      if (this.foundFormulations && this.selectedModificationOption) {
+        const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption) || this.foundFormulations[0];
+        if (formulacion) {
+          this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
+            next: actividades => {
+              this.selectedActivity = actividades.find((act: OperationalActivity) => act.idOperationalActivity === this.selectedActivityId) || null;
+              this.buscar.emit({
+                idOperationalActivity: this.selectedActivityId,
+                idDependency: this.selectedDependency ? Number(this.selectedDependency) : null,
+                modificationId: this.selectedModificationOption,
+                actividad: this.selectedActivity
+              });
+            },
+            error: () => {
+              this.selectedActivity = null;
+              this.buscar.emit({
+                idOperationalActivity: this.selectedActivityId,
+                idDependency: this.selectedDependency ? Number(this.selectedDependency) : null,
+                modificationId: this.selectedModificationOption,
+                actividad: null
+              });
+            }
+          });
+          return;
+        }
+      }
+    }
+    this.selectedActivity = null;
     this.buscar.emit({
       idOperationalActivity: this.selectedActivityId,
       idDependency: this.selectedDependency ? Number(this.selectedDependency) : null,
-      modificationId: this.selectedModificationOption
+      modificationId: this.selectedModificationOption,
+      actividad: null
     });
   }
 

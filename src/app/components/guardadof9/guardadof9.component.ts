@@ -7,6 +7,7 @@ import { OperationalActivityBudgetItemService } from '../../core/services/logic/
 import { LottieComponent } from 'ngx-lottie';
 import { AnimationOptions } from 'ngx-lottie';
 import { FinancialFund } from '../../models/logic/financialFund.model';
+import { OperationalActivity } from '../../models/logic/operationalActivity.model';
 
 @Component({
   selector: 'app-guardadof9',
@@ -104,7 +105,9 @@ export class Guardadof9Component {
           );
           // Construir el payload usando los objetos completos si existen
           const payload = {
-            operationalActivity: originalItem?.operationalActivity || { idOperationalActivity: this.idOperationalActivity },
+            operationalActivity: originalItem?.operationalActivity?.idOperationalActivity
+              ? { idOperationalActivity: originalItem.operationalActivity.idOperationalActivity } as OperationalActivity
+              : { idOperationalActivity: this.idOperationalActivity } as OperationalActivity,
             budgetItem: originalItem?.budgetItem || { idBudgetItem: idBudgetItem },
             expenseType: Number(item.tipoGastoId)
               ? (originalItem?.expenseType && Number(item.tipoGastoId) === Number(originalItem.expenseType.idExpenseType)

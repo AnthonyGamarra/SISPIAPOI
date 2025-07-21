@@ -11,4 +11,7 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 })
 export class RBSComponent {
 
+  @Input() goods: number | null = null;
+  @Input() remuneration: number | null = null;
+  @Input() services: number | null = null;
 }

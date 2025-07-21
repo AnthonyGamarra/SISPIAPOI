@@ -1,5 +1,14 @@
 <app-menubar></app-menubar>
 <app-selectoract (buscar)="manejarBusqueda($event)"></app-selectoract>
-<app-guardadof9 [idOperationalActivity]="idOperationalActivitySeleccionado"></app-guardadof9>
+<div style="display: flex; flex-wrap: wrap; gap: 32px; justify-content: center; align-items: flex-start; margin-bottom: 18px;">
+  <app-rbs
+    [goods]="actividadSeleccionada?.goods"
+    [remuneration]="actividadSeleccionada?.remuneration"
+    [services]="actividadSeleccionada?.services">
+  </app-rbs>
+  <div style="margin-top: 20px;">
+    <app-guardadof9 [idOperationalActivity]="idOperationalActivitySeleccionado"></app-guardadof9>
+  </div>
+</div>
 <app-form9 [idOperationalActivity]="idOperationalActivitySeleccionado" [idDependency]="idDependencySeleccionada"></app-form9>
 <app-footer></app-footer>
