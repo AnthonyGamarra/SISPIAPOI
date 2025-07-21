@@ -26,8 +26,9 @@ interface Row {
   financialFund?: FinancialFund | null; // Fondo financiero seleccionado
   children?: Row[];
   parent?: Row;
-  isOriginal?: boolean;  // <-- flag para fila original
+  isOriginal?: boolean;  // <-- flag para fila original
   order?: number; // nuevo campo para el orden
+  estimation?: number; // Para sincronizar con input de estimado
 }
 
 @Component({
@@ -61,6 +62,14 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
     private operationalActivityBudgetItemService: OperationalActivityBudgetItemService,
     private financialFundService: FinancialFundService
   ) {}
+
+  // Valida que el estimado no sea negativo ni nulo
+  onEstimadoInput(row: Row) {
+    if (row.estimation == null || isNaN(row.estimation) || row.estimation < 0) {
+      row.estimation = 0;
+    }
+    this.updateForm9DataService();
+  }
 
   ngOnInit() {
     // ngOnInit is primarily for initial setup that doesn't depend on input changes
@@ -245,7 +254,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
               parent: parent,
               isOriginal: order === 1,
               order: order,
-              financialFund: this.fondosFinancieros.find(f => f.idFinancialFund === (oaItem.financialFund?.idFinancialFund || oaItem.financialFund)) || null
+              financialFund: this.fondosFinancieros.find(f => f.idFinancialFund === (oaItem.financialFund?.idFinancialFund || oaItem.financialFund)) || null,
+              estimation: typeof oaItem.estimation === 'number' ? oaItem.estimation : 0
             };
             parent.children = parent.children || [];
             parent.children.push(itemRow);
@@ -262,7 +272,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
             parent: parent,
             isOriginal: true,
             order: 1,
-            financialFund: null
+            financialFund: null,
+            estimation: 0
           };
           parent.children = parent.children || [];
           parent.children.push(itemRow);
@@ -314,6 +325,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       for (const mes of this.meses) {
         row.meses[mes] = row.children.reduce((sum, child) => sum + (child.meses[mes] || 0), 0);
       }
+      // Sumar estimations de los hijos
+      row.estimation = row.children.reduce((sum, child) => sum + (typeof child.estimation === 'number' ? child.estimation : 0), 0);
     }
   }
 
@@ -329,11 +342,6 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       this.updateParentValues(row.parent);
     }
     this.updateForm9DataService();
-  }
-
-  // Nuevo: obtener el estimado para el payload
-  getEstimado(row: Row): number {
-    return row.meses['ESTIMADO'] || 0;
   }
 
   replicarEnero(row: Row) {

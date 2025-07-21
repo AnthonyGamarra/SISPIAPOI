@@ -48,13 +48,16 @@ export class Guardadof9Component {
           row.meses && Object.values(row.meses).some((v) => Number(v) > 0);
 
         if (row.editable && tieneMesesConValores) {
+          // Clonar meses y quitar ESTIMADO
+          const { ESTIMADO, ...mesesSinEstimado } = row.meses || {};
           items.push({
             id: row.id,
-            meses: row.meses,
+            meses: mesesSinEstimado,
             tipoGastoId: row.tipoGasto,
             codPoFi: row.codPoFi,
             order: row.order || 1,
-            financialFundId: row.financialFund?.idFinancialFund || null
+            financialFundId: row.financialFund?.idFinancialFund || null,
+            estimation: typeof row.estimation === 'number' ? row.estimation : 0
           });
         }
 
@@ -104,6 +107,7 @@ export class Guardadof9Component {
             (Number(orig.orderItem || 1) === Number(item.order || 1))
           );
           // Construir el payload usando los objetos completos si existen
+          const estimationValue = typeof item.estimation === 'number' ? item.estimation : 0;
           const payload = {
             operationalActivity: originalItem?.operationalActivity?.idOperationalActivity
               ? { idOperationalActivity: originalItem.operationalActivity.idOperationalActivity } as OperationalActivity
@@ -116,7 +120,6 @@ export class Guardadof9Component {
               : null,
             financialFund: { idFinancialFund: item.financialFundId } as FinancialFund,
             monthAmounts: {
-              ESTIMADO: Number(item.meses['ESTIMADO']) || 0,
               ENERO: Number(item.meses['ENERO']) || 0,
               FEBRERO: Number(item.meses['FEBRERO']) || 0,
               MARZO: Number(item.meses['MARZO']) || 0,
@@ -131,7 +134,7 @@ export class Guardadof9Component {
               DICIEMBRE: Number(item.meses['DICIEMBRE']) || 0
             },
             orderItem: item.order || 1,
-            estimation: Number(item.meses['ESTIMADO']) || 0
+            estimation: estimationValue
           };
           // Validar que los campos requeridos estén presentes y correctos (permitir valores 0)
           if (

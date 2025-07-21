@@ -145,8 +145,8 @@
                   type="number"
                   min="0"
                   max="999999999"
-                  [(ngModel)]="row.meses['ESTIMADO']"
-                  (input)="onInputValueChange(row, 'ESTIMADO')"
+                  [(ngModel)]="row.estimation"
+                  (ngModelChange)="onEstimadoInput(row)"
                   style="width: 80px;"
                 />
               </ng-container>
@@ -161,7 +161,7 @@
                   min="0"
                   max="999999999"
                   [(ngModel)]="row.meses[mes]"
-                  (input)="onInputValueChange(row, mes)"
+                  (ngModelChange)="onInputValueChange(row, mes)"
                   style="width: 80px;"
                 />
               </ng-container>
