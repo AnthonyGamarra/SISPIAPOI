@@ -239,12 +239,12 @@ export class AdmPlanificacionTableComponent implements OnInit {
     });
   }
 
-  openNewModificationDialog(): void {
+  openNewModificationDialogOC(): void {
     this.newModificationQuarter = null;
     this.displayNewModificationDialog = true;
   }
 
-  addNewModification(): void {
+  addNewModificationOC(): void {
     if (this.newModificationQuarter === null || this.newModificationQuarter < 1 || this.newModificationQuarter > 4) {
       this.toastr.warning('Por favor ingrese un trimestre válido (1-4).', 'Advertencia');
       return;
@@ -255,7 +255,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
       header: 'Confirmar Nueva Modificatoria',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.processNewModification();
+        this.processNewModificationOC();
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria cancelada.', 'Cancelado');
@@ -263,32 +263,38 @@ export class AdmPlanificacionTableComponent implements OnInit {
     });
   }
 
-  private processNewModification(): void {
+  private processNewModificationOC(): void {
     let maxModification = 0;
-    this.formulations.forEach(f => {
-      if (f.year === this.selectedYear && f.modification && f.modification > maxModification) {
+    // Solo considerar formulaciones OC y tipo 1
+    const ocFormulations = this.formulations.filter(f =>
+      f.year === this.selectedYear &&
+      f.dependency?.dependencyType?.idDependencyType === 1 &&
+      f.formulationType?.idFormulationType === 1
+    );
+    ocFormulations.forEach(f => {
+      if (f.modification && f.modification > maxModification) {
         maxModification = f.modification;
       }
     });
 
     if (maxModification === 0) {
-      this.toastr.warning(`No hay formulaciones para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
+      this.toastr.warning(`No hay formulaciones OC para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
       this.displayNewModificationDialog = false;
       return;
     }
 
     if (maxModification >= 8) {
-      this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para el año ${this.selectedYear}.`, 'Advertencia');
+      this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para OC en el año ${this.selectedYear}.`, 'Advertencia');
       this.displayNewModificationDialog = false;
       return;
     }
 
-    const formulationsToModify = this.formulations.filter(
-      f => f.year === this.selectedYear && f.modification === maxModification
+    const formulationsToModify = ocFormulations.filter(
+      f => f.modification === maxModification
     );
 
     if (formulationsToModify.length === 0) {
-      this.toastr.warning(`No se encontraron formulaciones con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
+      this.toastr.warning(`No se encontraron formulaciones OC con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
       this.displayNewModificationDialog = false;
       return;
     }
@@ -305,30 +311,30 @@ export class AdmPlanificacionTableComponent implements OnInit {
     if (modificationRequests.length > 0) {
       forkJoin(modificationRequests).subscribe({
         next: (results) => {
-          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias para el trimestre ${this.quarterLabels[this.newModificationQuarter!]}.`, 'Éxito');
+          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias OC para el trimestre ${this.quarterLabels[this.newModificationQuarter!]}.`, 'Éxito');
           this.displayNewModificationDialog = false;
           this.loadInitialData();
         },
         error: (err) => {
-          this.toastr.error('Error al crear nuevas modificatorias.', 'Error');
+          this.toastr.error('Error al crear nuevas modificatorias OC.', 'Error');
           console.error('Error adding new modifications', err);
           this.displayNewModificationDialog = false;
         }
       });
     } else {
-      this.toastr.info('No hay formulaciones para procesar la nueva modificatoria.', 'Info');
+      this.toastr.info('No hay formulaciones OC para procesar la nueva modificatoria.', 'Info');
       this.displayNewModificationDialog = false;
     }
   }
 
   // << NUEVO: Método para iniciar la formulación para todas las dependencias
-  onInitiateFormulation(): void {
+  onInitiateFormulationOC(): void {
     this.confirmationService.confirm({
       message: `¿Está seguro de iniciar la formulación para todas las dependencias para el año ${this.selectedYear}?`,
       header: 'Confirmar Iniciación',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.processInitiateFormulation();
+        this.processInitiateFormulationOC();
         this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
@@ -351,13 +357,16 @@ export class AdmPlanificacionTableComponent implements OnInit {
     });
   }
 
-  private processInitiateFormulation(): void {
+  private processInitiateFormulationOC(): void {
     this.dependencyService.getAll().subscribe({
       next: (allDependencies: Dependency[]) => {
         const creationRequests: Observable<Formulation>[] = [];
         const formulationStateInitial = { idFormulationState: 1 } as FormulationState;
 
-        allDependencies.forEach(dependency => {
+        // Filtrar solo dependencias OC
+        const ocDependencies = allDependencies.filter(dep => dep.dependencyType?.idDependencyType === 1);
+
+        ocDependencies.forEach(dependency => {
           const newFormulation: Formulation = {
             year: this.selectedYear,
             dependency: dependency,
@@ -365,17 +374,18 @@ export class AdmPlanificacionTableComponent implements OnInit {
             active: true,
             modification: 1,
             quarter: 1,
+            formulationType: { idFormulationType: 1 } // Asegurar tipo 1
           };
           creationRequests.push(this.formulationService.create(newFormulation));
         });
 
         forkJoin(creationRequests).subscribe({
           next: (results) => {
-            this.toastr.success(`Se crearon ${results.length} formulaciones iniciales correctamente.`, 'Éxito');
+            this.toastr.success(`Se crearon ${results.length} formulaciones iniciales OC correctamente.`, 'Éxito');
             this.loadInitialData(); // Recargar datos para ver los cambios
           },
           error: (err) => {
-            this.toastr.error('Error al iniciar la formulación para todas las dependencias.', 'Error');
+            this.toastr.error('Error al iniciar la formulación OC.', 'Error');
             console.error('Error initiating formulations', err);
           }
         });

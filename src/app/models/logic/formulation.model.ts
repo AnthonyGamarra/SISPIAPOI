@@ -1,6 +1,7 @@
 import { Dependency } from "./dependency.model";
 import { FormulationState } from "./formulationState.model";
 import { FormulationSupportFile } from "./formulationSupportFile.model";
+import { FormulationType } from "./formulationType.model";
 
 export interface Formulation {
   idFormulation?: number;
@@ -11,5 +12,6 @@ export interface Formulation {
   year?: number;
   modification?: number;
   quarter?: number;
+  formulationType?: FormulationType;
 }
 

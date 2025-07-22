@@ -273,22 +273,19 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         const year = this.year || (this.ano ? parseInt(this.ano, 10) : null);
         this.strategicObjectives = strategicObjectives
           .filter(obj => year !== null && obj.startYear === year)
-          .sort((a, b) => {
-            // Si code es numérico, ordenar como número; si es string, ordenar como string
-            const codeA = a.code?.toString() || '';
-            const codeB = b.code?.toString() || '';
-            return codeA.localeCompare(codeB, undefined, { numeric: true });
-          })
+          .sort((a, b) => parseInt(a.code ?? '0', 10) - parseInt(b.code ?? '0', 10))
           .map(obj => ({
             ...obj,
             name: `O.E.${obj.code}: ${obj.name}`
           }));
 
-        // 2. Formatear las Acciones Estratégicas
-        this.strategicActions = strategicActions.map(action => ({
-          ...action,
-          name: `A.E.${action.code}: ${action.name}`
-        }));
+        // 2. Formatear y ordenar las Acciones Estratégicas
+        this.strategicActions = strategicActions
+          .sort((a, b) => parseInt(a.code ?? '0', 10) - parseInt(b.code ?? '0', 10))
+          .map(action => ({
+            ...action,
+            name: `A.E.${action.code}: ${action.name}`
+          }));
 
         // 3. Formatear los Fondos Financieros (FF)
         const filteredFinancialFunds = dependencyId
@@ -379,10 +376,10 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     this.year = year;
 
     this.strategicObjectiveService.getAll().subscribe((objectives: StrategicObjective[]) => {
-      // Solo mostrar los OE cuyo startYear coincide exactamente con el año de la formulación
-      this.strategicObjectives = objectives.filter(
-        obj => obj.startYear === year
-      );
+      // Solo mostrar los OE cuyo startYear coincide exactamente con el año de la formulación y ordenados por code ascendente
+      this.strategicObjectives = objectives
+        .filter(obj => obj.startYear === year)
+        .sort((a, b) => parseInt(a.code ?? '0', 10) - parseInt(b.code ?? '0', 10));
     });
   }
 

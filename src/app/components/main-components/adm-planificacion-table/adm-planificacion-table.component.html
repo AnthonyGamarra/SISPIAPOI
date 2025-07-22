@@ -9,11 +9,11 @@
                   placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
             </div>
             <div class="col-6 flex justify-content-end flex-wrap gap-2">
-               <button *ngIf="canInitiateFormulation" pButton label="Iniciar Formulación" icon="pi pi-plus"
-                  class="add-button" (click)="onInitiateFormulation()"></button>
+               <button *ngIf="canInitiateFormulation" pButton label="Iniciar Formulación para OOCC" icon="pi pi-plus"
+                  class="add-button" (click)="onInitiateFormulationOC()"></button>
 
-               <button *ngIf="!canInitiateFormulation" pButton label="Nueva Modificatoria" icon="pi pi-plus"
-                  class="add-button" (click)="openNewModificationDialog()">
+               <button *ngIf="!canInitiateFormulation" pButton label="Nueva Modificatoria para OOCC" icon="pi pi-plus"
+                  class="add-button" (click)="openNewModificationDialogOC()">
                </button>
             </div>
          </div>
@@ -69,7 +69,7 @@
 
 <div class="success-animation" *ngIf="showSuccessAnimation">
    <ng-lottie [options]="options"></ng-lottie>
-   <div class="message">Formulación iniciada correctamente</div>
+   <div class="message">Formulación iniciada correctamente para Órganos Centrales</div>
 </div>
 
 
@@ -88,7 +88,7 @@
    <ng-template pTemplate="footer">
       <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
          (click)="displayNewModificationDialog = false" class="cancel-button"></button>
-      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModification()" class="add-button"></button>
+      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationOC()" class="add-button"></button>
    </ng-template>
 </p-dialog>
 

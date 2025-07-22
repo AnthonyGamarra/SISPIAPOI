@@ -117,8 +117,11 @@ export class SelectorComponent implements OnInit {
     this.dependencyService.getAll().subscribe((dependencies) => {
       let filteredDependencies: Dependency[];
 
+      // Filtrar por tipo de dependencia
+      const type1Dependencies = dependencies.filter(dep => dep.dependencyType?.idDependencyType === 1);
+
       if (this.isAdmin) {
-        filteredDependencies = dependencies;
+        filteredDependencies = type1Dependencies;
       } else {
         const dependencyIds: number[] = JSON.parse(
           localStorage.getItem('dependencies') || '[]'
@@ -130,7 +133,7 @@ export class SelectorComponent implements OnInit {
           );
           return;
         }
-        filteredDependencies = dependencies.filter((dep) =>
+        filteredDependencies = type1Dependencies.filter((dep) =>
           dependencyIds.includes(dep.idDependency!)
         );
       }
@@ -233,6 +236,7 @@ export class SelectorComponent implements OnInit {
     this.activeFormulation = null;
     this.hasSupportFile = false;
     this.supportFileMetadata = null;
+    this.selectedFormulationState = null; // Reiniciar
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
@@ -243,7 +247,9 @@ export class SelectorComponent implements OnInit {
 
     this.formulationService.searchByDependencyAndYear(depId, year).subscribe({
       next: (formulations) => {
-        this.foundFormulations = formulations;
+        // Filtrar por tipo de formulación
+        const type1Formulations = formulations.filter(f => f.formulationType?.idFormulationType === 1);
+        this.foundFormulations = type1Formulations;
         this.formulationExists = this.foundFormulations.length > 0;
 
         if (this.formulationExists) {
@@ -259,8 +265,13 @@ export class SelectorComponent implements OnInit {
           this.selectedModificationOption =
             this.modificationOptions[0] || null;
           this.onModificationChange();
+          // Sincronizar el estado seleccionado con el de la formulación activa
+          if (this.foundFormulations[0]?.formulationState?.idFormulationState) {
+            this.selectedFormulationState = this.foundFormulations[0].formulationState.idFormulationState;
+          }
         } else {
           this.idFormulation = null;
+          this.selectedFormulationState = null;
         }
 
         this.checkingFormulation = false;
@@ -274,7 +285,7 @@ export class SelectorComponent implements OnInit {
         this.modificationOptions = [];
         this.selectedModificationOption = null;
         this.quarterLabel = null;
-        this.currentFormulationStateLabel = null;
+        this.selectedFormulationState = null;
         this.activeFormulation = null;
         this.hasSupportFile = false;
         this.supportFileMetadata = null;
@@ -298,9 +309,8 @@ onModificationChange(): void {
       this.currentFormulationStateLabel =
         selectedFormulation.formulationState?.name ?? null;
       this.activeFormulation = selectedFormulation;
-
-      // === AQUÍ ESTÁ LA VERIFICACIÓN CORRECTA ===
-      // Usa la información que ya tienes en el objeto "selectedFormulation"
+      // Sincronizar el estado seleccionado con el de la formulación activa
+      this.selectedFormulationState = selectedFormulation.formulationState?.idFormulationState ?? null;
       if (selectedFormulation.formulationSupportFile) {
         this.hasSupportFile = true;
         this.supportFileMetadata = selectedFormulation.formulationSupportFile;
@@ -308,7 +318,6 @@ onModificationChange(): void {
         this.hasSupportFile = false;
         this.supportFileMetadata = null;
       }
-      
       this.formulationSelected.emit(this.activeFormulation);
     } else {
       this.idFormulation = null;
@@ -553,22 +562,16 @@ viewFile(): void {
       next: (updatedEntity) => {
         this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
         this.showChangeStateModal = false;
-
-        // === CORRECCIÓN AQUÍ: ACTUALIZAR DIRECTAMENTE LAS PROPIEDADES ===
         this.activeFormulation = updatedEntity;
         this.currentFormulationStateLabel = updatedEntity.formulationState?.name ?? null;
-
+        // Sincronizar el estado seleccionado con el de la formulación activa
+        this.selectedFormulationState = updatedEntity.formulationState?.idFormulationState ?? null;
         // También actualiza la formulación en la lista `foundFormulations`
         const index = this.foundFormulations.findIndex(f => f.idFormulation === updatedEntity.idFormulation);
         if (index !== -1) {
           this.foundFormulations[index] = updatedEntity;
         }
-        
-        // Emite el evento con la formulación actualizada
         this.formulationUpdated.emit(this.activeFormulation);
-
-        // NO SE NECESITA llamar a verificarFormulacion() aquí
-        // ya que los datos de la UI se han actualizado manualmente
       },
       error: (err) => {
         this.toastr.error('Error al cambiar el estado de formulación.', 'Error');
