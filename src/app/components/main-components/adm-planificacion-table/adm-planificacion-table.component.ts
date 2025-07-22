@@ -246,7 +246,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
 
   addNewModificationOC(): void {
     if (this.newModificationQuarter === null || this.newModificationQuarter < 1 || this.newModificationQuarter > 4) {
-      this.toastr.warning('Por favor ingrese un trimestre válido (1-4).', 'Advertencia');
+      this.toastr.warning('Por favor ingrese un trimestre válido (I-IV).', 'Advertencia');
       return;
     }
 
@@ -331,7 +331,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   onInitiateFormulationOC(): void {
     this.confirmationService.confirm({
       message: `¿Está seguro de iniciar la formulación para todas las dependencias para el año ${this.selectedYear}?`,
-      header: 'Confirmar Iniciación',
+      header: 'Confirmar Iniciación de Formulación para OOCC',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processInitiateFormulationOC();
@@ -341,7 +341,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
         }, 2500);
       },
       reject: () => {
-        this.toastr.info('Iniciación de formulación cancelada.', 'Cancelado');
+        this.toastr.info('Iniciación de formulación para OOCC cancelada.', 'Cancelado');
       },
       rejectButtonProps: {
         label: 'No',

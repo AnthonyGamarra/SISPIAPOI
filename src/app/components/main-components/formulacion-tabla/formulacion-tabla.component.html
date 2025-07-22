@@ -387,7 +387,7 @@
   </div>
 </div>
 
-<p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true" [resizable]="true" class="dialog-header">
+<p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true" [resizable]="true" class="dialog-header" draggable="false">
   <div class="p-fluid p-grid"> <div class="mt-5"> <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
    <p-dropdown
     id="strategicObjective"
@@ -427,7 +427,8 @@
  [modal]="true"
  [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
  [resizable]="false"
- [baseZIndex]="10000"> 
+ [baseZIndex]="10000"
+ draggable="false"> 
  <div class="confirmation-content text-center">
   <div class="success-animation mb-0">
    <ng-lottie [options]="options"></ng-lottie>

@@ -1,6 +1,6 @@
 <div class="selector-bar grid align-items-center">
   <div class="selector-group col-12 lg:col-4">
-    <label class="selector-label">Dependencia:</label>
+    <label class="selector-label">Órgano Central:</label>
     <p-dropdown
       *ngIf="isSingleDependency; else multipleDeps"
       [options]="dependencyOptions"
@@ -159,6 +159,7 @@
   [resizable]="true"
   (onHide)="onDocumentViewerHide()"
   class="document-viewer-dialog"
+  draggable="false"
 >
   <div class="document-content" style="height: 100%; width: 100%;">
     <iframe [src]="documentUrl | safeUrl" style="width: 100%; height: 100%; border: none;"></iframe>
@@ -169,6 +170,7 @@
   header="Cambiar Estado de Formulación"
   [(visible)]="showChangeStateModal"
   [modal]="true" [resizable]="true" class="dialog-header-state"
+  draggable="false"
 >
   <div class="p-fluid">
     <div class="p-field mt-5">
