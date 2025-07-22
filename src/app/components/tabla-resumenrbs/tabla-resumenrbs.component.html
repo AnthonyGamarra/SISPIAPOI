@@ -1,0 +1,25 @@
+<div class="tabla-resumenrbs">
+  <h3>Resumen de Sumas</h3>
+  <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Concepto</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>GASTO DE PERSONAL Y OBLIGAC. SOCIALES</td>
+        <td>{{ resumen.personal | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td>BIENES</td>
+        <td>{{ resumen.bienes | number:'1.2-2' }}</td>
+      </tr>
+      <tr>
+        <td>SERVICIOS</td>
+        <td>{{ resumen.servicios | number:'1.2-2' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

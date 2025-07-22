@@ -6,6 +6,7 @@ import { Form9Component } from '../../components/form9/form9.component';
 import { Guardadof9Component } from '../../components/guardadof9/guardadof9.component';
 import {SelectoractComponent} from '../../components/selectoract/selectoract.component';
 import { RBSComponent } from '../../components/rbs/rbs.component';
+
 @Component({
   selector: 'app-valida',
   imports: [CommonModule, FooterComponent, MenubarComponent, SelectoractComponent,Form9Component,Guardadof9Component, RBSComponent],
