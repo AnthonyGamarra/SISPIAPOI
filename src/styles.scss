@@ -77,6 +77,11 @@ $color-warning-darker: #B71C1C;       // Rojo alerta más intenso
 
   --p-datepicker-date-selected-background: #{$color-primary} !important;
 
+  --p-progressspinner-color-one: #{$color-primary} !important;
+  --p-progressspinner-color-two: #{$color-primary-light} !important;
+  --p-progressspinner-color-three: #{$color-primary} !important;
+  --p-progressspinner-color-four: #{$color-primary-darker} !important;
+
 }
 
 body {

@@ -1,0 +1,20 @@
+<app-menubar></app-menubar>
+
+<app-selector
+  (buscar)="manejarBusqueda($event)"
+  (cambioAno)="onSelectorChange({ano: $event})"
+  (cambioDependencia)="onSelectorChange({dependencia: $event})"
+  (formulationSelected)="manejarBusqueda($event)"
+  (formulationUpdated)="onFormulationUpdated($event)"
+></app-selector>
+
+<app-formulacion-tabla
+  [ano]="selectedYear"
+  [idFormulation]="currentFormulation?.idFormulation || null"
+  [idDependency]="selectedDependency"
+  [currentFormulation]="currentFormulation"
+  [mostrar]="mostrarTabla"
+  (seleccionCambio)="onSeleccionAccion($event)"
+></app-formulacion-tabla>
+
+<app-footer></app-footer>
