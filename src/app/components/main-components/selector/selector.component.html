@@ -9,12 +9,13 @@
       class="selector-dropdown"
       optionLabel="label"
       optionValue="value"
+      (onChange)="onDependencyChange()"
     ></p-dropdown>
     <ng-template #multipleDeps>
       <p-dropdown
         [options]="dependencyOptions"
         [(ngModel)]="selectedDependency"
-        (onChange)="verificarFormulacion()"
+        (onChange)="onDependencyChange()"
         placeholder="Seleccione"
         class="selector-dropdown"
         optionLabel="label"
@@ -30,7 +31,8 @@
     <p-dropdown
       [options]="optionsAno"
       [(ngModel)]="selectedAno"
-      (onChange)="verificarFormulacion()"
+      (onChange)="onAnoChange()"
+      [disabled]="!selectedDependency"
       placeholder="Seleccione"
       class="selector-dropdown"
       optionLabel="label"

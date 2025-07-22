@@ -48,12 +48,11 @@ export class SelectorComponent implements OnInit {
     dependencia: string | null;
     idFormulation: number | null;
   }>();
-  @Output() cambioAno = new EventEmitter<string | null>();
+  @Output() cambioAno = new EventEmitter<string | null>();
+  @Output() cambioDependencia = new EventEmitter<string | null>();
 
-  @Output() formulationSelected = new EventEmitter<Formulation>();
-  @Output() formulationUpdated = new EventEmitter<Formulation>();
-
-  private toastr = inject(ToastrService);
+  @Output() formulationSelected = new EventEmitter<Formulation>();
+  @Output() formulationUpdated = new EventEmitter<Formulation>();  private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private strategicObjectiveService = inject(StrategicObjectiveService);
@@ -106,104 +105,107 @@ export class SelectorComponent implements OnInit {
     return this.authService.hasRole(this.allowedRolesForEvaluacion);
   }
 
-  ngOnInit(): void {
-    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
-    this.loadYearsAndDependencies();
-    this.loadFormulationStates();
-  }
+  ngOnInit(): void {
+    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
+    this.loadDependencies();
+    this.loadFormulationStates();
+  }
 
-  loadYearsAndDependencies(): void {
-    this.formulationService.getAll().subscribe({
-      next: (formulations) => {
-        const uniqueYears = new Set<number>();
-        if (formulations && formulations.length > 0) {
-          formulations.forEach((f) => {
-            if (f.year) {
-              uniqueYears.add(f.year);
-            }
-          });
-        }
-        
-        const sortedYears = Array.from(uniqueYears).sort((a, b) => a - b);
-        
-        if (sortedYears.length > 0) {
-          this.optionsAno = sortedYears.map((year) => ({
-            label: year.toString(),
-            value: year.toString(),
-          }));
-        } else {
-          // Si no hay formulaciones, agregamos el año actual para permitir la creación
-          const currentYear = new Date().getFullYear().toString();
-          this.optionsAno = [{ label: currentYear, value: currentYear }];
-        }
-        
-        // Seleccionar el año más reciente o el actual
-        const currentYear = new Date().getFullYear().toString();
-        if (this.optionsAno.some((opt) => opt.value === currentYear)) {
-          this.selectedAno = currentYear;
-        } else if (this.optionsAno.length > 0) {
-          this.selectedAno = this.optionsAno[this.optionsAno.length - 1].value;
-        } else {
-          this.selectedAno = null;
-        }
-        
-        this.loadDependencies();
-      },
-      error: (err) => {
-        this.toastr.error(
-          'Error al cargar los años de formulación.',
-          'Error de Carga'
-        );
-        console.error('Error fetching formulations:', err);
-        // Fallback en caso de error
-        const currentYear = new Date().getFullYear().toString();
-        this.optionsAno = [{ label: currentYear, value: currentYear }];
-        this.selectedAno = currentYear;
-        this.loadDependencies();
-      },
-    });
-  }
+  // Ahora primero carga dependencias, y luego años según la dependencia seleccionada
 
-  loadDependencies(): void {
-    this.dependencyService.getAll().subscribe((dependencies) => {
-      let filteredDependencies: Dependency[];
+  loadDependencies(): void {
+    this.dependencyService.getAll().subscribe((dependencies) => {
+      let filteredDependencies: Dependency[];
 
-      if (this.isAdmin) {
-        filteredDependencies = dependencies;
-      } else {
-        const dependencyIds: number[] = JSON.parse(
-          localStorage.getItem('dependencies') || '[]'
-        );
-        if (dependencyIds.length === 0) {
-          this.toastr.warning(
-            'No se encontraron dependencias para el usuario.',
-            'Acceso Restringido'
-          );
-          return;
-        }
-        filteredDependencies = dependencies.filter((dep) =>
-          dependencyIds.includes(dep.idDependency!)
-        );
-      }
+      if (this.isAdmin) {
+        filteredDependencies = dependencies;
+      } else {
+        const dependencyIds: number[] = JSON.parse(
+          localStorage.getItem('dependencies') || '[]'
+        );
+        if (dependencyIds.length === 0) {
+          this.toastr.warning(
+            'No se encontraron dependencias para el usuario.',
+            'Acceso Restringido'
+          );
+          return;
+        }
+        filteredDependencies = dependencies.filter((dep) =>
+          dependencyIds.includes(dep.idDependency!)
+        );
+      }
 
-      this.isSingleDependency = filteredDependencies.length === 1;
+      this.isSingleDependency = filteredDependencies.length === 1;
 
-      this.dependencyOptions = filteredDependencies.map((dep) => ({
-        label: dep.name,
-        value: dep.idDependency!.toString(),
-      }));
+      this.dependencyOptions = filteredDependencies.map((dep) => ({
+        label: dep.name,
+        value: dep.idDependency!.toString(),
+      }));
 
-      if (this.isSingleDependency) {
-        this.selectedDependency = this.dependencyOptions[0]?.value;
-      } else if (this.isAdmin && this.dependencyOptions.length > 0) {
-        this.selectedDependency = null;
-      }
+      // Si solo hay una dependencia, la selecciona automáticamente y carga años
+      if (this.isSingleDependency) {
+        this.selectedDependency = this.dependencyOptions[0]?.value;
+        this.onDependencyChange();
+      } else if (this.isAdmin && this.dependencyOptions.length > 0) {
+        this.selectedDependency = null;
+      }
+      // Si hay más de una, espera a que el usuario seleccione
+    });
+  }
 
-      if (this.selectedAno && this.selectedDependency) {
-        this.verificarFormulacion();
-      }
-    });
-  }
+  // Nuevo método: cuando cambia la dependencia, carga los años válidos
+  onDependencyChange(): void {
+    this.optionsAno = [];
+    this.selectedAno = null;
+    
+    // Emitir el cambio de dependencia inmediatamente
+    this.cambioDependencia.emit(this.selectedDependency);
+    
+    if (!this.selectedDependency) return;
+    const depId = Number(this.selectedDependency);
+    this.strategicObjectiveService.getMinMaxYears().subscribe({
+      next: (range) => {
+        if (range && range.minYear && range.maxYear) {
+          const years: number[] = [];
+          for (let y = range.minYear; y <= range.maxYear; y++) {
+            years.push(y);
+          }
+          this.optionsAno = years.map((year) => ({
+            label: year.toString(),
+            value: year.toString(),
+          }));
+          // No selecciona ningún año por defecto
+          this.selectedAno = null;
+        } else {
+          // Si no hay rango, muestra solo el año actual pero no lo selecciona
+          const currentYear = new Date().getFullYear().toString();
+          this.optionsAno = [{ label: currentYear, value: currentYear }];
+          this.selectedAno = null;
+        }
+        // Solo busca formulaciones si el usuario ha seleccionado manualmente un año
+        // No se ejecuta automáticamente al cargar
+      },
+      error: (err) => {
+        this.toastr.error('Error al cargar rango de años.', 'Error');
+        console.error('Error fetching min/max years:', err);
+        const currentYear = new Date().getFullYear().toString();
+        this.optionsAno = [{ label: currentYear, value: currentYear }];
+        this.selectedAno = null;
+        // Solo busca formulaciones si el usuario ha seleccionado manualmente un año
+        // No se ejecuta automáticamente al cargar
+      },
+    });
+  }
+
+  // Cuando cambia el año, busca formulaciones
+  onAnoChange(): void {
+    // Emitir el cambio de año inmediatamente
+    this.cambioAno.emit(this.selectedAno);
+    
+    if (this.selectedAno && this.selectedDependency) {
+      this.verificarFormulacion();
+    }
+  }
 
   loadFormulationStates(): void {
     this.formulationStateService.getAll().subscribe({
@@ -220,25 +222,21 @@ export class SelectorComponent implements OnInit {
     });
   }
 
-  verificarFormulacion() {
-    this.cambioAno.emit(this.selectedAno);
+  verificarFormulacion() {
+    this.formulationExists = false;
+    this.idFormulation = null;
+    this.foundFormulations = [];
+    this.modificationOptions = [];
+    this.selectedModificationOption = null;
+    this.quarterLabel = null;
+    this.currentFormulationStateLabel = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
 
-    this.formulationExists = false;
-    this.idFormulation = null;
-    this.foundFormulations = [];
-    this.modificationOptions = [];
-    this.selectedModificationOption = null;
-    this.quarterLabel = null;
-    this.currentFormulationStateLabel = null;
-    this.activeFormulation = null;
-    this.hasSupportFile = false;
-    this.supportFileMetadata = null;
-
-    if (!this.selectedAno || !this.selectedDependency) {
-      return;
-    }
-
-    this.checkingFormulation = true;
+    if (!this.selectedAno || !this.selectedDependency) {
+      return;
+    }    this.checkingFormulation = true;
 
     const year = Number(this.selectedAno);
     const depId = Number(this.selectedDependency);

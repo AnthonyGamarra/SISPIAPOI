@@ -167,6 +167,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
         this.active = newFormulation.active;
+        console.log(this.ano);
 
         this.updatePermissions(); // Update permissions based on the new state
 

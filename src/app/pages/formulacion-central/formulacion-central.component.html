@@ -2,15 +2,16 @@
 
 <app-selector
   (buscar)="manejarBusqueda($event)"
-  (cambioAno)="limpiarTabla()"
+  (cambioAno)="onSelectorChange({ano: $event})"
+  (cambioDependencia)="onSelectorChange({dependencia: $event})"
   (formulationSelected)="manejarBusqueda($event)"
   (formulationUpdated)="onFormulationUpdated($event)"
 ></app-selector>
 
 <app-formulacion-tabla
-  [ano]="currentFormulation?.year?.toString() || null"
+  [ano]="selectedYear"
   [idFormulation]="currentFormulation?.idFormulation || null"
-  [idDependency]="currentFormulation?.dependency?.idDependency?.toString() || null"
+  [idDependency]="selectedDependency"
   [currentFormulation]="currentFormulation"
   [mostrar]="mostrarTabla"
   (seleccionCambio)="onSeleccionAccion($event)"
