@@ -6,29 +6,23 @@ import { AuthService } from '../../core/services/authentication/auth.service'; /
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 
-import { FormulacionModuloComponent } from '../../components/modules/formulacion-modulo/formulacion-modulo.component';
-import { EvaluacionModuloComponent } from '../../components/main-components/evaluacion-modulo/evaluacion-modulo.component'
-import { AdmPlanificacionModuloComponent } from '../../components/modules/adm-planificacion-modulo/adm-planificacion-modulo.component'
-import { ModuloksComponent } from '../../components/modules/moduloks/moduloks.component';
-import { AdmOEAEModuloComponent } from "../../components/modules/adm-oe-ae-modulo/adm-oe-ae-modulo.component";
+import { FormulacionCentralModuloComponent } from '../../components/modules/formulacion-central-modulo/formulacion-central-modulo.component';
+import { FormulacionDesconcentradoModuloComponent } from '../../components/modules/formulacion-desconcentrado-modulo/formulacion-desconcentrado-modulo.component';
 
 @Component({
-  selector: 'app-menu',
+  selector: 'app-menu-formulacion',
   standalone: true,
   imports: [
     CommonModule,
     FooterComponent,
     MenubarComponent,
-    FormulacionModuloComponent,
-    EvaluacionModuloComponent,
-    AdmPlanificacionModuloComponent,
-    ModuloksComponent,
-    AdmOEAEModuloComponent
+    FormulacionCentralModuloComponent,
+    FormulacionDesconcentradoModuloComponent,
 ],
-  templateUrl: './menu.component.html',
-  styleUrl: './menu.component.scss'
+  templateUrl: './menu-formulacion.component.html',
+  styleUrl: './menu-formulacion.component.scss'
 })
-export class MenuComponent {
+export class MenuFormulacionComponent {
 
   constructor(private authService: AuthService) {} // Inject your AuthService
 

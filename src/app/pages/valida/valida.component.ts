@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FooterComponent } from '../../components/footer/footer.component';
-import {MenubarComponent} from '../../components/menubar/menubar.component';
-import { Form9Component } from '../../components/form9/form9.component';
-import { Guardadof9Component } from '../../components/guardadof9/guardadof9.component';
-import {SelectoractComponent} from '../../components/selectoract/selectoract.component';
-import { RBSComponent } from '../../components/rbs/rbs.component';
+import { FooterComponent } from '../../components/utilities/footer/footer.component';
+import {MenubarComponent} from '../../components/utilities/menubar/menubar.component';
+import { Form9Component } from '../../components/main-components/form9/form9.component';
+import { Guardadof9Component } from '../../components/main-components/guardadof9/guardadof9.component';
+import {SelectoractComponent} from '../../components/main-components/selectoract/selectoract.component';
+import { RBSComponent } from '../../components/main-components/rbs/rbs.component';
 @Component({
   selector: 'app-valida',
   imports: [CommonModule, FooterComponent, MenubarComponent, SelectoractComponent,Form9Component,Guardadof9Component, RBSComponent],

@@ -3,25 +3,25 @@ import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
 import { SelectorComponent } from '../../components/main-components/selector/selector.component';
-import { EvaluacionTablaComponent } from '../../components/main-components/evaluacion-tabla/evaluacion-tabla.component';
+import { FormulacionTablaComponent } from '../../components/main-components/formulacion-tabla/formulacion-tabla.component';
 import { Formulation } from '../../models/logic/formulation.model';
 
 @Component({
-  selector: 'app-evaluacion',
+  selector: 'app-formulacion-central',
   standalone: true,
   imports: [
     CommonModule,
     FooterComponent,
     MenubarComponent,
     SelectorComponent,
-    EvaluacionTablaComponent
+    FormulacionTablaComponent,
   ],
-  templateUrl: './evaluacion.component.html',
-  styleUrl: './evaluacion.component.scss'
+  templateUrl: './formulacion-central.component.html',
+  styleUrl: './formulacion-central.component.scss',
 })
-export class EvaluacionComponent {
+export class FormulacionCentralComponent {
   // We still keep ViewChild, but its direct manipulation will be minimized
-  @ViewChild(EvaluacionTablaComponent) formulacionTablaComponent!: EvaluacionTablaComponent;
+  @ViewChild(FormulacionTablaComponent) formulacionTablaComponent!: FormulacionTablaComponent;
 
   // We only need to manage the `currentFormulation` object directly
   // All other inputs for `FormulacionTablaComponent` will be derived from this.

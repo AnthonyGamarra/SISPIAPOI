@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 import { MenuComponent } from './pages/menu/menu.component';
-import { FormulationComponent } from './pages/formulation/formulation.component';
+import { MenuFormulacionComponent } from './pages/menu-formulacion/menu-formulacion.component';
+import { FormulacionCentralComponent } from './pages/formulacion-central/formulacion-central.component';
 import { EvaluacionComponent } from './pages/evaluacion/evaluacion.component';
 import { ValidaComponent } from './pages/valida/valida.component';
 import { AdminPlanificacionComponent } from './pages/admin-planificacion/admin-planificacion.component';
@@ -37,10 +38,20 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'formulation', // ✅ nueva ruta para el componente Formu1
-    component: FormulationComponent,
+    path: 'formulacion', // ✅ nueva ruta para el componente Formu1
+    component: MenuFormulacionComponent,
     canActivate: [authGuard],
   },
+  {
+    path: 'formulacion-central', // ✅ nueva ruta para el componente Formu1
+    component: FormulacionCentralComponent,
+    canActivate: [authGuard],
+  },
+  // {
+  //   path: 'formulacion-desconcentrado', // ✅ nueva ruta para el componente Formu1
+  //   component: FormulacionDesconcentradoComponent,
+  //   canActivate: [authGuard],
+  // },
   {
     path: 'evaluacion', // ✅ nueva ruta para el componente Formu1
     component: EvaluacionComponent,

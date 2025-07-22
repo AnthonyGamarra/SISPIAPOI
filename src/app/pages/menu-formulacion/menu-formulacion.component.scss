@@ -1,0 +1,27 @@
+.modulos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; // centra los elementos en el eje horizontal
+  align-items: center; // centra verticalmente
+  padding: 1rem;
+  min-height: 90vh;
+  box-sizing: border-box;
+}
+
+// Cada módulo con ancho fijo (como 4 columnas de 12)
+.modulos > * {
+  flex: 0 0 calc(33.333% - 1rem); // 3 por fila, menos el gap
+  max-width: calc(33.333% - 1rem);
+}
+
+// Responsive: 1 por fila en pantallas pequeñas
+@media (max-width: 768px) {
+  .modulos {
+    min-height: 90vh; // menos alto en móvil
+    gap: 0.5rem;
+  }
+  .modulos > * {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
