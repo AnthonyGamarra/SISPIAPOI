@@ -97,4 +97,22 @@ export class AuthService {
     }
     return false;
   }
+
+  getDependenciesFromToken(): number[] {
+    // Suponiendo que el token está en localStorage y tiene un campo 'dependencies' como array de números
+    const token = localStorage.getItem('token');
+    if (!token) return [];
+    try {
+      // Decodificar el payload del JWT
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Puede ser 'dependencies' o 'dependencias', ajusta según tu backend
+      const deps = payload.dependencies || payload.dependencias || [];
+      if (Array.isArray(deps)) {
+        return deps.map((d: any) => Number(d)).filter((d: number) => !isNaN(d));
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
 }

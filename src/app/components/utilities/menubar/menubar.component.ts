@@ -25,7 +25,7 @@ export class MenubarComponent {
 
   ngOnInit() {
     this.userMenuItems = [
-      { label: 'Perfil', icon: 'pi pi-user', command: () => this.onProfile() },
+      // { label: 'Perfil', icon: 'pi pi-user', command: () => this.onProfile() },
       { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.onLogout() }
     ];
 
