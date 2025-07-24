@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, SimpleChanges, OnChanges } from '@angular/core'; // Import OnChanges
+import { Component, OnInit, Input, SimpleChanges, OnChanges, Output, EventEmitter } from '@angular/core'; // Import OnChanges
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BudgetCategoryService } from '../../../core/services/logic/budget-category.service';
@@ -44,6 +44,8 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   @Input() idDependency: number | null = null; // Recibe la dependencia seleccionada
   @Input() selectedYear: number | null = null; // Año seleccionado (opcional, para el header)
 
+  @Output() totalsUpdated = new EventEmitter<{ goods: number, remuneration: number, services: number }>();
+
   meses: string[] = [
     'ENERO', 'FEBRERO', 'MARZO', 'ABRIL',
     'MAYO', 'JUNIO', 'JULIO', 'AGOSTO',
@@ -53,6 +55,11 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   data: Row[] = [];
   fondosFinancieros: FinancialFund[] = [];
   estimadoHeader: string = '';
+
+  private itemsById: Map<number, BudgetItem> = new Map();
+  private goodsTotal: number = 0;
+  private remunerationTotal: number = 0;
+  private servicesTotal: number = 0;
 
   constructor(
     private budgetCategoryService: BudgetCategoryService,
@@ -122,9 +129,21 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       if (categories && items) {
         this.data = this.buildRows(categories, items, oaBudgetItems || []);
         this.form9DataService.setData(this.data);
+        // Calcular y emitir totales al cargar datos
+        this.goodsTotal = 0;
+        this.remunerationTotal = 0;
+        this.servicesTotal = 0;
+        for (const root of this.data) {
+          this.recalculateTotalsRecursive(root);
+        }
+        this.emitTotals();
       } else {
         this.data = [];
         this.form9DataService.setData([]);
+        this.goodsTotal = 0;
+        this.remunerationTotal = 0;
+        this.servicesTotal = 0;
+        this.emitTotals();
       }
     }).catch(error => {
       console.error('Error fetching initial budget data:', error);
@@ -220,10 +239,10 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       }
     }
 
-    const itemsById = new Map<number, BudgetItem>();
+    this.itemsById = new Map<number, BudgetItem>();
     for (const item of items) {
       if (item.idBudgetItem !== undefined) {
-        itemsById.set(item.idBudgetItem, item);
+        this.itemsById.set(item.idBudgetItem, item);
       }
     }
 
@@ -234,7 +253,7 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
       oaItemsGrouped.get(id)!.push(oa);
     }
 
-    for (const [id, item] of itemsById.entries()) {
+    for (const [id, item] of this.itemsById.entries()) {
       const parentId = item.budgetCategory.idBudgetCategory ?? 0;
       const parent = catMap.get(parentId);
       if (parent) {
@@ -346,7 +365,45 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
     if (row.parent) {
       this.updateParentValues(row.parent);
     }
+    // Recalcular totales dinámicamente
+    this.goodsTotal = 0;
+    this.remunerationTotal = 0;
+    this.servicesTotal = 0;
+    for (const root of this.data) {
+      this.recalculateTotalsRecursive(root);
+    }
     this.updateForm9DataService();
+    this.emitTotals();
+  }
+
+  private recalculateTotalsRecursive(row: Row) {
+    // Solo sumar si es hoja (no tiene hijos)
+    if (!row.children || row.children.length === 0) {
+      const total = this.calcularTotal(row);
+      const budgetItem = this.itemsById.get(row.id);
+      if (budgetItem && budgetItem.budgetType) {
+        if (budgetItem.budgetType.idBudgetType === 1) {
+          this.goodsTotal += total;
+        } else if (budgetItem.budgetType.idBudgetType === 2) {
+          this.servicesTotal += total;
+        } else if (budgetItem.budgetType.idBudgetType === 3) {
+          this.remunerationTotal += total;
+        }
+      }
+    }
+    if (row.children) {
+      for (const child of row.children) {
+        this.recalculateTotalsRecursive(child);
+      }
+    }
+  }
+
+  private emitTotals() {
+    this.totalsUpdated.emit({
+      goods: this.goodsTotal,
+      remuneration: this.remunerationTotal,
+      services: this.servicesTotal
+    });
   }
 
   replicarEnero(row: Row) {

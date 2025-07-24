@@ -6,9 +6,19 @@
     [remuneration]="actividadSeleccionada?.remuneration"
     [services]="actividadSeleccionada?.services">
   </app-rbs>
+  <app-rbs-resume
+  [goods]="goodsTotal"
+  [remuneration]="remunerationTotal"
+  [services]="servicesTotal">
+  </app-rbs-resume>
   <div style="margin-top: 20px;">
     <app-guardadof9 [idOperationalActivity]="idOperationalActivitySeleccionado"></app-guardadof9>
   </div>
 </div>
-<app-form9 [idOperationalActivity]="idOperationalActivitySeleccionado" [idDependency]="idDependencySeleccionada"></app-form9>
+<app-form9
+  [idOperationalActivity]="idOperationalActivitySeleccionado"
+  [idDependency]="idDependencySeleccionada"
+  (totalsUpdated)="onTotalsUpdated($event)">
+</app-form9>
+
 <app-footer></app-footer>

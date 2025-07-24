@@ -1,14 +1,13 @@
 .rbs-info {
   width: 100%;
   max-width: 500px;
-  margin: 0 auto 0 auto; // asegúrate que el primer valor (top) sea 0
+  margin: 0 auto 0 auto;
   background: var(--primary);
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   border: 1px solid #ddd;
   padding: 12px 32px 10px 32px;
   color: #ffffff;
-  min-height: 10px;
 }
 
 .rbs-info table {
@@ -35,8 +34,6 @@
 .rbs-info tr:last-child td {
   border-bottom: none;
 }
-
-
 
 @media (max-width: 600px) {
   .rbs-info {
