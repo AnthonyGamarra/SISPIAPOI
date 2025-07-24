@@ -1,0 +1,242 @@
+<div>
+  <div class="mx-5">
+    <div class="grid ml-auto mt-3">
+      <h2 class="col-auto">
+        Administrar Maestros - {{ currentFormulationType?.name }} del año:
+      </h2>
+      <span class="col-auto my-auto">
+        <p-dropdown [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
+          placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
+      </span>
+    </div>
+    <div class="grid mx-auto my-3">
+      <!-- <div class="col-6 flex justify-center mr-auto">
+        <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
+          optionLabel="name" optionValue="value" />
+      </div> -->
+      <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="addNewActivity()"
+        class="col-8 add-button ml-auto">
+      </button>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div *ngIf="loading" class="text-center p-6">
+      <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+      <p class="mt-3 text-gray-600">Cargando actividades...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay actividades -->
+    <div *ngIf="!loading && activityDetails.length === 0" class="text-center p-6">
+      <h3 class="text-lg font-semibold text-gray-600">No hay actividades registradas</h3>
+    </div>
+
+    <!-- Tabla de actividades -->
+    <div *ngIf="!loading && activityDetails.length > 0" class="table-container">
+      <p-table [value]="activityDetails" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
+        [scrollable]="true" scrollHeight="500px" columnResizeMode="expand" dataKey="idActivityDetail" editMode="row"
+        [paginator]="true" [rows]="5" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+
+        <ng-template pTemplate="header" class="table-header" #header>
+          <tr class="cabecera">
+            <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acciones</th>
+            <th style="min-width: 140px; max-width: 140px;" rowspan="2">Objetivo estratégico</th>
+            <th style="min-width: 130px; max-width: 130px;" rowspan="2">Acción estratégica</th>
+            <th style="min-width: 370px; max-width: 370px;" rowspan="2">Actividades de Gestión</th>
+            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Unidad de medida</th>
+            <th colspan="5">Programación de Metas</th>
+          </tr>
+          <tr class="cabecera">
+            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">I</th>
+            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">II</th>
+            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">III</th>
+            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">IV</th>
+            <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Total</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-activity let-editing="editing" let-ri="rowIndex" #body>
+          <tr [pEditableRow]="activity">
+
+            <td>
+              <div class="flex items-center justify-center gap-2">
+                <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil"
+                  (click)="onRowEditInit(activity)" text rounded severity="secondary">
+                </button>
+
+                <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
+                  (click)="onRowEditSave(activity)" text rounded severity="success">
+                </button>
+
+                <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
+                  (click)="onRowEditCancel(activity, ri)" text rounded severity="danger">
+                </button>
+
+                <button *ngIf="!editing" pButton pRipple type="button" icon="pi pi-trash"
+                  (click)="eliminarActividad(ri, activity)" text rounded severity="danger">
+                </button>
+              </div>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <div class="flex items-center">
+                    <input pInputText
+                      [ngModel]="getStrategicObjectiveCodeDisplay(activity.strategicAction?.strategicObjective?.idStrategicObjective)"
+                      type="text" [disabled]="true" style="max-width: 80%" />
+                    <button *ngIf="editing" pButton type="button" icon="pi pi-search"
+                      (click)="openOeAeSelectionModal(activity)" label="" class="p-button-sm ml-2">
+                    </button>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <span
+                    [pTooltip]="getStrategicObjectiveName(activity.strategicAction?.strategicObjective?.idStrategicObjective)">
+                    {{
+                    getStrategicObjectiveCodeDisplay(activity.strategicAction?.strategicObjective?.idStrategicObjective)
+                    }}
+                  </span>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText
+                    [ngModel]="getStrategicActionCodeDisplay(activity.strategicAction?.idStrategicAction)" type="text"
+                    [disabled]="true" />
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <span [pTooltip]="getStrategicActionName(activity.strategicAction?.idStrategicAction)">
+                    {{ getStrategicActionCodeDisplay(activity.strategicAction?.idStrategicAction) }}
+                  </span>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="3" cols="40" [autoResize]="true" pTextarea [(ngModel)]="activity.name"
+                    style="resize: none">
+                  </textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <textarea rows="3" cols="40" [autoResize]="true" pTextarea [disabled]="true"
+                    style="resize: none">{{ activity.name }}</textarea>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="3" cols="21" [autoResize]="true" pTextarea [(ngModel)]="activity.measurementUnit"
+                    style="resize: none">
+                  </textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <textarea rows="3" cols="21" [autoResize]="true" pTextarea [disabled]="true"
+                    style="resize: none">{{ activity.measurementUnit }}</textarea>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="activity.goals[0].value" type="number" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ activity.goals[0]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="activity.goals[1].value" type="number" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ activity.goals[1]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="activity.goals[2].value" type="number" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ activity.goals[2]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="activity.goals[3].value" type="number" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ activity.goals[3]?.value }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">{{ getTotalGoals(activity) }}</ng-template>
+                <ng-template pTemplate="output">{{ getTotalGoals(activity) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Modal para seleccionar Objetivo y Acción Estratégica -->
+  <p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true"
+    [resizable]="true" class="dialog-header" draggable="false">
+    <div class="p-fluid p-grid">
+      <div class="mt-5">
+        <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
+        <p-dropdown id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
+          optionValue="idStrategicObjective" [(ngModel)]="tempSelectedStrategicObjectiveId"
+          (onChange)="onModalStrategicObjectiveChange($event)" placeholder="Selecciona un objetivo" [filter]="true"
+          filterBy="name" appendTo="body" class="p-fluid mt-5">
+        </p-dropdown>
+      </div>
+      <div class="mt-5">
+        <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
+        <p-dropdown id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
+          optionValue="idStrategicAction" [(ngModel)]="tempSelectedStrategicActionId"
+          [disabled]="!tempSelectedStrategicObjectiveId" placeholder="Selecciona una acción" [filter]="true"
+          filterBy="name" appendTo="body" class="p-fluid mt-5">
+        </p-dropdown>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()" styleClass="p-button-text"
+        class="cancel-button">
+      </button>
+      <button pButton label="Seleccionar" icon="pi pi-check" (click)="confirmOeAeSelection()" class="mx-3 add-button">
+      </button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal de confirmación de eliminación -->
+  <p-dialog header="Confirmar Eliminación" [(visible)]="showDeleteConfirmation" [modal]="true"
+    [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+    [resizable]="false" [baseZIndex]="10000" draggable="false">
+    <div class="confirmation-content text-center">
+      <h3>¿Estás seguro de que quieres eliminar esta actividad?</h3>
+      <p>Esta acción no se puede deshacer.</p>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer-buttons-wrapper">
+        <button pButton label="No" icon="pi pi-times" (click)="cancelDelete()" class="custom-cancel-button mx-2">
+        </button>
+        <button pButton label="Sí" icon="pi pi-check" (click)="confirmDelete()" class="custom-confirm-button mx-2">
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
+</div>

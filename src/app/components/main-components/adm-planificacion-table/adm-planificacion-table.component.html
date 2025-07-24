@@ -12,6 +12,9 @@
                <button *ngIf="canInitiateFormulation" pButton label="Iniciar Formulación para OOCC" icon="pi pi-plus"
                   class="add-button" (click)="onInitiateFormulationOC()"></button>
 
+               <button *ngIf="canInitiateFormulationOODD" pButton label="Iniciar formulación de actividad de gestión para OODD" icon="pi pi-plus"
+                  class="add-button" (click)="onInitiateFormulationOODD()"></button>
+
                <button *ngIf="!canInitiateFormulation" pButton label="Nueva Modificatoria para OOCC" icon="pi pi-plus"
                   class="add-button" (click)="openNewModificationDialogOC()">
                </button>
@@ -69,7 +72,7 @@
 
 <div class="success-animation" *ngIf="showSuccessAnimation">
    <ng-lottie [options]="options"></ng-lottie>
-   <div class="message">Formulación iniciada correctamente para Órganos Centrales</div>
+   <div class="message">Formulación iniciada correctamente</div>
 </div>
 
 

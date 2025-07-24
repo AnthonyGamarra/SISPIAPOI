@@ -7,6 +7,9 @@ import { MeasurementType } from "./measurementType.model";
 import { Goal } from "./goal.model";
 import { Priority } from "./priority.model";
 import { ExecutedGoal } from "./executedGoal.model";
+import { MonthlyGoal } from "./monthlyGoal.model";
+import { ExecutedMonthlyGoal } from "./executedMonthlyGoal.model";
+import { ActivityFamily } from "./activityFamily.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
@@ -19,13 +22,16 @@ export interface OperationalActivity {
   financialFund: FinancialFund;
   managementCenter: ManagementCenter;
   costCenter: CostCenter;
-  measurementType: MeasurementType;
-  measurementUnit: string;
+  measurementType?: MeasurementType;
+  measurementUnit?: string;
   goals?: Goal[];
   executedGoals?: ExecutedGoal[];
+  monthlyGoals?: MonthlyGoal[];
+  executedMonthlyGoals?: ExecutedMonthlyGoal[];
   priority: Priority;
   goods: number;
   remuneration: number;
   services: number;
   description: string;
+  activityFamily?: ActivityFamily;
 }

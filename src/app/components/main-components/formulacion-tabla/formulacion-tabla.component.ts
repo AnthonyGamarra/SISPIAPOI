@@ -574,7 +574,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       financialFund: { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund,
       managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter,
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
-      measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
+      measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
       sapCode: product.sapCode || '', // Keep existing sapCode for now, will be regenerated if needed
       correlativeCode: product.correlativeCode || '' // Keep existing correlativeCode for now

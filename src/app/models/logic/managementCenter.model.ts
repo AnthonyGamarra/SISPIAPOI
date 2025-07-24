@@ -6,7 +6,7 @@ export interface ManagementCenter {
   description: string;
   managementCenterCode: string;
   active?: boolean;
-  head: boolean;
+  head?: boolean;
   dependency: Dependency;
 }
 

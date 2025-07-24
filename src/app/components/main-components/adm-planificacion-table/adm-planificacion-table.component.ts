@@ -22,12 +22,16 @@ import { FormulationStateService } from '../../../core/services/logic/formulatio
 import { DependencyTypeService } from '../../../core/services/logic/dependency-type.service';
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
 import { DependencyService } from '../../../core/services/logic/dependency.service'; // << AÑADIR ESTA LÍNEA
+import { ActivityDetailService } from '../../../core/services/logic/activity-detail.service'; // << AÑADIR ESTA LÍNEA
+import { OperationalActivityService } from '../../../core/services/logic/operational-activity.service'; // << AÑADIR ESTA LÍNEA
 
 import { Formulation } from '../../../models/logic/formulation.model';
 import { DependencyType } from '../../../models/logic/dependencyType.model';
 import { FormulationState } from '../../../models/logic/formulationState.model';
 import { Observable, forkJoin } from 'rxjs';
 import { Dependency } from '../../../models/logic/dependency.model'; // << AÑADIR ESTA LÍNEA
+import { ActivityDetail } from '../../../models/logic/activityDetail.model';
+import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
 
 @Component({
   selector: 'app-adm-planificacion-table',
@@ -94,6 +98,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   showSuccessAnimation = false;
   newModificationQuarter: number | null = null;
   public canInitiateFormulation = false; // << NUEVA BANDERA
+  public canInitiateFormulationOODD = false; // << NUEVA BANDERA PARA OODD
 
   public Object = Object;
 
@@ -104,7 +109,9 @@ export class AdmPlanificacionTableComponent implements OnInit {
     private dependencyTypeService: DependencyTypeService,
     private confirmationService: ConfirmationService,
     private yearsService: StrategicObjectiveService,
-    private dependencyService: DependencyService // << INYECTAR EL SERVICIO
+    private dependencyService: DependencyService, // << INYECTAR EL SERVICIO
+    private activityDetailService: ActivityDetailService, // << INYECTAR EL SERVICIO
+    private operationalActivityService: OperationalActivityService // << INYECTAR EL SERVICIO
   ) {
     const currentYear = new Date().getFullYear();
     this.selectedYear = currentYear;
@@ -157,6 +164,19 @@ export class AdmPlanificacionTableComponent implements OnInit {
     );
 
     this.canInitiateFormulation = filteredByYear.length === 0; // << ESTABLECER LA BANDERA
+
+    // Verificar si existen formulaciones OODD (tipo 2)
+    const ocFormulations = filteredByYear.filter(f => 
+      f.dependency?.dependencyType?.idDependencyType === 1 && 
+      f.formulationType?.idFormulationType === 1
+    );
+    const ooddFormulations = filteredByYear.filter(f => 
+      f.dependency?.dependencyType?.idDependencyType === 2 && 
+      f.formulationType?.idFormulationType === 2
+    );
+    
+    // Solo permitir iniciar formulación OODD si existen formulaciones OC pero no OODD
+    this.canInitiateFormulationOODD = ocFormulations.length > 0 && ooddFormulations.length === 0;
 
     this.dependencyTypes.forEach(depType => {
       this.groupedFormulations[depType.name] = {};
@@ -387,6 +407,148 @@ export class AdmPlanificacionTableComponent implements OnInit {
           error: (err) => {
             this.toastr.error('Error al iniciar la formulación OC.', 'Error');
             console.error('Error initiating formulations', err);
+          }
+        });
+      },
+      error: (err) => {
+        this.toastr.error('Error al cargar la lista de dependencias.', 'Error');
+        console.error('Error fetching dependencies', err);
+      }
+    });
+  }
+
+  // << NUEVO: Método para iniciar la formulación de actividades de gestión para OODD
+  onInitiateFormulationOODD(): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de iniciar la formulación de actividades de gestión para OODD para el año ${this.selectedYear}?`,
+      header: 'Confirmar Iniciación de Formulación para OODD',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.processInitiateFormulationOODD();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
+      },
+      reject: () => {
+        this.toastr.info('Iniciación de formulación para OODD cancelada.', 'Cancelado');
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
+    });
+  }
+
+  private processInitiateFormulationOODD(): void {
+    // Primero obtener todas las dependencias OODD
+    this.dependencyService.getAll().subscribe({
+      next: (allDependencies: Dependency[]) => {
+        const ooddDependencies = allDependencies.filter(dep => dep.dependencyType?.idDependencyType === 2);
+        
+        if (ooddDependencies.length === 0) {
+          this.toastr.warning('No se encontraron dependencias OODD para crear formulaciones.', 'Advertencia');
+          return;
+        }
+
+        // Crear formulaciones para todas las dependencias OODD
+        const formulationCreationRequests: Observable<Formulation>[] = [];
+        const formulationStateInitial = { idFormulationState: 1 } as FormulationState;
+
+        ooddDependencies.forEach(dependency => {
+          const newFormulation: Formulation = {
+            year: this.selectedYear,
+            dependency: dependency,
+            formulationState: formulationStateInitial,
+            active: true,
+            modification: 1,
+            quarter: 1,
+            formulationType: { idFormulationType: 2 } // Tipo 2 para OODD
+          };
+          formulationCreationRequests.push(this.formulationService.create(newFormulation));
+        });
+
+        // Ejecutar creación de formulaciones
+        forkJoin(formulationCreationRequests).subscribe({
+          next: (formulationsCreated) => {
+            // Ahora obtener los ActivityDetail del año seleccionado para crear actividades operativas
+            this.activityDetailService.getAll().subscribe({
+              next: (activityDetails: ActivityDetail[]) => {
+                const filteredDetails = activityDetails.filter(ad => 
+                  ad.year === this.selectedYear && 
+                  ad.formulationType?.idFormulationType === 2
+                );
+
+                if (filteredDetails.length === 0) {
+                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones OODD pero no hay actividades de gestión definidas para el año ${this.selectedYear}.`, 'Formulaciones Creadas');
+                  this.loadInitialData();
+                  return;
+                }
+
+                // Crear actividades operativas basadas en ActivityDetail para cada formulación
+                const operationalActivityCreationRequests: Observable<OperationalActivity>[] = [];
+
+                formulationsCreated.forEach(formulation => {
+                  filteredDetails.forEach(activityDetail => {
+                    const operationalActivity: Partial<OperationalActivity> = {
+                      sapCode: '', // Se generará automáticamente en el backend
+                      correlativeCode: '', // Se generará automáticamente en el backend
+                      name: activityDetail.name,
+                      description: activityDetail.description || '',
+                      active: true,
+                      strategicAction: activityDetail.strategicAction,
+                      formulation: formulation,
+                      financialFund: { idFinancialFund: 1 } as any, // Valor por defecto
+                      managementCenter: { idManagementCenter: 1 } as any, // Valor por defecto
+                      costCenter: { idCostCenter: 1 } as any, // Valor por defecto
+                      measurementType: activityDetail.measurementUnit ? { idMeasurementType: 1 } as any : undefined,
+                      measurementUnit: activityDetail.measurementUnit || '',
+                      priority: { idPriority: 1 } as any, // Valor por defecto
+                      goods: 0,
+                      remuneration: 0,
+                      services: 0,
+                      activityFamily: activityDetail.activityFamily
+                    };
+
+                    operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity as OperationalActivity));
+                  });
+                });
+
+                if (operationalActivityCreationRequests.length > 0) {
+                  forkJoin(operationalActivityCreationRequests).subscribe({
+                    next: (activitiesCreated) => {
+                      this.toastr.success(
+                        `Se crearon ${formulationsCreated.length} formulaciones OODD y ${activitiesCreated.length} actividades operativas correctamente.`, 
+                        'Éxito Completo'
+                      );
+                      this.loadInitialData();
+                    },
+                    error: (err) => {
+                      this.toastr.error('Error al crear las actividades operativas OODD.', 'Error');
+                      console.error('Error creating operational activities', err);
+                    }
+                  });
+                } else {
+                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones OODD correctamente.`, 'Éxito');
+                  this.loadInitialData();
+                }
+              },
+              error: (err) => {
+                this.toastr.error('Error al cargar los detalles de actividad.', 'Error');
+                console.error('Error fetching activity details', err);
+              }
+            });
+          },
+          error: (err) => {
+            this.toastr.error('Error al crear las formulaciones OODD.', 'Error');
+            console.error('Error creating OODD formulations', err);
           }
         });
       },

@@ -13,5 +13,6 @@ export interface Formulation {
   modification?: number;
   quarter?: number;
   formulationType?: FormulationType;
+  budget?: number; // number in TypeScript covers double/float from backend/db
 }
 

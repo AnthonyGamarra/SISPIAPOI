@@ -1,8 +1,8 @@
 import { OperationalActivity } from "./operationalActivity.model";
 import { ActivityDetail } from "./activityDetail.model";
 
-export interface ExecutedGoal {
-  idExecutedGoal?: number;
+export interface MonthlyGoal {
+  idMonthlyGoal?: number;
   active?: boolean;
   operationalActivity?: OperationalActivity;
   activityDetail?: ActivityDetail;

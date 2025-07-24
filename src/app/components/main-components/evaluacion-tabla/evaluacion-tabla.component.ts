@@ -435,7 +435,7 @@ export class EvaluacionTablaComponent implements OnChanges {
       financialFund: { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund,
       managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter,
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
-      measurementType: { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType,
+      measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
       sapCode: product.sapCode || ''
     };
