@@ -37,8 +37,8 @@
 }
 
 .matrix-table {
-  width: 160%;
-  table-layout: fixed;
+  width: 200%; // aumenta el ancho total de la tabla para permitir columnas más anchas
+  table-layout: auto; // permite que los anchos de columna se ajusten automáticamente
   border-collapse: collapse;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   background-color: #fff;
@@ -119,18 +119,18 @@
 /* Cuarta columna (Acciones) */
 .matrix-table thead th:nth-child(4),
 .matrix-table tbody td:nth-child(4) {
-  width: 105px;
-  max-width: 105px;
-  min-width: 105px;
+  width: 120px;
+  max-width: 120px;
+  min-width: 120px;
   text-align: center;
 }
 
 /* Quinta columna (Tipo de gasto) */
 .matrix-table thead th:nth-child(5),
 .matrix-table tbody td:nth-child(5) {
-  width: 240px;
-  max-width: 240px;
-  min-width: 240px;
+  width: 100px !important; // usa !important para forzar el ancho
+  max-width: 100px !important;
+  min-width: 100px !important;
   text-align: center;
 }
 
