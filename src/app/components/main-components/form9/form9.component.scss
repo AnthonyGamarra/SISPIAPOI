@@ -110,9 +110,9 @@
 /* Tercera columna (Posición presupuestaria) */
 .matrix-table thead th:nth-child(3),
 .matrix-table tbody td:nth-child(3) {
-  width: 360px;
-  max-width: 360px;
-  min-width: 360px;
+  width: 340px;
+  max-width: 340px;
+  min-width: 340px;
   text-align: left;
 }
 
@@ -131,6 +131,15 @@
   width: 100px !important; // usa !important para forzar el ancho
   max-width: 100px !important;
   min-width: 100px !important;
+  text-align: center;
+}
+
+/* Columnas de los meses (enero a diciembre) */
+.matrix-table thead th:nth-child(n+8):not(:last-child),
+.matrix-table tbody td:nth-child(n+8):not(:last-child) {
+  width: 60px;
+  max-width: 60px;
+  min-width: 60px;
   text-align: center;
 }
 
@@ -233,6 +242,14 @@ button.toggle-btn:hover {
     width: 70px;
     max-width: 70px;
     min-width: 70px;
+    text-align: center;
+  }
+  /* Columnas de los meses (enero a diciembre) en pantallas pequeñas */
+  .matrix-table thead th:nth-child(n+8):not(:last-child),
+  .matrix-table tbody td:nth-child(n+8):not(:last-child) {
+    width: 40px;
+    max-width: 40px;
+    min-width: 40px;
     text-align: center;
   }
   .matrix-table thead th:not(:first-child):not(:nth-child(2)):not(:nth-child(3)),
