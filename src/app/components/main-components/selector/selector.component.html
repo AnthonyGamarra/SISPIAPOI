@@ -148,6 +148,38 @@
         [disabled]="!idFormulation"
       ></button>
     </div>
+
+    <!-- NUEVO: Controles de descarga de reportes OC R1 y OC R2 -->
+    <div *ngIf="formulationExists && selectedModificationOption">
+      <label class="selector-label mr-2">Descargar reporte:</label>
+      <p-dropdown
+        [options]="downloadFormatOptions"
+        [(ngModel)]="selectedDownloadFormat"
+        placeholder="Formato"
+        class="selector-dropdown mr-2"
+        optionLabel="label"
+        optionValue="value"
+
+      ></p-dropdown>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-download"
+        label="Reporte completo"
+        class="selector p-button-info mr-2"
+        (click)="downloadOcR1()"
+        [disabled]="isDownloadingR1"
+      ></button>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-download"
+        label="Reporte simplificado"
+        class="selector p-button-warning"
+        (click)="downloadOcR2()"
+        [disabled]="isDownloadingR2"
+      ></button>
+    </div>
   </div>
 </div>
 

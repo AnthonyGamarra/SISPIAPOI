@@ -83,8 +83,8 @@
           <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">II</th>
           <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">III</th>
           <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">IV</th>
-          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Bienes</th>
           <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Remuneraciones</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Bienes</th>
           <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Servicios</th>
           <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Total</th>
         </tr>
@@ -341,34 +341,34 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.goods" type="number" [disabled]="state === 2 || state === 4 || !active" />
+                <input pInputText [(ngModel)]="product.remuneration" type="number" step="any" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
-              <ng-template pTemplate="output">{{ product.goods }}</ng-template>
+              <ng-template pTemplate="output">{{ product.remuneration | number:'1.2-2' }}</ng-template>
             </p-cellEditor>
           </td>
 
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.remuneration" type="number" [disabled]="state === 2 || state === 4 || !active" />
+                <input pInputText [(ngModel)]="product.goods" type="number" step="any" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
-              <ng-template pTemplate="output">{{ product.remuneration }}</ng-template>
+              <ng-template pTemplate="output">{{ product.goods | number:'1.2-2' }}</ng-template>
             </p-cellEditor>
           </td>
 
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <input pInputText [(ngModel)]="product.services" type="number" [disabled]="state === 2 || state === 4 || !active" />
+                <input pInputText [(ngModel)]="product.services" type="number" step="any" [disabled]="state === 2 || state === 4 || !active" />
               </ng-template>
-              <ng-template pTemplate="output">{{ product.services }}</ng-template>
+              <ng-template pTemplate="output">{{ product.services | number:'1.2-2' }}</ng-template>
             </p-cellEditor>
           </td>
 
           <td class="montos">
             <p-cellEditor>
-              <ng-template pTemplate="input">{{ product.goods + product.remuneration + product.services }}</ng-template>
-              <ng-template pTemplate="output">{{ product.goods + product.remuneration + product.services }}</ng-template>
+              <ng-template pTemplate="input">{{ (product.goods + product.remuneration + product.services) | number:'1.2-2' }}</ng-template>
+              <ng-template pTemplate="output">{{ (product.goods + product.remuneration + product.services) | number:'1.2-2' }}</ng-template>
             </p-cellEditor>
           </td>
 

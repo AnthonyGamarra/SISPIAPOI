@@ -25,6 +25,7 @@ import { FormulationState } from '../../../models/logic/formulationState.model';
 import { FormulationSupportFile } from '../../../models/logic/formulationSupportFile.model';
 
 import { SafeUrlPipe } from '../../../safe-url.pipe';
+import { OcReportService } from '../../../core/services/logic/oc-report.service';
 
 @Component({
   selector: 'app-selector',
@@ -68,6 +69,67 @@ export class SelectorComponent implements OnInit {
   idFormulation: number | null = null;
   public activeFormulation: Formulation | null = null;
   public isLoadingFileMetadata: boolean = false;
+
+  // Opciones de formato para descarga de reportes
+  downloadFormatOptions = [
+    { label: 'Excel', value: 'excel' },
+    { label: 'PDF', value: 'pdf' },
+    { label: 'Word', value: 'word' }
+  ];
+  selectedDownloadFormat: string = 'excel';
+  isDownloadingR1 = false;
+  isDownloadingR2 = false;
+
+  // Inyección del servicio de reportes OC
+private ocReportService = inject(OcReportService);
+
+  // Descargar OC R1
+  downloadOcR1(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    this.isDownloadingR1 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    this.ocReportService.downloadOcR1Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR1 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR1 = false;
+        }
+      });
+  }
+
+  // Descargar OC R2
+  downloadOcR2(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    this.isDownloadingR2 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    this.ocReportService.downloadOcR2Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR2 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR2 = false;
+        }
+      });
+  }
 
   isSingleDependency = false;
   formulationExists = false;

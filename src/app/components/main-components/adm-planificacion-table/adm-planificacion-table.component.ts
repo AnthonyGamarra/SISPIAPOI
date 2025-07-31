@@ -497,27 +497,62 @@ export class AdmPlanificacionTableComponent implements OnInit {
 
                 formulationsCreated.forEach(formulation => {
                   filteredDetails.forEach(activityDetail => {
-                    const operationalActivity: Partial<OperationalActivity> = {
+                    // Crear nuevos goals sin ID para evitar el error de entidad detached
+                    const newGoals = (activityDetail.goals || []).map(goal => ({
+                      goalOrder: goal.goalOrder,
+                      value: goal.value,
+                      active: goal.active || true
+                      // NO incluir idGoal para crear nuevos goals
+                    }));
+
+                    // Crear nuevos monthlyGoals sin ID
+                    const newMonthlyGoals = (activityDetail.monthlyGoals || []).map(monthlyGoal => ({
+                      goalOrder: monthlyGoal.goalOrder,
+                      value: monthlyGoal.value,
+                      active: monthlyGoal.active || true
+                      // NO incluir idMonthlyGoal para crear nuevos monthlyGoals
+                    }));
+
+                    const operationalActivity: OperationalActivity = {
                       sapCode: '', // Se generará automáticamente en el backend
                       correlativeCode: '', // Se generará automáticamente en el backend
                       name: activityDetail.name,
                       description: activityDetail.description || '',
                       active: true,
-                      strategicAction: activityDetail.strategicAction,
-                      formulation: formulation,
-                      financialFund: { idFinancialFund: 1 } as any, // Valor por defecto
-                      managementCenter: { idManagementCenter: 1 } as any, // Valor por defecto
-                      costCenter: { idCostCenter: 1 } as any, // Valor por defecto
-                      measurementType: activityDetail.measurementUnit ? { idMeasurementType: 1 } as any : undefined,
+                      strategicAction: {
+                        idStrategicAction: activityDetail.strategicAction.idStrategicAction,
+                        strategicObjective: { 
+                          idStrategicObjective: activityDetail.strategicAction.strategicObjective?.idStrategicObjective 
+                        } as any
+                      } as any,
+                      formulation: { 
+                        idFormulation: formulation.idFormulation 
+                      } as any,
+                      financialFund: { 
+                        idFinancialFund: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
+                      } as any,
+                      managementCenter: { 
+                        idManagementCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
+                      } as any,
+                      costCenter: { 
+                        idCostCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
+                      } as any,
+                      measurementType: activityDetail.measurementUnit ? { 
+                        idMeasurementType: 1 
+                      } as any : undefined,
                       measurementUnit: activityDetail.measurementUnit || '',
-                      priority: { idPriority: 1 } as any, // Valor por defecto
+                      priority: { 
+                        idPriority: 1 // Valor por defecto
+                      } as any,
                       goods: 0,
                       remuneration: 0,
                       services: 0,
-                      activityFamily: activityDetail.activityFamily
+                      activityFamily: activityDetail.activityFamily,
+                      goals: newGoals,
+                      monthlyGoals: newMonthlyGoals
                     };
 
-                    operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity as OperationalActivity));
+                    operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity));
                   });
                 });
 
@@ -531,8 +566,9 @@ export class AdmPlanificacionTableComponent implements OnInit {
                       this.loadInitialData();
                     },
                     error: (err) => {
-                      this.toastr.error('Error al crear las actividades operativas OODD.', 'Error');
+                      this.toastr.error('Error al crear las actividades operativas OODD. Verifique que los valores por defecto sean válidos.', 'Error');
                       console.error('Error creating operational activities', err);
+                      console.error('Error details:', err.error);
                     }
                   });
                 } else {
