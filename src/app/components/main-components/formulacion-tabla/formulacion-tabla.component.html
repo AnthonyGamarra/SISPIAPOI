@@ -45,12 +45,12 @@
       showGridlines
       [resizableColumns]="true"
       [scrollable]="true"
-      scrollHeight="500px"
+      scrollHeight="590px"
       columnResizeMode="expand"
       dataKey="idOperationalActivity"
       editMode="row"
       [paginator]="true" 
-      [rows]="5"
+      [rows]="6"
       [rowHover]="true"
       [editingRowKeys]="editingRowKeys">
       
@@ -58,12 +58,12 @@
         <tr class="cabecera">
           <th style="min-width: 120px; max-width: 120px;" rowspan="2">Acciones</th>
 
-          <th style="min-width: 140px; max-width: 140px;" rowspan="2">Objetivo estratégico</th>
-          <th style="min-width: 130px; max-width: 130px;" rowspan="2">Acción estratégica</th>
+          <th style="min-width: 120px; max-width: 120px;" rowspan="2">Objetivo estratégico</th>
+          <th style="min-width: 100px; max-width: 100px;" rowspan="2">Acción estratégica</th>
 
           <th style="min-width: 170px; max-width: 170px;" rowspan="2">Centro gestor</th>
           <th style="min-width: 550px; max-width: 550px;" rowspan="2">Centro de costos</th>          
-          <th style="min-width: 500px; max-width: 500px;" rowspan="2">Fondo financiero</th>
+          <th style="min-width: 450px; max-width: 450px;" rowspan="2">Fondo financiero</th>
           
           <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>
           <th style="min-width: 370px; max-width: 370px;" rowspan="2">Nombre de actividad</th>
@@ -251,18 +251,18 @@
           <td>
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
-              <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="40" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
+              <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
             </p-cellEditor>
           </td>
 
           <td>
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                <textarea rows="1" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
-              <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="21" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.measurementUnit }}</textarea></ng-template>
+              <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="21" [autoResize]="true" pTextarea [disabled]="true" style="resize: none">{{ product.measurementUnit }}</textarea></ng-template>
             </p-cellEditor>
           </td>
 
@@ -375,9 +375,9 @@
           <td class="montos">
             <p-cellEditor>
               <ng-template pTemplate="input">
-                <textarea rows="3" cols="40" [autoResize]="true"  pTextarea [(ngModel)]="product.description" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                <textarea rows="1" cols="40" [autoResize]="true"  pTextarea [(ngModel)]="product.description" [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
               </ng-template>
-              <ng-template pTemplate="output" class="text-output"><textarea rows="3" cols="40" [autoResize]="true"  pTextarea [disabled]="true" style="resize: none">{{ product.description }}</textarea></ng-template>
+              <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"  pTextarea [disabled]="true" style="resize: none">{{ product.description }}</textarea></ng-template>
             </p-cellEditor>
           </td>
 
