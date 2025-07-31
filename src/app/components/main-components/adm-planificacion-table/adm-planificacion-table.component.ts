@@ -176,7 +176,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
     );
     
     // Solo permitir iniciar formulación OODD si existen formulaciones OC pero no OODD
-    this.canInitiateFormulationOODD = ocFormulations.length > 0 && ooddFormulations.length === 0;
+    this.canInitiateFormulationOODD = ooddFormulations.length === 0;
 
     this.dependencyTypes.forEach(depType => {
       this.groupedFormulations[depType.name] = {};
