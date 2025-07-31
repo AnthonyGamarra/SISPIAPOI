@@ -72,10 +72,10 @@
       <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
       <p-dropdown [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
         class="selector-dropdown mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-dropdown>
-      <button pButton type="button" icon="pi pi-download" label="Reporte completo"
+      <button pButton type="button" icon="pi pi-download" label="Reporte"
         class="selector p-button-info mr-2 w-full sm:w-auto" (click)="downloadOcR1()"
         [disabled]="isDownloadingR1"></button>
-      <button pButton type="button" icon="pi pi-download" label="Reporte simplificado"
+      <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download" label="Reporte simplificado"
         class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
         [disabled]="isDownloadingR2"></button>
     </div>
