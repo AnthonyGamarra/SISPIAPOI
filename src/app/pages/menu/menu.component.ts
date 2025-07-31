@@ -11,6 +11,7 @@ import { EvaluacionModuloComponent } from '../../components/main-components/eval
 import { AdmPlanificacionModuloComponent } from '../../components/modules/adm-planificacion-modulo/adm-planificacion-modulo.component'
 import { ModuloksComponent } from '../../components/modules/moduloks/moduloks.component';
 import { AdmOEAEModuloComponent } from "../../components/modules/adm-oe-ae-modulo/adm-oe-ae-modulo.component";
+import { ModuloReporteF9Component } from '../../components/modules/modulo-reporte-f9/modulo-reporte-f9.component';
 
 @Component({
   selector: 'app-menu',
@@ -23,7 +24,8 @@ import { AdmOEAEModuloComponent } from "../../components/modules/adm-oe-ae-modul
     EvaluacionModuloComponent,
     AdmPlanificacionModuloComponent,
     ModuloksComponent,
-    AdmOEAEModuloComponent
+    AdmOEAEModuloComponent,
+    ModuloReporteF9Component
 ],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'

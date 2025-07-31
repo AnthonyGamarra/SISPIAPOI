@@ -13,6 +13,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { FormulacionDesconcentradoGestionModuloComponent } from './components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
 import { MenuFormulacionDesconcentradoComponent } from './pages/menu-formulacion-desconcentrado/menu-formulacion-desconcentrado.component';
+import { ReporteF9 } from './pages/reporte-f9/reporte-f9.component';
 
 export const routes: Routes = [
   {
@@ -74,6 +75,18 @@ export const routes: Routes = [
     //   dependencies: [11, 12, 13],
     // },
   },
+  {
+    path: 'reporte-f9', // ✅ nueva ruta para el componente Formu1
+    component: ReporteF9,
+    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "UPLANEAMIENTO", "GPLANEAMIENTO"],
+    },
+    // data: {
+    //   dependencies: [11, 12, 13],
+    // },
+  },
+
   {
     path: 'valida', // ✅ nueva ruta para el componente Formu1
     component: ValidaComponent,
