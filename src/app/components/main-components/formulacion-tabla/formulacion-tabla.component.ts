@@ -145,16 +145,9 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   }
 
   isLoadingFormulation: boolean = false;
-  @Input() isLoadingFormulationExternal: boolean = false; // Nuevo input para loading externo
-
 
   // --- Core Data Loading and Reactivity ---
   ngOnChanges(changes: SimpleChanges): void {
-    // Actualizar loading externo primero
-    if (changes['isLoadingFormulationExternal']) {
-      this.isLoadingFormulation = changes['isLoadingFormulationExternal'].currentValue;
-    }
-
     // Priority 1: Handle changes to 'currentFormulation' itself.
     if (changes['currentFormulation']) {
       const newFormulation = changes['currentFormulation'].currentValue;
@@ -165,8 +158,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
 
       if (newFormulation && newFormulation.idFormulation) {
-        // Formulación encontrada y válida
-        this.isLoadingFormulation = false;
+        this.isLoadingFormulation = false; // Clear loading when formulation is received
         this.idFormulation = newFormulation.idFormulation;
         this.ano = newFormulation.year?.toString() ?? null;
         this.idDependency = newFormulation.dependency?.idDependency?.toString() ?? null;
@@ -184,12 +176,15 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           this.loadOperationalActivities();
         }
       } else if (newFormulation === null && oldFormulation !== null) {
-        // Formulación establecida explícitamente como null (no existe formulación)
+        // Formulation was cleared (set to null)
         this.isLoadingFormulation = false;
-        console.log('FormulacionTablaComponent: No formulation found for the selected criteria.');
+        console.log('FormulacionTablaComponent: Clearing data due to null currentFormulation.');
         this.clearFormulationDetails();
       }
-      // Si newFormulation es undefined, mantiene el estado actual (puede ser loading)
+      // If newFormulation is undefined, it means we're still waiting for a formulation
+      else if (newFormulation === undefined) {
+        this.isLoadingFormulation = true;
+      }
     }
 
     // Priority 2: Handle 'mostrar' input changing
@@ -204,6 +199,8 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
+        } else if (this.currentFormulation === undefined) {
+          this.isLoadingFormulation = true;
         }
       } else if (!isShowing && wasShowing) {
         this.isLoadingFormulation = false;
@@ -223,22 +220,19 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       this.canDelete = hasPermission;
     }
   }
-
-  clearFormulationDetails(): void {
-    this.quarter = null;
-    this.state = null;
-    this.stateName = null;
-    this.active = null;
-    this.products = [];
-    this.isLoadingActivities = false;
-    this.isLoadingFormulation = false;
-
-    // NUEVO: Limpiar también ano e idDependency
-    this.ano = null;
-    this.idDependency = null;
-
-    this.updatePermissions();
-  }
+clearFormulationDetails(): void {
+  this.quarter = null;
+  this.state = null;
+  this.stateName = null;
+  this.active = null;
+  this.products = [];
+  this.isLoadingActivities = false;
+  this.isLoadingFormulation = false;
+  this.ano = null;
+  this.idDependency = null;
+  this.idFormulation = null;
+  this.updatePermissions();
+}
 
   // --- Data Loading Methods ---
   loadFormulationDetails(): void {

@@ -1,14 +1,12 @@
 <div>
-  <!-- Mensaje cuando no hay formulación -->
-  <!-- Mensaje cuando no hay formulación -->
-  <div *ngIf="!currentFormulation && !isLoadingActivities && !isLoadingFormulation" class="text-center p-6">
-    <h3 class="text-lg font-semibold text-gray-600" *ngIf="ano && idDependency; else noFormulationSelected">
-      No se ha iniciado una formulación para el año: {{ ano }}
-    </h3>
-    <ng-template #noFormulationSelected>
-      <h3 class="text-lg font-semibold text-gray-600">No se ha seleccionado una formulación</h3>
-    </ng-template>
-  </div>
+<div *ngIf="!currentFormulation && !isLoadingActivities && !isLoadingFormulation" class="text-center p-6">
+  <h3 class="text-lg font-semibold text-gray-600" *ngIf="ano && idDependency; else noSelectionMessage">
+    No se ha iniciado una formulación para el año: {{ ano }}
+  </h3>
+  <ng-template #noSelectionMessage>
+    <h3 class="text-lg font-semibold text-gray-600">No se ha seleccionado una formulación</h3>
+  </ng-template>
+</div>
 
   <div *ngIf="isLoadingFormulation" class="text-center p-6">
     <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
