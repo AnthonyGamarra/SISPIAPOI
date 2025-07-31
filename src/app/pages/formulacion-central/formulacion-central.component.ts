@@ -27,7 +27,7 @@ export class FormulacionCentralComponent {
   // All other inputs for `FormulacionTablaComponent` will be derived from this.
   currentFormulation: Formulation | null = null;
   mostrarTabla = false; // Controls visibility of the table
-  
+
   // NEW: Store selected year and dependency independently of formulation
   selectedYear: string | null = null;
   selectedDependency: string | null = null;
@@ -62,34 +62,34 @@ export class FormulacionCentralComponent {
 
     // Determine if `event` is a full `Formulation` object or the intermediate `{ano, dependencia, idFormulation}`
     if (event && (event as Formulation).idFormulation) {
-        selectedFormulation = event as Formulation;
-        // Update selected year and dependency from formulation
-        this.selectedYear = selectedFormulation.year?.toString() || null;
-        this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
+      selectedFormulation = event as Formulation;
+      // Update selected year and dependency from formulation
+      this.selectedYear = selectedFormulation.year?.toString() || null;
+      this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
     } else if (formulation && (formulation as Formulation).idFormulation) {
-        selectedFormulation = formulation as Formulation;
-        // Update selected year and dependency from formulation
-        this.selectedYear = selectedFormulation.year?.toString() || null;
-        this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
+      selectedFormulation = formulation as Formulation;
+      // Update selected year and dependency from formulation
+      this.selectedYear = selectedFormulation.year?.toString() || null;
+      this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
     } else if (event && (event as any).idFormulation) {
-        // This handles the original `buscar` event structure
-        this.selectedYear = (event as any).ano;
-        this.selectedDependency = (event as any).dependencia;
-        selectedFormulation = {
-            idFormulation: (event as any).idFormulation,
-            year: (event as any).ano ? parseInt((event as any).ano, 10) : undefined,
-            dependency: (event as any).dependencia ? { idDependency: parseInt((event as any).dependencia, 10) } as any : undefined,
-            // You might need to fetch the full object if only ID is available
-            // For now, let's assume the Selector sends the full object if available
-        } as Formulation;
+      // This handles the original `buscar` event structure
+      this.selectedYear = (event as any).ano;
+      this.selectedDependency = (event as any).dependencia;
+      selectedFormulation = {
+        idFormulation: (event as any).idFormulation,
+        year: (event as any).ano ? parseInt((event as any).ano, 10) : undefined,
+        dependency: (event as any).dependencia ? { idDependency: parseInt((event as any).dependencia, 10) } as any : undefined,
+        // You might need to fetch the full object if only ID is available
+        // For now, let's assume the Selector sends the full object if available
+      } as Formulation;
     } else {
-        // If event has ano/dependencia but no formulation, still store the selections
-        if (event && (event as any).ano !== undefined) {
-            this.selectedYear = (event as any).ano;
-        }
-        if (event && (event as any).dependencia !== undefined) {
-            this.selectedDependency = (event as any).dependencia;
-        }
+      // If event has ano/dependencia but no formulation, still store the selections
+      if (event && (event as any).ano !== undefined) {
+        this.selectedYear = (event as any).ano;
+      }
+      if (event && (event as any).dependencia !== undefined) {
+        this.selectedDependency = (event as any).dependencia;
+      }
     }
 
     if (!selectedFormulation?.idFormulation) {
@@ -142,5 +142,16 @@ export class FormulacionCentralComponent {
       // Clear table when dependency changes to avoid showing old data
       this.limpiarTabla();
     }
+  }
+
+  selectedFormulation: Formulation | null = null;
+  isLoadingFormulation: boolean = false;
+
+  onFormulationSelected(formulation: Formulation | null) {
+    this.selectedFormulation = formulation;
+  }
+
+  onLoadingFormulationChange(loading: boolean) {
+    this.isLoadingFormulation = loading;
   }
 }

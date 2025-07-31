@@ -166,15 +166,15 @@ export class AdmPlanificacionTableComponent implements OnInit {
     this.canInitiateFormulation = filteredByYear.length === 0; // << ESTABLECER LA BANDERA
 
     // Verificar si existen formulaciones OODD (tipo 2)
-    const ocFormulations = filteredByYear.filter(f => 
-      f.dependency?.dependencyType?.idDependencyType === 1 && 
+    const ocFormulations = filteredByYear.filter(f =>
+      f.dependency?.dependencyType?.idDependencyType === 1 &&
       f.formulationType?.idFormulationType === 1
     );
-    const ooddFormulations = filteredByYear.filter(f => 
-      f.dependency?.dependencyType?.idDependencyType === 2 && 
+    const ooddFormulations = filteredByYear.filter(f =>
+      f.dependency?.dependencyType?.idDependencyType === 2 &&
       f.formulationType?.idFormulationType === 2
     );
-    
+
     // Solo permitir iniciar formulación OODD si existen formulaciones OC pero no OODD
     this.canInitiateFormulationOODD = ooddFormulations.length === 0;
 
@@ -452,7 +452,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
     this.dependencyService.getAll().subscribe({
       next: (allDependencies: Dependency[]) => {
         const ooddDependencies = allDependencies.filter(dep => dep.dependencyType?.idDependencyType === 2);
-        
+
         if (ooddDependencies.length === 0) {
           this.toastr.warning('No se encontraron dependencias OODD para crear formulaciones.', 'Advertencia');
           return;
@@ -481,8 +481,8 @@ export class AdmPlanificacionTableComponent implements OnInit {
             // Ahora obtener los ActivityDetail del año seleccionado para crear actividades operativas
             this.activityDetailService.getAll().subscribe({
               next: (activityDetails: ActivityDetail[]) => {
-                const filteredDetails = activityDetails.filter(ad => 
-                  ad.year === this.selectedYear && 
+                const filteredDetails = activityDetails.filter(ad =>
+                  ad.year === this.selectedYear &&
                   ad.formulationType?.idFormulationType === 2
                 );
 
@@ -521,27 +521,27 @@ export class AdmPlanificacionTableComponent implements OnInit {
                       active: true,
                       strategicAction: {
                         idStrategicAction: activityDetail.strategicAction.idStrategicAction,
-                        strategicObjective: { 
-                          idStrategicObjective: activityDetail.strategicAction.strategicObjective?.idStrategicObjective 
+                        strategicObjective: {
+                          idStrategicObjective: activityDetail.strategicAction.strategicObjective?.idStrategicObjective
                         } as any
                       } as any,
-                      formulation: { 
-                        idFormulation: formulation.idFormulation 
+                      formulation: {
+                        idFormulation: formulation.idFormulation
                       } as any,
-                      financialFund: { 
+                      financialFund: {
                         idFinancialFund: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
                       } as any,
-                      managementCenter: { 
+                      managementCenter: {
                         idManagementCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
                       } as any,
-                      costCenter: { 
+                      costCenter: {
                         idCostCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
                       } as any,
-                      measurementType: activityDetail.measurementUnit ? { 
-                        idMeasurementType: 1 
+                      measurementType: activityDetail.measurementUnit ? {
+                        idMeasurementType: 1
                       } as any : undefined,
                       measurementUnit: activityDetail.measurementUnit || '',
-                      priority: { 
+                      priority: {
                         idPriority: 1 // Valor por defecto
                       } as any,
                       goods: 0,
@@ -560,7 +560,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
                   forkJoin(operationalActivityCreationRequests).subscribe({
                     next: (activitiesCreated) => {
                       this.toastr.success(
-                        `Se crearon ${formulationsCreated.length} formulaciones OODD y ${activitiesCreated.length} actividades operativas correctamente.`, 
+                        `Se crearon ${formulationsCreated.length} formulaciones OODD y ${activitiesCreated.length} actividades operativas correctamente.`,
                         'Éxito Completo'
                       );
                       this.loadInitialData();

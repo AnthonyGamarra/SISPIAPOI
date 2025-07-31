@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { ToastrService } from 'ngx-toastr';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -144,22 +144,29 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     ];
   }
 
+  isLoadingFormulation: boolean = false;
+  @Input() isLoadingFormulationExternal: boolean = false; // Nuevo input para loading externo
+
+
   // --- Core Data Loading and Reactivity ---
   ngOnChanges(changes: SimpleChanges): void {
+    // Actualizar loading externo primero
+    if (changes['isLoadingFormulationExternal']) {
+      this.isLoadingFormulation = changes['isLoadingFormulationExternal'].currentValue;
+    }
+
     // Priority 1: Handle changes to 'currentFormulation' itself.
-    // This is the most reliable way to update the table based on the primary data source.
     if (changes['currentFormulation']) {
       const newFormulation = changes['currentFormulation'].currentValue;
       const oldFormulation = changes['currentFormulation'].previousValue;
 
-      // Check if the formulation object has actually changed (not just a reference, but content relevant to ID)
       const hasFormulationChanged = newFormulation?.idFormulation !== oldFormulation?.idFormulation ||
         newFormulation?.modification !== oldFormulation?.modification ||
         newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
 
-
       if (newFormulation && newFormulation.idFormulation) {
-        // A valid formulation object is present. Update internal properties.
+        // Formulación encontrada y válida
+        this.isLoadingFormulation = false;
         this.idFormulation = newFormulation.idFormulation;
         this.ano = newFormulation.year?.toString() ?? null;
         this.idDependency = newFormulation.dependency?.idDependency?.toString() ?? null;
@@ -167,48 +174,44 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
         this.active = newFormulation.active;
-        console.log(this.ano);
 
-        this.updatePermissions(); // Update permissions based on the new state
+        this.updatePermissions();
 
-        // Only reload data if the formulation *itself* changed or if it just became visible
-        // (and it's the first time for this currentFormulation object).
         if (hasFormulationChanged || (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue)) {
           console.log('FormulacionTablaComponent: Loading data for new/updated formulation.');
-          this.cargarDatos(); // Reload strategic objectives based on year
-          this.loadCombos(); // Reload dependency-filtered combos
-          this.loadOperationalActivities(); // Reload operational activities
+          this.cargarDatos();
+          this.loadCombos();
+          this.loadOperationalActivities();
         }
-      } else {
-        // currentFormulation is null or invalid (e.g., idFormulation is missing).
-        // This means we should clear the table.
-        console.log('FormulacionTablaComponent: Clearing data due to null/invalid currentFormulation.');
+      } else if (newFormulation === null && oldFormulation !== null) {
+        // Formulación establecida explícitamente como null (no existe formulación)
+        this.isLoadingFormulation = false;
+        console.log('FormulacionTablaComponent: No formulation found for the selected criteria.');
         this.clearFormulationDetails();
-        this.clearFormulationDetails(); // Ensure all related details are cleared
       }
+      // Si newFormulation es undefined, mantiene el estado actual (puede ser loading)
     }
-    // Priority 2: Handle 'mostrar' input changing *if* currentFormulation hasn't triggered a load.
-    // This is for cases where 'mostrar' changes, but currentFormulation itself hasn't necessarily changed.
-    // Example: table was hidden with data, now shown.
+
+    // Priority 2: Handle 'mostrar' input changing
     else if (changes['mostrar']) {
       const isShowing = changes['mostrar'].currentValue;
       const wasShowing = changes['mostrar'].previousValue;
 
-      if (isShowing && !wasShowing && this.currentFormulation && this.currentFormulation.idFormulation) {
-        // Table just became visible AND we have a valid formulation, so ensure data is loaded.
-        console.log('FormulacionTablaComponent: Table just became visible, ensuring data is loaded.');
-        this.cargarDatos();
-        this.loadCombos();
-        this.loadOperationalActivities();
+      if (isShowing && !wasShowing) {
+        if (this.currentFormulation && this.currentFormulation.idFormulation) {
+          this.isLoadingFormulation = false;
+          console.log('FormulacionTablaComponent: Table just became visible, ensuring data is loaded.');
+          this.cargarDatos();
+          this.loadCombos();
+          this.loadOperationalActivities();
+        }
       } else if (!isShowing && wasShowing) {
-        // Table just became hidden, clear its data.
+        this.isLoadingFormulation = false;
         console.log('FormulacionTablaComponent: Table just became hidden, clearing data.');
-        this.clearFormulationDetails();
         this.clearFormulationDetails();
       }
     }
   }
-
   // Helper to update permissions based on the current state
   updatePermissions(): void {
     if (this.state && this.active) {
@@ -228,7 +231,13 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     this.active = null;
     this.products = [];
     this.isLoadingActivities = false;
-    this.updatePermissions(); // Reset permissions to default/disabled
+    this.isLoadingFormulation = false;
+
+    // NUEVO: Limpiar también ano e idDependency
+    this.ano = null;
+    this.idDependency = null;
+
+    this.updatePermissions();
   }
 
   // --- Data Loading Methods ---
@@ -383,6 +392,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     });
   }
 
+  @ViewChild('dataTable') table!: Table;
   // --- Action Methods ---
   agregarActividad(): void {
     if (!this.canAdd) {
@@ -391,7 +401,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     }
 
     const nuevaActividad: OperationalActivity = {
-      idOperationalActivity: this.newActivityCounter--, // Negative ID for new activities
+      idOperationalActivity: this.newActivityCounter--,
       sapCode: '',
       correlativeCode: '',
       name: '',
@@ -420,8 +430,22 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         { goalOrder: 4, value: 0, operationalActivity: {} } as ExecutedGoal
       ],
     };
+
     this.products = [...this.products, nuevaActividad];
     this.editingRowKeys[nuevaActividad.idOperationalActivity as any] = true;
+
+    // Navegar a la página donde está la nueva actividad
+    setTimeout(() => {
+      if (this.table) {
+        const newItemIndex = this.products.length - 1;
+        const rowsPerPage = this.table.rows || 6;
+        const targetPage = Math.floor(newItemIndex / rowsPerPage);
+
+        if (this.table.first !== targetPage * rowsPerPage) {
+          this.table.first = targetPage * rowsPerPage;
+        }
+      }
+    }, 0);
   }
 
   eliminarActividad(index: number, product: OperationalActivity): void {
@@ -447,14 +471,14 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       this.operationalActivityService.deleteById(this.activityToDelete.idOperationalActivity).subscribe({
         next: () => {
           if (this.activityToDeleteIndex !== null) {
+            // Solo eliminar del array local, sin recargar
             this.products.splice(this.activityToDeleteIndex, 1);
-            this.products = [...this.products];
+            this.products = [...this.products]; // Trigger change detection
           }
           this.toastr.success('Actividad eliminada exitosamente.', 'Éxito');
           this.showDeleteConfirmation = false;
           this.activityToDelete = null;
           this.activityToDeleteIndex = null;
-          this.loadOperationalActivities(); // Re-load to ensure data consistency
         },
         error: (errorResponse) => {
           const errorMessage = errorResponse?.error?.message || 'Error desconocido al eliminar la actividad.';
@@ -560,10 +584,8 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       return;
     }
 
-    // Destructure `goals` and `executedGoals` to handle them separately
     const { goals, executedGoals, ...activityWithoutGoals } = product;
 
-    // Initial base activity object for both create and update
     const baseActividad: OperationalActivity = {
       ...activityWithoutGoals,
       strategicAction: {
@@ -576,47 +598,40 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
       priority: { idPriority: product.priority.idPriority } as Priority,
-      sapCode: product.sapCode || '', // Keep existing sapCode for now, will be regenerated if needed
-      correlativeCode: product.correlativeCode || '' // Keep existing correlativeCode for now
+      sapCode: product.sapCode || '',
+      correlativeCode: product.correlativeCode || ''
     };
 
-    // Observable to hold the activity after potential SAP code generation
-    let activityToSave$: Observable<OperationalActivity>;
-
-    // --- Start of New/Modified Logic for SAP Code Generation ---
-    // Always regenerate SAP code (or reuse existing correlative) for both create and update
-    activityToSave$ = this._generateSapCodeAndCorrelative(product).pipe(
+    let activityToSave$ = this._generateSapCodeAndCorrelative(product).pipe(
       map(result => ({
-        ...baseActividad, // Use the base activity structure
-        idOperationalActivity: product.idOperationalActivity || undefined, // Keep existing ID for updates
+        ...baseActividad,
+        idOperationalActivity: product.idOperationalActivity || undefined,
         sapCode: result.sapCode,
         correlativeCode: result.correlativeCode
       })),
       catchError(err => {
         this.toastr.error('Error al generar el código SAP y correlativo.', 'Error');
         console.error('Error generating SAP code and correlative:', err);
-        // Return an observable that emits the base activity (without updated codes)
-        // and completes, to allow the rest of the save process to potentially proceed
-        // or to handle the error further down the chain.
-        return of(baseActividad); // Or throw error, depending on desired behavior
+        return of(baseActividad);
       })
     );
-    // --- End of New/Modified Logic ---
-
 
     activityToSave$.subscribe({
       next: (finalActivity: OperationalActivity) => {
-        // Now, finalActivity contains the correct sapCode and correlativeCode (either new or existing)
-
         if (finalActivity.idOperationalActivity && finalActivity.idOperationalActivity > 0) {
-          // Update existing operational activity
+          // UPDATE EXISTING ACTIVITY
           this.operationalActivityService.update(finalActivity).subscribe({
             next: () => {
-              const goalObservables: Observable<any>[] = [];
+              // Actualizar solo el elemento específico en el array local usando finalActivity
+              const index = this.products.findIndex(p => p.idOperationalActivity === finalActivity.idOperationalActivity);
+              if (index !== -1) {
+                this.products[index] = { ...finalActivity, goals: goals || [], executedGoals: executedGoals || [] };
+                this.products = [...this.products]; // Trigger change detection
+              }
 
+              const goalObservables: Observable<any>[] = [];
               if (goals) {
                 for (const g of goals) {
-                  // Only save goals for current or future quarters (based on formulation quarter)
                   if (this.quarter !== null && g.goalOrder < this.quarter) {
                     continue;
                   }
@@ -638,30 +653,30 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
               if (goalObservables.length > 0) {
                 forkJoin(goalObservables).subscribe({
-                  next: () => {
+                  next: (updatedGoals) => {
+                    // Actualizar las metas en el elemento local
+                    if (index !== -1 && updatedGoals) {
+                      this.products[index].goals = goals;
+                      this.products = [...this.products];
+                    }
                     this.toastr.success('Actividad operativa y metas actualizadas.', 'Éxito');
-                    this.loadOperationalActivities(); // Reload to refresh table with updated data
                   },
                   error: (err) => {
                     this.toastr.error('Error al actualizar una o más metas.', 'Error');
                     console.error('Error al actualizar metas:', err);
-                    this.loadOperationalActivities(); // Reload to revert to server state
                   }
                 });
               } else {
                 this.toastr.success('Actividad operativa actualizada.', 'Éxito');
-                this.loadOperationalActivities();
               }
             },
             error: (err) => {
               this.toastr.error('Error al actualizar la actividad operativa.', 'Error');
               console.error('Error al actualizar la actividad operativa:', err);
-              this.loadOperationalActivities(); // Revert changes in UI
             }
           });
         } else {
-          // Create new operational activity
-          // Ensure ID is not sent for new creation
+          // CREATE NEW ACTIVITY
           const { idOperationalActivity, ...activityForCreation } = finalActivity;
 
           this.operationalActivityService.create(activityForCreation).subscribe({
@@ -669,12 +684,16 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
               const id = actividadCreada.idOperationalActivity;
 
               if (id && !isNaN(id)) {
-                // The sapCode and correlativeCode are already generated in activityToSave$
-                // Now we just need to save the goals with the new activity ID.
+                // Actualizar el elemento en el array local con el ID real
+                const index = this.products.findIndex(p => p.idOperationalActivity === product.idOperationalActivity);
+                if (index !== -1) {
+                  this.products[index] = { ...actividadCreada, goals: goals || [], executedGoals: executedGoals || [] };
+                  this.products = [...this.products];
+                }
+
                 const goalObservables: Observable<any>[] = [];
                 if (goals) {
                   for (const g of goals) {
-                    // Only save goals for current or future quarters (based on formulation quarter)
                     if (this.quarter !== null && g.goalOrder < this.quarter) {
                       continue;
                     }
@@ -690,42 +709,40 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
                 if (goalObservables.length > 0) {
                   forkJoin(goalObservables).subscribe({
-                    next: () => {
+                    next: (createdGoals) => {
+                      // Actualizar las metas en el elemento local
+                      if (index !== -1 && createdGoals) {
+                        this.products[index].goals = goals;
+                        this.products = [...this.products];
+                      }
                       this.toastr.success('Actividad operativa creada, metas guardadas.', 'Éxito');
-                      this.loadOperationalActivities(); // Reload to refresh table
                     },
                     error: (err) => {
                       this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
                       console.error('Error al crear metas para la nueva actividad:', err);
-                      this.loadOperationalActivities(); // Revert changes
                     }
                   });
                 } else {
                   this.toastr.success('Actividad operativa creada.', 'Éxito');
-                  this.loadOperationalActivities();
                 }
               } else {
                 this.toastr.error('El ID devuelto por la creación de la actividad no es válido.', 'Error');
-                this.loadOperationalActivities(); // Revert changes
               }
             },
             error: (err) => {
               this.toastr.error('Error al crear la actividad operativa.', 'Error');
               console.error('Error al crear la actividad operativa:', err);
-              this.loadOperationalActivities(); // Revert changes
             }
           });
         }
       },
       error: (err) => {
-        // This catch block handles errors from _generateSapCodeAndCorrelative
         this.toastr.error('No se pudo procesar la actividad debido a un error de código SAP/correlativo.', 'Error');
         console.error('Error in SAP code generation flow:', err);
-        this.loadOperationalActivities(); // Revert changes
       }
     });
 
-    delete this.editingRowKeys[product.idOperationalActivity as any]; // Remove from editing state
+    delete this.editingRowKeys[product.idOperationalActivity as any];
   }
 
   onRowEditInit(product: OperationalActivity) {

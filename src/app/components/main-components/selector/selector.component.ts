@@ -52,7 +52,7 @@ export class SelectorComponent implements OnInit {
   @Output() cambioAno = new EventEmitter<string | null>();
   @Output() cambioDependencia = new EventEmitter<string | null>();
 
-  @Output() formulationSelected = new EventEmitter<Formulation>();
+  @Output() formulationSelected = new EventEmitter<Formulation | null>();
   @Output() formulationUpdated = new EventEmitter<Formulation>(); private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
@@ -220,55 +220,61 @@ export class SelectorComponent implements OnInit {
 
   // Nuevo método: cuando cambia la dependencia, carga los años válidos
   onDependencyChange(): void {
+    // Limpiar años y formulación inmediatamente
     this.optionsAno = [];
     this.selectedAno = null;
 
-    // Emitir el cambio de dependencia inmediatamente
+    // NUEVO: Limpiar formulación actual inmediatamente
+    this.formulationExists = false;
+    this.idFormulation = null;
+    this.foundFormulations = [];
+    this.modificationOptions = [];
+    this.selectedModificationOption = null;
+    this.quarterLabel = null;
+    this.currentFormulationStateLabel = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+    this.selectedFormulationState = null;
+
+    // Emitir null para limpiar la tabla inmediatamente
+    this.formulationSelected.emit(null);
+    this.loadingFormulationChange.emit(false);
+
     this.cambioDependencia.emit(this.selectedDependency);
 
     if (!this.selectedDependency) return;
+
     const depId = Number(this.selectedDependency);
     this.strategicObjectiveService.getMinMaxYears().subscribe({
       next: (range) => {
         if (range && range.minYear && range.maxYear) {
-          const years: number[] = [];
-          for (let y = range.minYear; y <= range.maxYear; y++) {
-            years.push(y);
+          this.optionsAno = [];
+          for (let year = range.maxYear; year >= range.minYear; year--) {
+            this.optionsAno.push({ label: year.toString(), value: year.toString() });
           }
-          this.optionsAno = years.map((year) => ({
-            label: year.toString(),
-            value: year.toString(),
-          }));
-          // No selecciona ningún año por defecto
-          this.selectedAno = null;
-        } else {
-          // Si no hay rango, muestra solo el año actual pero no lo selecciona
-          const currentYear = new Date().getFullYear().toString();
-          this.optionsAno = [{ label: currentYear, value: currentYear }];
-          this.selectedAno = null;
         }
-        // Solo busca formulaciones si el usuario ha seleccionado manualmente un año
-        // No se ejecuta automáticamente al cargar
       },
       error: (err) => {
-        this.toastr.error('Error al cargar rango de años.', 'Error');
-        console.error('Error fetching min/max years:', err);
-        const currentYear = new Date().getFullYear().toString();
-        this.optionsAno = [{ label: currentYear, value: currentYear }];
-        this.selectedAno = null;
-        // Solo busca formulaciones si el usuario ha seleccionado manualmente un año
-        // No se ejecuta automáticamente al cargar
+        console.error('Error al cargar rango de años:', err);
+        this.toastr.error('Error al cargar los años disponibles.', 'Error');
       },
     });
   }
 
   // Cuando cambia el año, busca formulaciones
   onAnoChange(): void {
-    // Emitir el cambio de año inmediatamente
     this.cambioAno.emit(this.selectedAno);
 
+    // Solo verificar formulación si hay dependencia Y año seleccionados
     if (this.selectedAno && this.selectedDependency) {
       this.verificarFormulacion();
+    } else {
+      // Si no hay año seleccionado, limpiar formulación
+      this.formulationExists = false;
+      this.activeFormulation = null;
+      this.formulationSelected.emit(null);
+      this.loadingFormulationChange.emit(false);
     }
   }
 
@@ -287,6 +293,8 @@ export class SelectorComponent implements OnInit {
     });
   }
 
+  @Output() loadingFormulationChange = new EventEmitter<boolean>();
+
   verificarFormulacion() {
     this.formulationExists = false;
     this.idFormulation = null;
@@ -298,60 +306,61 @@ export class SelectorComponent implements OnInit {
     this.activeFormulation = null;
     this.hasSupportFile = false;
     this.supportFileMetadata = null;
-    this.selectedFormulationState = null; // Reiniciar
+    this.selectedFormulationState = null;
 
     if (!this.selectedAno || !this.selectedDependency) {
+      this.loadingFormulationChange.emit(false);
+      this.formulationSelected.emit(null);
       return;
-    } this.checkingFormulation = true;
+    }
+
+    // ACTIVAR LOADING INMEDIATAMENTE
+    this.loadingFormulationChange.emit(true);
+    this.checkingFormulation = true;
 
     const year = Number(this.selectedAno);
     const depId = Number(this.selectedDependency);
 
     this.formulationService.searchByDependencyAndYear(depId, year).subscribe({
       next: (formulations) => {
-        // Filtrar por tipo de formulación
-        const type1Formulations = formulations.filter(f => f.formulationType?.idFormulationType === 1);
-        this.foundFormulations = type1Formulations;
-        this.formulationExists = this.foundFormulations.length > 0;
+        this.loadingFormulationChange.emit(false);
+        this.checkingFormulation = false;
 
-        if (this.formulationExists) {
-          this.foundFormulations.sort(
-            (a, b) => (b.modification || 0) - (a.modification || 0)
-          );
+        if (formulations && formulations.length > 0) {
+          this.formulationExists = true;
+          this.foundFormulations = formulations;
 
-          this.modificationOptions = this.foundFormulations.map((f) => ({
+          // Ordenar las formulaciones por modification en orden descendente para obtener la mayor primero
+          const sortedFormulations = formulations.sort((a, b) => (b.modification || 0) - (a.modification || 0));
+
+          this.modificationOptions = sortedFormulations.map(f => ({
             label: this.getModificationLabel(f.modification),
-            value: f.modification!,
+            value: f.modification || 1
           }));
 
-          this.selectedModificationOption =
-            this.modificationOptions[0] || null;
-          this.onModificationChange();
-          // Sincronizar el estado seleccionado con el de la formulación activa
-          if (this.foundFormulations[0]?.formulationState?.idFormulationState) {
-            this.selectedFormulationState = this.foundFormulations[0].formulationState.idFormulationState;
+          // SELECCIONAR AUTOMÁTICAMENTE LA MODIFICACIÓN MAYOR
+          if (sortedFormulations.length > 0) {
+            const highestModification = sortedFormulations[0];
+            this.selectedModificationOption = {
+              label: this.getModificationLabel(highestModification.modification),
+              value: highestModification.modification || 1
+            };
+            this.onModificationChange(); // Trigger the change to load details
           }
         } else {
-          this.idFormulation = null;
-          this.selectedFormulationState = null;
+          this.formulationExists = false;
+          // Emite null cuando no hay formulaciones (después de que termina el loading)
+          this.formulationSelected.emit(null);
         }
-
-        this.checkingFormulation = false;
       },
       error: () => {
-        this.toastr.error('Error al verificar formulación.');
+        this.loadingFormulationChange.emit(false);
         this.checkingFormulation = false;
         this.formulationExists = false;
-        this.idFormulation = null;
-        this.foundFormulations = [];
-        this.modificationOptions = [];
-        this.selectedModificationOption = null;
-        this.quarterLabel = null;
-        this.selectedFormulationState = null;
-        this.activeFormulation = null;
-        this.hasSupportFile = false;
-        this.supportFileMetadata = null;
-      },
+        // También emite null en caso de error
+        //this.formulationSelected.emit(null);
+        this.toastr.error('Error al verificar formulaciones.', 'Error');
+      }
     });
   }
 
