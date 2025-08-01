@@ -6,6 +6,7 @@
   (cambioDependencia)="onSelectorChange({dependencia: $event})"
   (formulationSelected)="manejarBusqueda($event)"
   (formulationUpdated)="onFormulationUpdated($event)"
+  [hasActivities]="activitiesCount > 0"
 ></app-selector>
 
 <app-formulacion-tabla
@@ -15,6 +16,7 @@
   [currentFormulation]="currentFormulation"
   [mostrar]="mostrarTabla"
   (seleccionCambio)="onSeleccionAccion($event)"
+  (activitiesCountChanged)="onActivitiesCountChanged($event)">
 ></app-formulacion-tabla>
 
 <app-footer></app-footer>

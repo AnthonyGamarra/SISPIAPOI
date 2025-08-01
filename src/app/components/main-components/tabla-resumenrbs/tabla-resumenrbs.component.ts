@@ -1,6 +1,6 @@
 
 import { Component, OnInit } from '@angular/core';
-import { Form9DataService } from '../../core/services/logic/form9-data.service';
+import { Form9DataService } from '../../../core/services/logic/form9-data.service';
 
 @Component({
   selector: 'app-tabla-resumenrbs',

@@ -1,5 +1,5 @@
 // src/app/selector/selector.component.ts
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';

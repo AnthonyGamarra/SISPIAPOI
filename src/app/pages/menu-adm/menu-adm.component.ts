@@ -6,21 +6,27 @@ import { AuthService } from '../../core/services/authentication/auth.service';
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 
-import { FormulacionDesconcentradoGestionModuloComponent } from '../../components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
+import { AdmMaestrosODModuloComponent } from '../../components/modules/adm-maestros-oc-modulo/adm-maestros-od-modulo.component';
+import { AdmPlanificacionModuloComponent } from '../../components/modules/adm-planificacion-modulo/adm-planificacion-modulo.component';
+import { AdmOEAEModuloComponent } from '../../components/modules/adm-oe-ae-modulo/adm-oe-ae-modulo.component';
+import { AdmMaestrosPEModuloComponent } from '../../components/modules/adm-maestros-pe-modulo/adm-maestros-pe-modulo.component';
 
 @Component({
-  selector: 'app-menu-formulacion-desconcentrado',
+  selector: 'app-menu-adm',
   standalone: true,
   imports: [
     CommonModule,
     FooterComponent,
     MenubarComponent,
-    FormulacionDesconcentradoGestionModuloComponent
+    AdmMaestrosODModuloComponent,
+    AdmPlanificacionModuloComponent,
+    AdmOEAEModuloComponent,
+    AdmMaestrosPEModuloComponent
 ],
-  templateUrl: './menu-formulacion-desconcentrado.component.html',
-  styleUrl: './menu-formulacion-desconcentrado.component.scss'
+  templateUrl: './menu-adm.component.html',
+  styleUrl: './menu-adm.component.scss'
 })
-export class MenuFormulacionDesconcentradoComponent {
+export class MenuAdmComponent {
 
     constructor(private authService: AuthService) {} // Inject your AuthService
 
@@ -36,4 +42,5 @@ export class MenuFormulacionDesconcentradoComponent {
       return this.authService.hasRole(this.allowedRolesForAdm);
       
     }
+
 }

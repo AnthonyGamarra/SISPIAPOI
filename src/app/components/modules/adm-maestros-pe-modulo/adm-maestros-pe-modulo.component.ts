@@ -2,21 +2,21 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-formulacion-central-modulo',
-  templateUrl: './formulacion-central-modulo.component.html',
-  styleUrls: ['./formulacion-central-modulo.component.scss']
+  selector: 'app-adm-maestros-pe-modulo',
+  imports: [],
+  templateUrl: './adm-maestros-pe-modulo.component.html',
+  styleUrl: './adm-maestros-pe-modulo.component.scss'
 })
-export class FormulacionCentralModuloComponent {
+export class AdmMaestrosPEModuloComponent {
   constructor(private router: Router) {}
   @Output() clicked = new EventEmitter<void>();
 
   onClick() {
-console.log('Botón modulop clickeado');
-  this.router.navigate(['/formulacion/formulacion-central']).then(success => {
+  this.router.navigate(['/gestion/adm-maestro-gcspe']).then(success => {
     if (success) {
-      console.log('Navegación a /formulation exitosa');
+      console.log('Navegación a /admin-maestros-oc exitosa');
     } else {
-      console.warn('Navegación a /formulation falló');
+      console.warn('Navegación a /admin-maestros-oc falló');
     }
   }).catch(err => {
     console.error('Error durante la navegación:', err);

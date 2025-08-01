@@ -24,10 +24,12 @@ import { StrategicObjectiveService } from '../../../core/services/logic/strategi
 import { DependencyService } from '../../../core/services/logic/dependency.service'; // << AÑADIR ESTA LÍNEA
 import { ActivityDetailService } from '../../../core/services/logic/activity-detail.service'; // << AÑADIR ESTA LÍNEA
 import { OperationalActivityService } from '../../../core/services/logic/operational-activity.service'; // << AÑADIR ESTA LÍNEA
+import { FormulationTypeService } from '../../../core/services/logic/formulation-type.service';
 
 import { Formulation } from '../../../models/logic/formulation.model';
 import { DependencyType } from '../../../models/logic/dependencyType.model';
 import { FormulationState } from '../../../models/logic/formulationState.model';
+import { FormulationType } from '../../../models/logic/formulationType.model';
 import { Observable, forkJoin } from 'rxjs';
 import { Dependency } from '../../../models/logic/dependency.model'; // << AÑADIR ESTA LÍNEA
 import { ActivityDetail } from '../../../models/logic/activityDetail.model';
@@ -62,13 +64,20 @@ export class AdmPlanificacionTableComponent implements OnInit {
   years: number[] = [];
   selectedYear: number;
   dependencyTypes: DependencyType[] = [];
+  formulationTypes: FormulationType[] = [];
   originalActiveState?: boolean;
 
   options: AnimationOptions = {
     path: 'resources/succes-allert.json',
   };
 
-  groupedFormulations: { [key: string]: { [key: number]: Formulation[] } } = {};
+  groupedFormulations: { 
+    [dependencyTypeName: string]: { 
+      [formulationTypeName: string]: { 
+        [modification: number]: Formulation[] 
+      } 
+    } 
+  } = {};
   modificationLabels: { [key: number]: string } = {
     1: 'Formulación Inicial',
     2: 'Primera Modificatoria',
@@ -95,8 +104,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
   ];
 
   displayNewModificationDialog: boolean = false;
+  displayNewModificationDialogOODD: boolean = false;
   showSuccessAnimation = false;
   newModificationQuarter: number | null = null;
+  newModificationQuarterOODD: number | null = null;
   public canInitiateFormulation = false; // << NUEVA BANDERA
   public canInitiateFormulationOODD = false; // << NUEVA BANDERA PARA OODD
 
@@ -107,6 +118,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   constructor(
     private formulationService: FormulationService,
     private dependencyTypeService: DependencyTypeService,
+    private formulationTypeService: FormulationTypeService,
     private confirmationService: ConfirmationService,
     private yearsService: StrategicObjectiveService,
     private dependencyService: DependencyService, // << INYECTAR EL SERVICIO
@@ -138,10 +150,17 @@ export class AdmPlanificacionTableComponent implements OnInit {
   loadInitialData(): void {
     forkJoin({
       dependencyTypes: this.dependencyTypeService.getAll(),
+      formulationTypes: this.formulationTypeService.getAll(),
       formulations: this.formulationService.getAll()
     }).subscribe({
       next: (results) => {
-        this.dependencyTypes = results.dependencyTypes;
+        // Solo incluir tipos de dependencia con idDependencyType 1 y 2
+        this.dependencyTypes = (results.dependencyTypes || []).filter(
+          (dt: DependencyType) => dt.idDependencyType === 1 || dt.idDependencyType === 2
+        );
+        this.formulationTypes = (results.formulationTypes || []).filter(
+          (ft: FormulationType) => ft.idFormulationType !== undefined && ft.idFormulationType >= 2
+        );
         this.formulations = results.formulations;
         this.groupAndFilterFormulations();
       },
@@ -178,35 +197,75 @@ export class AdmPlanificacionTableComponent implements OnInit {
     // Solo permitir iniciar formulación OODD si existen formulaciones OC pero no OODD
     this.canInitiateFormulationOODD = ooddFormulations.length === 0;
 
+    // Initialize the structure
     this.dependencyTypes.forEach(depType => {
       this.groupedFormulations[depType.name] = {};
-      for (let i = 1; i <= 8; i++) {
-        this.groupedFormulations[depType.name][i] = [];
+      
+      if (depType.idDependencyType === 2) {
+        // For OODD (dependency type 2), group by formulation type
+        this.formulationTypes.forEach(formType => {
+          const formTypeName = formType.name || 'Sin Clasificar';
+          this.groupedFormulations[depType.name][formTypeName] = {};
+          for (let i = 1; i <= 8; i++) {
+            this.groupedFormulations[depType.name][formTypeName][i] = [];
+          }
+        });
+      } else {
+        // For OC (dependency type 1), use "General" as single group
+        this.groupedFormulations[depType.name]['General'] = {};
+        for (let i = 1; i <= 8; i++) {
+          this.groupedFormulations[depType.name]['General'][i] = [];
+        }
       }
     });
 
+    // Group formulations
     filteredByYear.forEach(formulation => {
       const depTypeName = formulation.dependency?.dependencyType?.name;
       const modification = formulation.modification;
+      const formulationTypeName = formulation.formulationType?.name || 'Sin Clasificar';
 
       if (depTypeName && modification && modification >= 1 && modification <= 8) {
         if (!this.groupedFormulations[depTypeName]) {
-          this.groupedFormulations[depTypeName] = {};
+          return; // Skip if dependency type not found
         }
-        if (!this.groupedFormulations[depTypeName][modification]) {
-          this.groupedFormulations[depTypeName][modification] = [];
+
+        let groupKey: string;
+        if (formulation.dependency?.dependencyType?.idDependencyType === 2) {
+          // For OODD, use formulation type name
+          groupKey = formulationTypeName;
+        } else {
+          // For OC, use "General"
+          groupKey = 'General';
         }
-        this.groupedFormulations[depTypeName][modification].push(formulation);
+
+        if (!this.groupedFormulations[depTypeName][groupKey]) {
+          this.groupedFormulations[depTypeName][groupKey] = {};
+          for (let i = 1; i <= 8; i++) {
+            this.groupedFormulations[depTypeName][groupKey][i] = [];
+          }
+        }
+
+        if (!this.groupedFormulations[depTypeName][groupKey][modification]) {
+          this.groupedFormulations[depTypeName][groupKey][modification] = [];
+        }
+
+        this.groupedFormulations[depTypeName][groupKey][modification].push(formulation);
       }
     });
 
+    // Sort formulations within each group
     for (const depTypeName in this.groupedFormulations) {
       if (this.groupedFormulations.hasOwnProperty(depTypeName)) {
-        for (const modificationNum in this.groupedFormulations[depTypeName]) {
-          if (this.groupedFormulations[depTypeName].hasOwnProperty(modificationNum)) {
-            this.groupedFormulations[depTypeName][modificationNum].sort((a, b) =>
-              (a.dependency?.name || '').localeCompare(b.dependency?.name || '')
-            );
+        for (const formTypeName in this.groupedFormulations[depTypeName]) {
+          if (this.groupedFormulations[depTypeName].hasOwnProperty(formTypeName)) {
+            for (const modificationNum in this.groupedFormulations[depTypeName][formTypeName]) {
+              if (this.groupedFormulations[depTypeName][formTypeName].hasOwnProperty(modificationNum)) {
+                this.groupedFormulations[depTypeName][formTypeName][modificationNum].sort((a: Formulation, b: Formulation) =>
+                  (a.dependency?.name || '').localeCompare(b.dependency?.name || '')
+                );
+              }
+            }
           }
         }
       }
@@ -271,7 +330,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
     }
 
     this.confirmationService.confirm({
-      message: `¿Está seguro de crear una nueva modificatoria para el trimestre ${this.quarterLabels[this.newModificationQuarter]} para todas las formulaciones del año ${this.selectedYear} con la mayor modificación existente?`,
+      message: `¿Está seguro de crear una nueva modificatoria para el ${this.quarterLabels[this.newModificationQuarter]} para todas las formulaciones del año ${this.selectedYear}?`,
       header: 'Confirmar Nueva Modificatoria',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
@@ -279,7 +338,18 @@ export class AdmPlanificacionTableComponent implements OnInit {
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria cancelada.', 'Cancelado');
-      }
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
     });
   }
 
@@ -291,6 +361,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
       f.dependency?.dependencyType?.idDependencyType === 1 &&
       f.formulationType?.idFormulationType === 1
     );
+
     ocFormulations.forEach(f => {
       if (f.modification && f.modification > maxModification) {
         maxModification = f.modification;
@@ -344,6 +415,107 @@ export class AdmPlanificacionTableComponent implements OnInit {
     } else {
       this.toastr.info('No hay formulaciones OC para procesar la nueva modificatoria.', 'Info');
       this.displayNewModificationDialog = false;
+    }
+  }
+
+  // << NUEVO: Métodos para modificatorias OODD
+  openNewModificationDialogOODD(): void {
+    this.newModificationQuarterOODD = null;
+    this.displayNewModificationDialogOODD = true;
+  }
+
+  addNewModificationOODD(): void {
+    if (this.newModificationQuarterOODD === null || this.newModificationQuarterOODD < 1 || this.newModificationQuarterOODD > 4) {
+      this.toastr.warning('Por favor ingrese un trimestre válido (I-IV).', 'Advertencia');
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: `¿Está seguro de crear una nueva modificatoria de actividades de gestión para el ${this.quarterLabels[this.newModificationQuarterOODD]} para todas las formulaciones OODD del año ${this.selectedYear}?`,
+      header: 'Confirmar Nueva Modificatoria OODD',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.processNewModificationOODD();
+      },
+      reject: () => {
+        this.toastr.info('Creación de nueva modificatoria OODD cancelada.', 'Cancelado');
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
+    });
+  }
+
+  private processNewModificationOODD(): void {
+    let maxModification = 0;
+    // Solo considerar formulaciones OODD y tipo 2 (OODD ACTIVIDADES DE GESTIÓN)
+    const ooddFormulations = this.formulations.filter(f =>
+      f.year === this.selectedYear &&
+      f.dependency?.dependencyType?.idDependencyType === 2 &&
+      f.formulationType?.idFormulationType === 2
+    );
+    
+    ooddFormulations.forEach(f => {
+      if (f.modification && f.modification > maxModification) {
+        maxModification = f.modification;
+      }
+    });
+
+    if (maxModification === 0) {
+      this.toastr.warning(`No hay formulaciones OODD para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
+      this.displayNewModificationDialogOODD = false;
+      return;
+    }
+
+    if (maxModification >= 8) {
+      this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para OODD en el año ${this.selectedYear}.`, 'Advertencia');
+      this.displayNewModificationDialogOODD = false;
+      return;
+    }
+
+    const formulationsToModify = ooddFormulations.filter(
+      f => f.modification === maxModification
+    );
+
+    if (formulationsToModify.length === 0) {
+      this.toastr.warning(`No se encontraron formulaciones OODD con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
+      this.displayNewModificationDialogOODD = false;
+      return;
+    }
+
+    const modificationRequests: Observable<Formulation>[] = [];
+    formulationsToModify.forEach(formulation => {
+      if (formulation.idFormulation !== undefined) {
+        modificationRequests.push(
+          this.formulationService.addModification(formulation.idFormulation, this.newModificationQuarterOODD!)
+        );
+      }
+    });
+
+    if (modificationRequests.length > 0) {
+      forkJoin(modificationRequests).subscribe({
+        next: (results) => {
+          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias OODD para el trimestre ${this.quarterLabels[this.newModificationQuarterOODD!]}.`, 'Éxito');
+          this.displayNewModificationDialogOODD = false;
+          this.loadInitialData();
+        },
+        error: (err) => {
+          this.toastr.error('Error al crear nuevas modificatorias OODD.', 'Error');
+          console.error('Error adding new modifications OODD', err);
+          this.displayNewModificationDialogOODD = false;
+        }
+      });
+    } else {
+      this.toastr.info('No hay formulaciones OODD para procesar la nueva modificatoria.', 'Info');
+      this.displayNewModificationDialogOODD = false;
     }
   }
 
@@ -519,37 +691,20 @@ export class AdmPlanificacionTableComponent implements OnInit {
                       name: activityDetail.name,
                       description: activityDetail.description || '',
                       active: true,
-                      strategicAction: {
-                        idStrategicAction: activityDetail.strategicAction.idStrategicAction,
-                        strategicObjective: {
-                          idStrategicObjective: activityDetail.strategicAction.strategicObjective?.idStrategicObjective
-                        } as any
-                      } as any,
+                      strategicAction: activityDetail.strategicAction, // Usar directamente el strategicAction del activityDetail
                       formulation: {
                         idFormulation: formulation.idFormulation
-                      } as any,
-                      financialFund: {
-                        idFinancialFund: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
-                      } as any,
-                      managementCenter: {
-                        idManagementCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
-                      } as any,
-                      costCenter: {
-                        idCostCenter: formulation.dependency.idDependency // Usar ID de la dependencia como valor por defecto
                       } as any,
                       measurementType: activityDetail.measurementUnit ? {
                         idMeasurementType: 1
                       } as any : undefined,
                       measurementUnit: activityDetail.measurementUnit || '',
-                      priority: {
-                        idPriority: 1 // Valor por defecto
-                      } as any,
                       goods: 0,
                       remuneration: 0,
                       services: 0,
-                      activityFamily: activityDetail.activityFamily,
                       goals: newGoals,
                       monthlyGoals: newMonthlyGoals
+                      // financialFund, managementCenter, costCenter, priority, activityFamily se envían vacíos (opcionales)
                     };
 
                     operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity));
@@ -595,12 +750,32 @@ export class AdmPlanificacionTableComponent implements OnInit {
     });
   }
 
-  getModificationNumbers(depTypeName: string): number[] {
-    const mods = this.Object.keys(this.groupedFormulations[depTypeName] || {}).map(Number).sort((a, b) => a - b);
+  getModificationNumbers(depTypeName: string, formTypeName?: string): number[] {
+    const target = formTypeName 
+      ? this.groupedFormulations[depTypeName]?.[formTypeName] 
+      : this.groupedFormulations[depTypeName]?.['General'];
+    
+    const mods = this.Object.keys(target || {}).map(Number).sort((a, b) => a - b);
     return mods.length > 0 ? mods : [1];
   }
 
   getDependencyTypeNames(): string[] {
     return this.Object.keys(this.groupedFormulations).sort();
   }
+
+  getFormulationTypeNames(depTypeName: string): string[] {
+    return this.Object.keys(this.groupedFormulations[depTypeName] || {}).sort();
+  }
+
+  getFormulationsForGroup(depTypeName: string, formTypeName: string, modification: number): Formulation[] {
+    return this.groupedFormulations[depTypeName]?.[formTypeName]?.[modification] || [];
+  }
 }
+
+
+// Mira el adm-maestro-gcspe. Quiero que agregues la funcionalidad de "Iniciar formulación para prestaciones económicas" y "Nueva Modificatoria para prestaciones económicas".
+
+// PERO HAY CONSIDERACIONES DISTINTAS.
+// 1. FormulationType es 4
+// 2. Se debe generar para los de dependencyType = 3
+// 3. En la modificatoria no es por el campo quarter, sino por month que es del 1 al 12

@@ -47,7 +47,7 @@
         class="selector p-button-success w-full sm:w-auto" (click)="viewFile()" [disabled]="!hasSupportFile"></button>
       <p-fileUpload *ngIf="activeFormulation?.formulationState?.idFormulationState !== 2 && 
           activeFormulation?.formulationState?.idFormulationState !== 4 && 
-          activeFormulation?.active" #fileUpdate mode="basic" chooseLabel="Actualizar archivo" [auto]="true"
+          activeFormulation?.active" #fileUpdate mode="basic" chooseLabel="Actualizar sustento" [auto]="true"
         [customUpload]="true" (onSelect)="onFileUpdate($event)" [disabled]="fileUploading"
         chooseIcon="pi pi-cloud-upload" class="w-full sm:w-auto"></p-fileUpload>
     </div>
@@ -56,7 +56,7 @@
            activeFormulation?.formulationState?.idFormulationState !== 2 &&
            activeFormulation?.formulationState?.idFormulationState !== 4 &&
            activeFormulation?.active">
-      <p-fileUpload #fileUpload mode="basic" chooseLabel="Subir Archivo" [auto]="true" [customUpload]="true"
+      <p-fileUpload #fileUpload mode="basic" chooseLabel="Subir sustento" [auto]="true" [customUpload]="true"
         (onSelect)="onFileSelect($event)" [disabled]="fileUploading" chooseIcon="pi pi-cloud-upload"
         class="w-full sm:w-auto"></p-fileUpload>
     </div>
@@ -68,7 +68,7 @@
     </div>
 
     <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
-      *ngIf="formulationExists && selectedModificationOption">
+      *ngIf="formulationExists && selectedModificationOption && hasActivities">
       <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
       <p-dropdown [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
         class="selector-dropdown mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-dropdown>

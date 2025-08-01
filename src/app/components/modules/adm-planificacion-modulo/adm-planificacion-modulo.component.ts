@@ -12,7 +12,7 @@ export class AdmPlanificacionModuloComponent {
   @Output() clicked = new EventEmitter<void>();
 
   onClick() {
-  this.router.navigate(['/admin-planificacion']).then(success => {
+  this.router.navigate(['/gestion/admin-planificacion']).then(success => {
     if (success) {
       console.log('Navegación a /admin-planificacion exitosa');
     } else {

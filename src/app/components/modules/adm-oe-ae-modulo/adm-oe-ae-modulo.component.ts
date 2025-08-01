@@ -12,7 +12,7 @@ export class AdmOEAEModuloComponent {
   @Output() clicked = new EventEmitter<void>();
 
   onClick() {
-  this.router.navigate(['/admin-oe-ae']).then(success => {
+  this.router.navigate(['/gestion/admin-oe-ae']).then(success => {
     if (success) {
       console.log('Navegación a /admin-oe-ae exitosa');
     } else {

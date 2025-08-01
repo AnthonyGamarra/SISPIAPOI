@@ -1,10 +1,11 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router'; // Import Router
+import { Router, NavigationEnd } from '@angular/router'; // Import Router and NavigationEnd
 import { TieredMenuModule } from 'primeng/tieredmenu';
 import { ButtonModule } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/authentication/auth.service'; // ajusta la ruta si es necesario
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-menubar',
@@ -22,6 +23,7 @@ export class MenubarComponent {
   private router = inject(Router);
   userMenuItems: MenuItem[] = [];
   settingsMenuItems: MenuItem[] = [];
+  showBackButton: boolean = true;
 
   ngOnInit() {
     this.userMenuItems = [
@@ -33,6 +35,16 @@ export class MenubarComponent {
       { label: 'Configuración', icon: 'pi pi-cog', command: () => this.onSettings() },
       { label: 'Ayuda', icon: 'pi pi-question', command: () => this.onHelp() }
     ];
+
+    // Escuchar cambios de ruta para mostrar/ocultar el botón de atrás
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      this.showBackButton = event.url !== '/menu';
+    });
+
+    // Verificar la ruta inicial
+    this.showBackButton = this.router.url !== '/menu';
   }
 
   onProfile() {
@@ -51,6 +63,10 @@ export class MenubarComponent {
 
   onHelp() {
     console.log('Ayuda');
+  }
+
+  goBack() {
+    window.history.back();
   }
 
   goToLogin() {

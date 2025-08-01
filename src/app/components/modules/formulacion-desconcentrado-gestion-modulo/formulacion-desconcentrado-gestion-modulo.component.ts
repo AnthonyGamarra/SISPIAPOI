@@ -12,7 +12,7 @@ export class FormulacionDesconcentradoGestionModuloComponent {
 
   onClick() {
 console.log('Botón módulo clickeado');
-  this.router.navigate(['/formulacion-desconcentrado-gestion']).then(success => {
+  this.router.navigate(['/formulacion/formulacion-desconcentrado/gestion']).then(success => {
 
     if (success) {
       console.log('Navegación a /formulacion-desconcentrado-gestion exitosa');

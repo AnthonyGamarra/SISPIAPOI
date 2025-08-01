@@ -432,11 +432,11 @@ export class EvaluacionTablaComponent implements OnChanges {
           strategicObjective: { idStrategicObjective: strategicObjectiveId } as StrategicObjective
       } as StrategicAction,
       formulation: { idFormulation: this.idFormulation } as Formulation,
-      financialFund: { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund,
-      managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter,
-      costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
+      financialFund: { idFinancialFund: product.financialFund?.idFinancialFund } as FinancialFund,
+      managementCenter: { idManagementCenter: product.managementCenter?.idManagementCenter } as ManagementCenter,
+      costCenter: { idCostCenter: product.costCenter?.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
-      priority: { idPriority: product.priority.idPriority } as Priority,
+      priority: { idPriority: product.priority?.idPriority } as Priority,
       sapCode: product.sapCode || ''
     };
 
@@ -720,10 +720,13 @@ export class EvaluacionTablaComponent implements OnChanges {
   }
 
   onSeleccionar(id: number, product: OperationalActivity) {
+    if (!product.strategicAction) {
+      product.strategicAction = {} as StrategicAction;
+    }
     product.strategicAction.idStrategicAction = id;
     const selectedAction = this.strategicActions.find(a => a.idStrategicAction === id);
     if (selectedAction) {
-      product.strategicAction = { ...selectedAction, strategicObjective: selectedAction.strategicObjective || product.strategicAction.strategicObjective };
+      product.strategicAction = { ...selectedAction, strategicObjective: selectedAction.strategicObjective || product.strategicAction?.strategicObjective };
     }
   }
 
@@ -754,7 +757,7 @@ export class EvaluacionTablaComponent implements OnChanges {
    */
   private _generateSapCodeAndCorrelative(activity: OperationalActivity): Observable<{ sapCode: string, correlativeCode: string }> {
     const selectedStrategicAction = this.strategicActions.find(
-      sa => sa.idStrategicAction == activity.strategicAction.idStrategicAction
+      sa => sa.idStrategicAction == activity.strategicAction?.idStrategicAction
     );
     const strategicObjectiveCode = this.strategicObjectives.find(
       so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
@@ -762,7 +765,7 @@ export class EvaluacionTablaComponent implements OnChanges {
     const strategicActionCode = selectedStrategicAction?.code || '';
 
     const selectedCostCenter = this.costCenters.find(
-      cc => cc.idCostCenter === activity.costCenter.idCostCenter
+      cc => cc.idCostCenter === activity.costCenter?.idCostCenter
     );
     const costCenterCode = selectedCostCenter?.costCenterCode || '';
 

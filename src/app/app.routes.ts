@@ -8,7 +8,8 @@ import { ValidaComponent } from './pages/valida/valida.component';
 import { AdminPlanificacionComponent } from './pages/admin-planificacion/admin-planificacion.component';
 import { AdminOeAeComponent } from './pages/admin-oe-ae/admin-oe-ae.component';
 import { AdminMaestroGestionOcComponent } from './pages/admin-maestro-gestion-oc/admin-maestro-gestion-oc.component';
-
+import { AdminMaestroGcspeComponent } from './pages/admin-maestro-gcspe/admin-maestro-gcspe.component';
+import { MenuAdmComponent } from './pages/menu-adm/menu-adm.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 import { FormulacionDesconcentradoGestionModuloComponent } from './components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
@@ -26,7 +27,27 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
-    path: 'admin-planificacion', // ✅ nueva ruta para el componente Formu1
+    path: 'formulacion', // ✅ nueva ruta para el componente Formu1
+    component: MenuFormulacionComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'formulacion/formulacion-central', // ✅ nueva ruta para el componente Formu1
+    component: FormulacionCentralComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'formulacion/formulacion-desconcentrado', // ✅ nueva ruta para el componente Formu1
+    component: MenuFormulacionDesconcentradoComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'gestion', // ✅ nueva ruta para el componente Formu1
+    component: MenuAdmComponent,
+    canActivate: [authGuard],
+  },  
+  {
+    path: 'gestion/admin-planificacion', // ✅ nueva ruta para el componente Formu1
     component: AdminPlanificacionComponent,
     canActivate: [authGuard],
     data: {
@@ -34,7 +55,7 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'admin-oe-ae', // ✅ nueva ruta para el componente Formu1
+    path: 'gestion/admin-oe-ae', // ✅ nueva ruta para el componente Formu1
     component: AdminOeAeComponent,
     canActivate: [authGuard],
     data: {
@@ -42,7 +63,7 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'adm-maestro-gestion-oc', // ✅ nueva ruta para administrar maestros OC
+    path: 'gestion/adm-maestro-gestion-od', // ✅ nueva ruta para administrar maestros OC
     component: AdminMaestroGestionOcComponent,
     canActivate: [authGuard],
     data: {
@@ -50,19 +71,12 @@ export const routes: Routes = [
     },
   },
   {
-    path: 'formulacion', // ✅ nueva ruta para el componente Formu1
-    component: MenuFormulacionComponent,
+    path: 'gestion/adm-maestro-gcspe',
+    component: AdminMaestroGcspeComponent,
     canActivate: [authGuard],
-  },
-  {
-    path: 'formulacion-central', // ✅ nueva ruta para el componente Formu1
-    component: FormulacionCentralComponent,
-    canActivate: [authGuard],
-  },
-  {
-    path: 'formulacion-desconcentrado', // ✅ nueva ruta para el componente Formu1
-    component: MenuFormulacionDesconcentradoComponent,
-    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "GPLANEAMIENTO"],
+    },
   },
   {
     path: 'evaluacion', // ✅ nueva ruta para el componente Formu1

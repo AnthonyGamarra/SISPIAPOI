@@ -13,22 +13,22 @@ import { ActivityFamily } from "./activityFamily.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
-  sapCode: string;
+  sapCode?: string;
   correlativeCode: String;
   name: string;
   active?: boolean;
-  strategicAction: StrategicAction;
+  strategicAction?: StrategicAction;
   formulation: Formulation;
-  financialFund: FinancialFund;
-  managementCenter: ManagementCenter;
-  costCenter: CostCenter;
+  financialFund?: FinancialFund;
+  managementCenter?: ManagementCenter;
+  costCenter?: CostCenter;
   measurementType?: MeasurementType;
   measurementUnit?: string;
   goals?: Goal[];
   executedGoals?: ExecutedGoal[];
   monthlyGoals?: MonthlyGoal[];
   executedMonthlyGoals?: ExecutedMonthlyGoal[];
-  priority: Priority;
+  priority?: Priority;
   goods: number;
   remuneration: number;
   services: number;

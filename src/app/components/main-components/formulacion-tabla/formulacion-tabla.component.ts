@@ -72,6 +72,8 @@ interface Accion {
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {
 
+  @Output() activitiesCountChanged = new EventEmitter<number>();
+
   @Input() mostrar = false;
   @Input() ano: string | null = null;
   @Input() idFormulation: number | null = null;
@@ -117,6 +119,9 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   // Loading states
   isLoadingActivities: boolean = false;
+  isSearchingFormulation: boolean = false;
+  isLoadingFormulation: boolean = false;
+  hasSearchedFormulation: boolean = false; // Nueva variable para saber si ya se buscó
 
   private strategicActionService = inject(StrategicActionService);
   private financialFundService = inject(FinancialFundService);
@@ -132,6 +137,9 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   private newActivityCounter: number = -1;
 
+  private lastSelectedAno: string | null = null;
+  private lastSelectedDependency: string | null = null;
+
   options: AnimationOptions = {
     path: 'resources/warning-allert.json'
   };
@@ -144,24 +152,31 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     ];
   }
 
-  isLoadingFormulation: boolean = false;
-
-  // --- Core Data Loading and Reactivity ---
-  ngOnChanges(changes: SimpleChanges): void {
+    // --- Core Data Loading and Reactivity ---
+ngOnChanges(changes: SimpleChanges): void {
     // Priority 1: Handle changes to 'currentFormulation' itself.
     if (changes['currentFormulation']) {
       const newFormulation = changes['currentFormulation'].currentValue;
       const oldFormulation = changes['currentFormulation'].previousValue;
+
+      // ALWAYS reset loading states when currentFormulation changes
+      this.isLoadingFormulation = false;
+      this.isSearchingFormulation = false;
+      this.hasSearchedFormulation = true; // Marcar que ya se ha buscado
 
       const hasFormulationChanged = newFormulation?.idFormulation !== oldFormulation?.idFormulation ||
         newFormulation?.modification !== oldFormulation?.modification ||
         newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
 
       if (newFormulation && newFormulation.idFormulation) {
-        this.isLoadingFormulation = false; // Clear loading when formulation is received
         this.idFormulation = newFormulation.idFormulation;
         this.ano = newFormulation.year?.toString() ?? null;
         this.idDependency = newFormulation.dependency?.idDependency?.toString() ?? null;
+        
+        // Actualizar los últimos valores seleccionados
+        this.lastSelectedAno = this.ano;
+        this.lastSelectedDependency = this.idDependency;
+        
         this.quarter = newFormulation.quarter || null;
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
@@ -170,41 +185,59 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.updatePermissions();
 
         if (hasFormulationChanged || (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue)) {
-          console.log('FormulacionTablaComponent: Loading data for new/updated formulation.');
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
         }
-      } else if (newFormulation === null && oldFormulation !== null) {
-        // Formulation was cleared (set to null)
-        this.isLoadingFormulation = false;
-        console.log('FormulacionTablaComponent: Clearing data due to null currentFormulation.');
+      } else {
+        // No formulation found - clear everything
         this.clearFormulationDetails();
       }
-      // If newFormulation is undefined, it means we're still waiting for a formulation
-      else if (newFormulation === undefined) {
-        this.isLoadingFormulation = true;
+    }
+
+    // Handle individual input changes when currentFormulation is not available
+    if (changes['ano']) {
+      const newAno = changes['ano'].currentValue;
+      this.lastSelectedAno = newAno;
+      
+      if (!this.currentFormulation) {
+        this.ano = newAno;
+        // Si tenemos año y dependencia, activar estado de búsqueda
+        if (newAno && this.idDependency) {
+          this.isSearchingFormulation = true;
+          this.isLoadingFormulation = false;
+          this.hasSearchedFormulation = false;
+        }
+      }
+    }
+    
+    if (changes['idDependency']) {
+      const newDependency = changes['idDependency'].currentValue;
+      this.lastSelectedDependency = newDependency;
+      
+      if (!this.currentFormulation) {
+        this.idDependency = newDependency;
+        // Si tenemos año y dependencia, activar estado de búsqueda
+        if (newDependency && this.ano) {
+          this.isSearchingFormulation = true;
+          this.isLoadingFormulation = false;
+          this.hasSearchedFormulation = false;
+        }
       }
     }
 
     // Priority 2: Handle 'mostrar' input changing
-    else if (changes['mostrar']) {
+    if (changes['mostrar']) {
       const isShowing = changes['mostrar'].currentValue;
       const wasShowing = changes['mostrar'].previousValue;
 
       if (isShowing && !wasShowing) {
         if (this.currentFormulation && this.currentFormulation.idFormulation) {
-          this.isLoadingFormulation = false;
-          console.log('FormulacionTablaComponent: Table just became visible, ensuring data is loaded.');
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
-        } else if (this.currentFormulation === undefined) {
-          this.isLoadingFormulation = true;
         }
       } else if (!isShowing && wasShowing) {
-        this.isLoadingFormulation = false;
-        console.log('FormulacionTablaComponent: Table just became hidden, clearing data.');
         this.clearFormulationDetails();
       }
     }
@@ -220,19 +253,36 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       this.canDelete = hasPermission;
     }
   }
-clearFormulationDetails(): void {
-  this.quarter = null;
-  this.state = null;
-  this.stateName = null;
-  this.active = null;
-  this.products = [];
-  this.isLoadingActivities = false;
-  this.isLoadingFormulation = false;
-  this.ano = null;
-  this.idDependency = null;
-  this.idFormulation = null;
-  this.updatePermissions();
-}
+  clearFormulationDetails(): void {
+    this.quarter = null;
+    this.state = null;
+    this.stateName = null;
+    this.active = null;
+    this.products = [];
+    this.isLoadingActivities = false;
+    this.isLoadingFormulation = false;
+    this.isSearchingFormulation = false;
+    this.hasSearchedFormulation = false; // Resetear también esta variable
+    
+    // Usar los últimos valores seleccionados para mantener la información de la selección
+    this.ano = this.lastSelectedAno;
+    this.idDependency = this.lastSelectedDependency;
+    
+    this.idFormulation = null;
+    this.updatePermissions();
+    
+    // Emitir que no hay actividades
+    this.activitiesCountChanged.emit(0);
+  }
+
+  // Getters para el template
+  get displayAno(): string | null {
+    return this.ano || this.lastSelectedAno;
+  }
+
+  get displayDependency(): string | null {
+    return this.idDependency || this.lastSelectedDependency;
+  }
 
   // --- Data Loading Methods ---
   loadFormulationDetails(): void {
@@ -327,6 +377,7 @@ clearFormulationDetails(): void {
   loadOperationalActivities(): void {
     if (!this.idFormulation) {
       this.products = []; // Clear products if no formulation ID
+      this.activitiesCountChanged.emit(0);
       return;
     }
 
@@ -364,11 +415,13 @@ clearFormulationDetails(): void {
           return activity;
         });
         this.isLoadingActivities = false;
+        this.activitiesCountChanged.emit(this.products.length);
       },
       error: () => {
         this.toastr.error('Error al cargar actividades operativas.', 'Error');
         this.products = []; // Clear products on error
         this.isLoadingActivities = false;
+        this.activitiesCountChanged.emit(0);
       }
     });
   }
@@ -587,11 +640,11 @@ clearFormulationDetails(): void {
         strategicObjective: { idStrategicObjective: strategicObjectiveId } as StrategicObjective
       } as StrategicAction,
       formulation: { idFormulation: this.idFormulation } as Formulation,
-      financialFund: { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund,
-      managementCenter: { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter,
-      costCenter: { idCostCenter: product.costCenter.idCostCenter } as CostCenter,
+      financialFund: { idFinancialFund: product.financialFund?.idFinancialFund } as FinancialFund,
+      managementCenter: { idManagementCenter: product.managementCenter?.idManagementCenter } as ManagementCenter,
+      costCenter: { idCostCenter: product.costCenter?.idCostCenter } as CostCenter,
       measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
-      priority: { idPriority: product.priority.idPriority } as Priority,
+      priority: { idPriority: product.priority?.idPriority } as Priority,
       sapCode: product.sapCode || '',
       correlativeCode: product.correlativeCode || ''
     };
@@ -876,18 +929,21 @@ clearFormulationDetails(): void {
   onSeleccionar(id: number, product: OperationalActivity) {
     // This method seems to be for the inline dropdown in the table, not the modal
     // It updates the product's strategicAction based on the selected ID
+    if (!product.strategicAction) {
+      product.strategicAction = {} as StrategicAction;
+    }
     product.strategicAction.idStrategicAction = id;
     const selectedAction = this.strategicActions.find(a => a.idStrategicAction === id);
     if (selectedAction) {
       // Ensure the strategicObjective is also linked correctly
-      product.strategicAction = { ...selectedAction, strategicObjective: selectedAction.strategicObjective || product.strategicAction.strategicObjective };
+      product.strategicAction = { ...selectedAction, strategicObjective: selectedAction.strategicObjective || product.strategicAction?.strategicObjective };
     }
   }
 
   // --- SAP Code Generation Logic ---
   private _generateSapCodeAndCorrelative(activity: OperationalActivity): Observable<{ sapCode: string, correlativeCode: string }> {
     const selectedStrategicAction = this.strategicActions.find(
-      sa => sa.idStrategicAction == activity.strategicAction.idStrategicAction
+      sa => sa.idStrategicAction == activity.strategicAction?.idStrategicAction
     );
     const strategicObjectiveCode = this.strategicObjectives.find(
       so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
@@ -895,7 +951,7 @@ clearFormulationDetails(): void {
     const strategicActionCode = selectedStrategicAction?.code || '';
 
     const selectedCostCenter = this.costCenters.find(
-      cc => cc.idCostCenter === activity.costCenter.idCostCenter
+      cc => cc.idCostCenter === activity.costCenter?.idCostCenter
     );
     const costCenterCode = selectedCostCenter?.costCenterCode || '';
 

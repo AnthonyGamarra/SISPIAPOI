@@ -51,4 +51,8 @@ export class FormulationService {
       return this.http.post<Formulation>(`${this.BASE_URL}/add-modification/${idOriginalFormulation}/${newQuarter}`, {});
     }
 
+    addModificationPe(idOriginalFormulation: number, newMonth: number): Observable<Formulation> {
+      return this.http.post<Formulation>(`${this.BASE_URL}/add-modificationpe/${idOriginalFormulation}/${newMonth}`, {});
+    }
+
 }

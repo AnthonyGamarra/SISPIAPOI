@@ -1,6 +1,6 @@
 // selector.component.ts
 
-import { Component, EventEmitter, OnInit, Output, inject, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
@@ -44,6 +44,9 @@ import { OcReportService } from '../../../core/services/logic/oc-report.service'
   styleUrls: ['./selector.component.scss'],
 })
 export class SelectorComponent implements OnInit {
+  
+  @Input() hasActivities: boolean = false;
+
   @Output() buscar = new EventEmitter<{
     ano: string | null;
     dependencia: string | null;
@@ -54,6 +57,13 @@ export class SelectorComponent implements OnInit {
 
   @Output() formulationSelected = new EventEmitter<Formulation>();
   @Output() formulationUpdated = new EventEmitter<Formulation>(); private toastr = inject(ToastrService);
+
+  @Output() activitiesCountChanged = new EventEmitter<number>();
+
+  updateActivitiesCount(count: number): void {
+    this.hasActivities = count > 0;
+  }
+
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private strategicObjectiveService = inject(StrategicObjectiveService);

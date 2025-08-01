@@ -1,9 +1,8 @@
 <app-menubar></app-menubar>
 <div class="modulos">
     <app-formulacion-modulo></app-formulacion-modulo>
-    <app-evaluacion-modulo *ngIf="canSeeEvaluacionComponent()"></app-evaluacion-modulo>
-    <app-adm-oe-ae-modulo *ngIf="canSeeAdmComponent()"></app-adm-oe-ae-modulo>
-    <app-adm-planificacion-modulo *ngIf="canSeeAdmComponent()"></app-adm-planificacion-modulo>
+    <app-gestion-modulo *ngIf="canSeeAdmComponent()"></app-gestion-modulo>
+    <!-- <app-evaluacion-modulo *ngIf="canSeeEvaluacionComponent()"></app-evaluacion-modulo> -->
     <app-moduloks></app-moduloks>
     <app-modulo-reporte-f9 *ngIf="canSeeAdmComponent()"></app-modulo-reporte-f9>
 </div>

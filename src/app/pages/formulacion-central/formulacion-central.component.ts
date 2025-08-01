@@ -143,4 +143,11 @@ export class FormulacionCentralComponent {
       this.limpiarTabla();
     }
   }
+
+  activitiesCount: number = 0;
+
+  onActivitiesCountChanged(count: number): void {
+    this.activitiesCount = count;
+  }
+  
 }

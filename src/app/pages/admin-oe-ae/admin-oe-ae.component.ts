@@ -5,7 +5,7 @@ import { MenubarComponent } from '../../components/utilities/menubar/menubar.com
 import { OeAeAdminComponent } from "../../components/main-components/oe-ae-admin/oe-ae-admin.component";
 
 @Component({
-  selector: 'app-admin-planificacion',
+  selector: 'admin-oe-ae.component',
   imports: [
     CommonModule,
     MenubarComponent,

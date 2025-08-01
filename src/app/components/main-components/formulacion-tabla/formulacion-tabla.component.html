@@ -1,19 +1,21 @@
 <div>
-<div *ngIf="!currentFormulation && !isLoadingActivities && !isLoadingFormulation" class="text-center p-6">
-  <h3 class="text-lg font-semibold text-gray-600" *ngIf="ano && idDependency; else noSelectionMessage">
-    No se ha iniciado una formulación para el año: {{ ano }}
-  </h3>
-  <ng-template #noSelectionMessage>
+  <!-- 1. Mostrar mensaje inicial cuando no se ha seleccionado nada -->
+  <div *ngIf="!ano || !idDependency" class="text-center p-6">
     <h3 class="text-lg font-semibold text-gray-600">No se ha seleccionado una formulación</h3>
-  </ng-template>
-</div>
-
-  <div *ngIf="isLoadingFormulation" class="text-center p-6">
-    <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
-    <p class="mt-3 text-gray-600">Verificando formulación...</p>
   </div>
 
-  <!-- Contenido principal cuando hay formulación -->
+  <!-- 2. Mostrar spinner mientras se está buscando la formulación -->
+  <div *ngIf="(ano && idDependency) && (isLoadingFormulation || isSearchingFormulation)" class="text-center p-6">
+    <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+    <p class="mt-3 text-gray-600">{{ isSearchingFormulation ? 'Buscando formulación...' : 'Verificando formulación...' }}</p>
+  </div>
+
+  <!-- 3.2 Mostrar mensaje cuando NO hay formulación (después de buscar) -->
+  <div *ngIf="(ano && idDependency) && !currentFormulation && !isLoadingFormulation && !isSearchingFormulation" class="text-center p-6">
+    <h3 class="text-lg font-semibold text-gray-600">No se ha iniciado una formulación para el año: {{ ano }}</h3>
+  </div>
+
+  <!-- 3.1 Contenido principal cuando SÍ hay formulación -->
   <div *ngIf="currentFormulation">
     <div class="grid mx-auto my-3">
       <div class="col-6 flex justify-center mr-auto">
