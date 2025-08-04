@@ -27,6 +27,13 @@ import { OperationalActivityService } from '../../../core/services/logic/operati
 import { GoalService } from '../../../core/services/logic/goal.service';
 import { FormulationService } from '../../../core/services/logic/formulation.service';
 
+// Middlewares
+import { SapCodeGeneratorMiddleware } from './middlewares/sap-code-generator.middleware';
+import { ActivityValidatorMiddleware } from './middlewares/activity-validator.middleware';
+
+// Subcomponentes
+import { FormulacionOspesTablaComponent } from './formulacion-ospes-tabla/formulacion-ospes-tabla.component';
+
 import { StrategicObjective } from '../../../models/logic/strategicObjective.model';
 import { StrategicAction } from '../../../models/logic/strategicAction.model';
 import { FinancialFund } from '../../../models/logic/financialFund.model';
@@ -37,8 +44,9 @@ import { Priority } from '../../../models/logic/priority.model';
 import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
 import { Goal } from '../../../models/logic/goal.model';
 import { Formulation } from '../../../models/logic/formulation.model';
-import { Dependency } from '../../../models/logic/dependency.model';
 import { ExecutedGoal } from '../../../models/logic/executedGoal.model';
+import { MonthlyGoal } from '../../../models/logic/monthlyGoal.model';
+import { MonthlyBudget } from '../../../models/logic/monthlyBudget.model';
 
 import { forkJoin, Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
@@ -67,7 +75,8 @@ interface Accion {
     LottieComponent,
     TextareaModule,
     TooltipModule,
-    ProgressSpinnerModule
+    ProgressSpinnerModule,
+    FormulacionOspesTablaComponent
   ]
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {
@@ -135,6 +144,10 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   private strategicObjectiveService = inject(StrategicObjectiveService);
   private formulationService = inject(FormulationService);
 
+  // Middleware injections
+  private sapCodeGenerator = inject(SapCodeGeneratorMiddleware);
+  private activityValidator = inject(ActivityValidatorMiddleware);
+
   private newActivityCounter: number = -1;
 
   private lastSelectedAno: string | null = null;
@@ -152,31 +165,26 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     ];
   }
 
-    // --- Core Data Loading and Reactivity ---
-ngOnChanges(changes: SimpleChanges): void {
-    // Priority 1: Handle changes to 'currentFormulation' itself.
+  // --- Core Data Loading and Reactivity ---
+  ngOnChanges(changes: SimpleChanges): void {
+    // 1. Manejar cambios en 'currentFormulation'
     if (changes['currentFormulation']) {
       const newFormulation = changes['currentFormulation'].currentValue;
       const oldFormulation = changes['currentFormulation'].previousValue;
 
-      // ALWAYS reset loading states when currentFormulation changes
-      this.isLoadingFormulation = false;
-      this.isSearchingFormulation = false;
-      this.hasSearchedFormulation = true; // Marcar que ya se ha buscado
-
-      const hasFormulationChanged = newFormulation?.idFormulation !== oldFormulation?.idFormulation ||
-        newFormulation?.modification !== oldFormulation?.modification ||
-        newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
-
+      // Si recibimos una formulación válida
       if (newFormulation && newFormulation.idFormulation) {
+        // Resetear todos los estados de búsqueda
+        this.isSearchingFormulation = false;
+        this.isLoadingFormulation = false;
+        this.hasSearchedFormulation = true;
+
+        // Cargar datos de la formulación
         this.idFormulation = newFormulation.idFormulation;
         this.ano = newFormulation.year?.toString() ?? null;
         this.idDependency = newFormulation.dependency?.idDependency?.toString() ?? null;
-        
-        // Actualizar los últimos valores seleccionados
         this.lastSelectedAno = this.ano;
         this.lastSelectedDependency = this.idDependency;
-        
         this.quarter = newFormulation.quarter || null;
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
@@ -184,61 +192,89 @@ ngOnChanges(changes: SimpleChanges): void {
 
         this.updatePermissions();
 
+        // Verificar si la formulación realmente cambió
+        const hasFormulationChanged = newFormulation?.idFormulation !== oldFormulation?.idFormulation ||
+          newFormulation?.modification !== oldFormulation?.modification ||
+          newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
+
+        // Cargar datos si la formulación cambió o si se está mostrando por primera vez
         if (hasFormulationChanged || (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue)) {
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
         }
-      } else {
-        // No formulation found - clear everything
-        this.clearFormulationDetails();
+      }
+      // Si recibimos null/undefined (no se encontró formulación)
+      else {
+        // SIEMPRE resetear estados de búsqueda cuando se recibe null/undefined
+        this.isSearchingFormulation = false;
+        this.isLoadingFormulation = false;
+        this.hasSearchedFormulation = true;
+        this.clearFormulationDetails(false); // No resetear hasSearchedFormulation
       }
     }
 
-    // Handle individual input changes when currentFormulation is not available
+    // 2. Manejar cambios en año
     if (changes['ano']) {
       const newAno = changes['ano'].currentValue;
       this.lastSelectedAno = newAno;
-      
+
+      // Si no hay formulación actual, actualizar año local
       if (!this.currentFormulation) {
         this.ano = newAno;
-        // Si tenemos año y dependencia, activar estado de búsqueda
-        if (newAno && this.idDependency) {
-          this.isSearchingFormulation = true;
-          this.isLoadingFormulation = false;
-          this.hasSearchedFormulation = false;
-        }
       }
-    }
-    
-    if (changes['idDependency']) {
-      const newDependency = changes['idDependency'].currentValue;
-      this.lastSelectedDependency = newDependency;
-      
-      if (!this.currentFormulation) {
-        this.idDependency = newDependency;
-        // Si tenemos año y dependencia, activar estado de búsqueda
-        if (newDependency && this.ano) {
-          this.isSearchingFormulation = true;
-          this.isLoadingFormulation = false;
-          this.hasSearchedFormulation = false;
-        }
+
+      // Si tenemos año y dependencia pero no formulación, iniciar búsqueda
+      if (newAno && this.idDependency && !this.currentFormulation) {
+        this.isSearchingFormulation = true;
+        this.isLoadingFormulation = false;
+        this.hasSearchedFormulation = false;
+      }
+      // Si no tenemos año, resetear estados
+      else if (!newAno) {
+        this.isSearchingFormulation = false;
+        this.hasSearchedFormulation = false;
       }
     }
 
-    // Priority 2: Handle 'mostrar' input changing
+    // 3. Manejar cambios en dependencia
+    if (changes['idDependency']) {
+      const newDependency = changes['idDependency'].currentValue;
+      this.lastSelectedDependency = newDependency;
+
+      // Si no hay formulación actual, actualizar dependencia local
+      if (!this.currentFormulation) {
+        this.idDependency = newDependency;
+      }
+
+      // Si tenemos año y dependencia pero no formulación, iniciar búsqueda
+      if (newDependency && this.ano && !this.currentFormulation) {
+        this.isSearchingFormulation = true;
+        this.isLoadingFormulation = false;
+        this.hasSearchedFormulation = false;
+      }
+      // Si no tenemos dependencia, resetear estados
+      else if (!newDependency) {
+        this.isSearchingFormulation = false;
+        this.hasSearchedFormulation = false;
+      }
+    }
+
+    // 4. Manejar cambios en 'mostrar'
     if (changes['mostrar']) {
       const isShowing = changes['mostrar'].currentValue;
       const wasShowing = changes['mostrar'].previousValue;
 
       if (isShowing && !wasShowing) {
+        // Si se está mostrando y hay formulación, cargar datos
         if (this.currentFormulation && this.currentFormulation.idFormulation) {
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
         }
       } else if (!isShowing && wasShowing) {
-        this.clearFormulationDetails();
+        // Si se está ocultando, limpiar todo
+        this.clearFormulationDetails(true);
       }
     }
   }
@@ -253,7 +289,7 @@ ngOnChanges(changes: SimpleChanges): void {
       this.canDelete = hasPermission;
     }
   }
-  clearFormulationDetails(): void {
+  clearFormulationDetails(resetSearchedFlag: boolean = true): void {
     this.quarter = null;
     this.state = null;
     this.stateName = null;
@@ -262,15 +298,19 @@ ngOnChanges(changes: SimpleChanges): void {
     this.isLoadingActivities = false;
     this.isLoadingFormulation = false;
     this.isSearchingFormulation = false;
-    this.hasSearchedFormulation = false; // Resetear también esta variable
     
+    // Only reset hasSearchedFormulation if explicitly requested
+    if (resetSearchedFlag) {
+      this.hasSearchedFormulation = false;
+    }
+
     // Usar los últimos valores seleccionados para mantener la información de la selección
     this.ano = this.lastSelectedAno;
     this.idDependency = this.lastSelectedDependency;
-    
+
     this.idFormulation = null;
     this.updatePermissions();
-    
+
     // Emitir que no hay actividades
     this.activitiesCountChanged.emit(0);
   }
@@ -298,14 +338,11 @@ ngOnChanges(changes: SimpleChanges): void {
         },
         error: (err) => {
           this.toastr.error('Error al cargar detalles de la formulación.', 'Error');
-          console.error('Error al cargar detalles de la formulación:', err);
-          this.clearFormulationDetails();
+          this.clearFormulationDetails(true); // Reset search flag on error
         }
       });
     }
   }
-
-  // En tu componente, dentro de la clase
 
   // En tu componente, dentro de la clase
 
@@ -369,7 +406,6 @@ ngOnChanges(changes: SimpleChanges): void {
       },
       error: (err) => {
         this.toastr.error('Error al cargar combos de la tabla.', 'Error de Carga');
-        console.error('Error loading table combos:', err);
       }
     });
   }
@@ -440,6 +476,7 @@ ngOnChanges(changes: SimpleChanges): void {
   }
 
   @ViewChild('dataTable') table!: Table;
+  @ViewChild('ospesTabla') ospesTabla!: FormulacionOspesTablaComponent;
   // --- Action Methods ---
   agregarActividad(): void {
     if (!this.canAdd) {
@@ -530,7 +567,6 @@ ngOnChanges(changes: SimpleChanges): void {
         error: (errorResponse) => {
           const errorMessage = errorResponse?.error?.message || 'Error desconocido al eliminar la actividad.';
           this.toastr.error(`Error al eliminar la actividad: ${errorMessage}`, 'Error');
-          console.error('Error deleting activity:', errorResponse);
           this.showDeleteConfirmation = false;
           this.activityToDelete = null;
           this.activityToDeleteIndex = null;
@@ -546,66 +582,7 @@ ngOnChanges(changes: SimpleChanges): void {
   }
 
   private validateActivity(product: OperationalActivity): boolean {
-    if (!product.name || product.name.trim() === '') {
-      this.toastr.error('El campo "Nombre de actividad" no puede estar vacío.', 'Error de validación');
-      return false;
-    }
-    if (!product.measurementUnit || product.measurementUnit.trim() === '') {
-      this.toastr.error('El campo "Unidad de medida" no puede estar vacío.', 'Error de validación');
-      return false;
-    }
-    if (!product.strategicAction?.idStrategicAction || !product.strategicAction?.strategicObjective?.idStrategicObjective) {
-      this.toastr.error('Debe seleccionar un Objetivo Estratégico y una Acción Estratégica.', 'Error de validación');
-      return false;
-    }
-    if (!product.financialFund?.idFinancialFund) {
-      this.toastr.error('Debe seleccionar un Fondo financiero.', 'Error de validación');
-      return false;
-    }
-    if (!product.managementCenter?.idManagementCenter) {
-      this.toastr.error('Debe seleccionar un Centro gestor.', 'Error de validación');
-      return false;
-    }
-    if (!product.costCenter?.idCostCenter) {
-      this.toastr.error('Debe seleccionar un Centro de costos.', 'Error de validación');
-      return false;
-    }
-    if (!product.measurementType?.idMeasurementType) {
-      this.toastr.error('Debe seleccionar un Tipo de medida.', 'Error de validación');
-      return false;
-    }
-    if (!product.priority?.idPriority) {
-      this.toastr.error('Debe seleccionar una Prioridad.', 'Error de validación');
-      return false;
-    }
-    // Validate numeric fields for goods, remuneration, services
-    if (typeof product.goods !== 'number' || isNaN(product.goods)) {
-      this.toastr.error('El campo "Bienes" debe ser un número válido.', 'Error de validación');
-      return false;
-    }
-    if (typeof product.remuneration !== 'number' || isNaN(product.remuneration)) {
-      this.toastr.error('El campo "Remuneraciones" debe ser un número válido.', 'Error de validación');
-      return false;
-    }
-    if (typeof product.services !== 'number' || isNaN(product.services)) {
-      this.toastr.error('El campo "Servicios" debe ser un número válido.', 'Error de validación');
-      return false;
-    }
-
-    if (product.goals && product.goals.length === 4) {
-      for (let i = 0; i < product.goals.length; i++) {
-        const goal = product.goals[i];
-        if (typeof goal.value !== 'number' || isNaN(goal.value)) {
-          this.toastr.error(`La meta del trimestre ${i + 1} debe ser un número válido.`, 'Error de validación');
-          return false;
-        }
-      }
-    } else {
-      this.toastr.error('Las metas de los trimestres no están completas.', 'Error de validación');
-      return false;
-    }
-
-    return true;
+    return this.activityValidator.validateActivity(product);
   }
 
   onRowEditSave(product: OperationalActivity) {
@@ -658,7 +635,6 @@ ngOnChanges(changes: SimpleChanges): void {
       })),
       catchError(err => {
         this.toastr.error('Error al generar el código SAP y correlativo.', 'Error');
-        console.error('Error generating SAP code and correlative:', err);
         return of(baseActividad);
       })
     );
@@ -710,7 +686,6 @@ ngOnChanges(changes: SimpleChanges): void {
                   },
                   error: (err) => {
                     this.toastr.error('Error al actualizar una o más metas.', 'Error');
-                    console.error('Error al actualizar metas:', err);
                   }
                 });
               } else {
@@ -719,7 +694,6 @@ ngOnChanges(changes: SimpleChanges): void {
             },
             error: (err) => {
               this.toastr.error('Error al actualizar la actividad operativa.', 'Error');
-              console.error('Error al actualizar la actividad operativa:', err);
             }
           });
         } else {
@@ -766,7 +740,6 @@ ngOnChanges(changes: SimpleChanges): void {
                     },
                     error: (err) => {
                       this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
-                      console.error('Error al crear metas para la nueva actividad:', err);
                     }
                   });
                 } else {
@@ -778,14 +751,12 @@ ngOnChanges(changes: SimpleChanges): void {
             },
             error: (err) => {
               this.toastr.error('Error al crear la actividad operativa.', 'Error');
-              console.error('Error al crear la actividad operativa:', err);
             }
           });
         }
       },
       error: (err) => {
         this.toastr.error('No se pudo procesar la actividad debido a un error de código SAP/correlativo.', 'Error');
-        console.error('Error in SAP code generation flow:', err);
       }
     });
 
@@ -942,54 +913,19 @@ ngOnChanges(changes: SimpleChanges): void {
 
   // --- SAP Code Generation Logic ---
   private _generateSapCodeAndCorrelative(activity: OperationalActivity): Observable<{ sapCode: string, correlativeCode: string }> {
-    const selectedStrategicAction = this.strategicActions.find(
-      sa => sa.idStrategicAction == activity.strategicAction?.idStrategicAction
+    return this.sapCodeGenerator.generateSapCodeAndCorrelative(
+      activity,
+      this.strategicActions,
+      this.strategicObjectives,
+      this.costCenters
     );
-    const strategicObjectiveCode = this.strategicObjectives.find(
-      so => so.idStrategicObjective == selectedStrategicAction?.strategicObjective?.idStrategicObjective
-    )?.code || '';
-    const strategicActionCode = selectedStrategicAction?.code || '';
+  }
 
-    const selectedCostCenter = this.costCenters.find(
-      cc => cc.idCostCenter === activity.costCenter?.idCostCenter
-    );
-    const costCenterCode = selectedCostCenter?.costCenterCode || '';
-
-    const formattedObjectiveCode = String(strategicObjectiveCode).padStart(1, '0');
-    const formattedActionCode = String(strategicActionCode).padStart(2, '0');
-    const formattedCostCenterCode = String(costCenterCode).padStart(10, '0');
-
-    const idCostCenter = activity.costCenter?.idCostCenter;
-
-    if (!idCostCenter) {
-      this.toastr.error('ID de Centro de Costos es nulo para generar código SAP.', 'Error');
-      return of({ sapCode: '', correlativeCode: '' });
+  // --- Prestaciones Económicas Modal Methods ---
+  openPrestacionesEconomicasModal(): void {
+    if (this.ospesTabla) {
+      this.ospesTabla.openModal();
     }
-
-    // --- NEW LOGIC: Check if activity already has a correlativeCode ---
-    if (activity.correlativeCode) {
-      const existingCorrelativeCode = String(activity.correlativeCode).padStart(3, '0');
-      const sapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${existingCorrelativeCode}`;
-      return of({ sapCode: sapCode, correlativeCode: existingCorrelativeCode });
-    }
-    // --- END NEW LOGIC ---
-
-    return this.operationalActivityService.getHigherCorrelativeCodeByCostCenter(idCostCenter).pipe(
-      map(correlativeCodeStr => {
-        const currentCorrelative = parseInt(correlativeCodeStr, 10);
-        const nextCorrelative = (isNaN(currentCorrelative) ? 0 : currentCorrelative) + 1;
-        const formattedActivityId = String(nextCorrelative).padStart(3, '0');
-
-        const sapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
-
-        return { sapCode: sapCode, correlativeCode: formattedActivityId };
-      }),
-      catchError(err => {
-        this.toastr.error('Error al obtener el código correlativo superior para el código SAP.', 'Error');
-        console.error('Error fetching higher correlative code:', err);
-        return of({ sapCode: '', correlativeCode: '' });
-      })
-    );
   }
 
 }

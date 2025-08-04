@@ -340,6 +340,8 @@ onDependencyChange(): void {
         } else {
           this.idFormulation = null;
           this.selectedFormulationState = null;
+          // Emitir undefined para indicar que no se encontró formulación
+          this.formulationSelected.emit(undefined);
         }
 
         this.checkingFormulation = false;
@@ -356,6 +358,8 @@ onDependencyChange(): void {
         this.selectedFormulationState = null;
         this.activeFormulation = null;
         this.hasSupportFile = false;
+        // Emitir undefined para indicar que hubo un error en la búsqueda
+        this.formulationSelected.emit(undefined);
         this.supportFileMetadata = null;
       },
     });

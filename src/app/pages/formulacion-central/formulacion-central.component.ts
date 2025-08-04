@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
@@ -22,6 +22,8 @@ import { Formulation } from '../../models/logic/formulation.model';
 export class FormulacionCentralComponent {
   // We still keep ViewChild, but its direct manipulation will be minimized
   @ViewChild(FormulacionTablaComponent) formulacionTablaComponent!: FormulacionTablaComponent;
+
+  private cdr = inject(ChangeDetectorRef);
 
   // We only need to manage the `currentFormulation` object directly
   // All other inputs for `FormulacionTablaComponent` will be derived from this.
@@ -55,10 +57,25 @@ export class FormulacionCentralComponent {
       ano?: string | null; // Made optional as `formulation` might carry it
       dependencia?: string | null; // Made optional
       idFormulation?: number | null; // Made optional
-    } | Formulation, // Can receive either the event object or a full Formulation
+    } | Formulation | undefined | null, // Can receive either the event object, a full Formulation, or undefined/null
     formulation?: Formulation | null // For direct Formulation object
   ): void {
     let selectedFormulation: Formulation | null = null;
+
+    // Handle explicit undefined/null cases (when selector clears the formulation)
+    if (event === undefined || event === null) {
+      // Force change detection by temporarily setting to a different value
+      this.currentFormulation = {} as any; // Temporary non-null value
+      this.cdr.detectChanges(); // Force first change detection
+      
+      // Use setTimeout to trigger change detection in next cycle
+      setTimeout(() => {
+        this.currentFormulation = null;
+        this.mostrarTabla = false;
+        this.cdr.detectChanges(); // Force second change detection
+      }, 0);
+      return;
+    }
 
     // Determine if `event` is a full `Formulation` object or the intermediate `{ano, dependencia, idFormulation}`
     if (event && (event as Formulation).idFormulation) {

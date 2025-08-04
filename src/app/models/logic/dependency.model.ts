@@ -6,5 +6,6 @@ export interface Dependency {
   description: string;
   active?: boolean;
   dependencyType: DependencyType;
+  ospe?: boolean;
 }
 

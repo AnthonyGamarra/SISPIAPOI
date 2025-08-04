@@ -10,6 +10,8 @@ import { ExecutedGoal } from "./executedGoal.model";
 import { MonthlyGoal } from "./monthlyGoal.model";
 import { ExecutedMonthlyGoal } from "./executedMonthlyGoal.model";
 import { ActivityFamily } from "./activityFamily.model";
+import { MonthlyBudget } from "./monthlyBudget.model";
+import { ExecutedMonthlyBudget } from "./executedMonthlyBudget.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
@@ -28,6 +30,8 @@ export interface OperationalActivity {
   executedGoals?: ExecutedGoal[];
   monthlyGoals?: MonthlyGoal[];
   executedMonthlyGoals?: ExecutedMonthlyGoal[];
+  monthlyBudgets?: MonthlyBudget[];
+  executedMonthlyBudgets?: ExecutedMonthlyBudget[];
   priority?: Priority;
   goods: number;
   remuneration: number;
