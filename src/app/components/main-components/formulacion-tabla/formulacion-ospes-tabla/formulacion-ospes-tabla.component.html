@@ -15,24 +15,24 @@
   </div>
 
   <!-- Toggle para mostrar consolidado -->
-  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0" class="mb-4 p-3 bg-gray-50 rounded-lg">
+  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0" class="m-4 p-3 bg-gray-50 rounded-lg">
     <div class="flex items-center gap-3">
-      <label for="showConsolidated" class="text-sm font-medium text-gray-700">Vista:</label>
+      <label for="showConsolidated" class="text-md text-gray-800">Vista:</label>
       <div class="flex items-center gap-2">
         <input type="radio" id="showDetailed" name="viewType" [value]="false" 
                [(ngModel)]="showConsolidatedView" class="form-radio">
-        <label for="showDetailed" class="text-sm text-gray-600">Detallada</label>
+        <label for="showDetailed" class="text-md text-gray-800">Detallada</label>
       </div>
       <div class="flex items-center gap-2">
         <input type="radio" id="showConsolidated" name="viewType" [value]="true" 
                [(ngModel)]="showConsolidatedView" class="form-radio">
-        <label for="showConsolidated" class="text-sm text-gray-600">Consolidada</label>
+        <label for="showConsolidated" class="text-md text-gray-800">Consolidada</label>
       </div>
     </div>
   </div>
 
   <!-- Tablas de prestaciones económicas agrupadas por dependencia (Vista Detallada) -->
-  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && !showConsolidatedView" class="tables-container">
+  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && !showConsolidatedView" class="tables-container m-4">
     <div *ngFor="let dependencyName of dependencyNamesList" class="dependency-section mb-4">
       <!-- Título de la dependencia -->
       <h3 class="dependency-title text-xl font-bold mb-4 p-3 bg-blue-100 rounded-lg border-l-4 border-blue-500">
@@ -49,13 +49,8 @@
           <tr class="cabecera">
             <th style="min-width: 120px; max-width: 120px;" rowspan="2">Objetivo estratégico</th>
             <th style="min-width: 200px; max-width: 200px;" rowspan="2">Acción estratégica</th>
-            <th style="min-width: 170px; max-width: 170px;" rowspan="2">Centro gestor</th>
-            <th style="min-width: 350px; max-width: 350px;" rowspan="2">Centro de costos</th>
-            <th style="min-width: 300px; max-width: 300px;" rowspan="2">Fondo financiero</th>
             <th style="min-width: 300px; max-width: 300px;" rowspan="2">Nombre de actividad</th>
             <th style="min-width: 150px; max-width: 150px;" rowspan="2">Unidad de medida</th>
-            <th style="min-width: 200px; max-width: 200px;" rowspan="2">Tipo de medida</th>
-            <th style="min-width: 120px; max-width: 120px;" rowspan="2">Prioridad</th>
             <th colspan="12">Metas Mensuales</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
             <th colspan="12">Presupuesto Mensual S/.</th>
@@ -107,48 +102,6 @@
               </span>
             </td>
 
-            <td>
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.managementCenter?.name }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <p-dropdown [options]="managementCenters" 
-                  [ngModel]="editingActivity?.managementCenter?.idManagementCenter"
-                  (ngModelChange)="updateManagementCenter($event)"
-                  optionLabel="name" optionValue="idManagementCenter" 
-                  placeholder="Seleccionar centro gestor">
-                </p-dropdown>
-              </ng-container>
-            </td>
-            
-            <td>
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.costCenter?.name }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <p-dropdown [options]="costCenters" 
-                  [ngModel]="editingActivity?.costCenter?.idCostCenter"
-                  (ngModelChange)="updateCostCenter($event)"
-                  optionLabel="name" optionValue="idCostCenter" 
-                  placeholder="Seleccionar centro de costos">
-                </p-dropdown>
-              </ng-container>
-            </td>
-            
-            <td>
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.financialFund?.name }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <p-dropdown [options]="financialFunds" 
-                  [ngModel]="editingActivity?.financialFund?.idFinancialFund"
-                  (ngModelChange)="updateFinancialFund($event)"
-                  optionLabel="name" optionValue="idFinancialFund" 
-                  placeholder="Seleccionar fondo financiero">
-                </p-dropdown>
-              </ng-container>
-            </td>
-            
             <!-- El código SAP se oculta como solicitaste -->
             
             <td>
@@ -171,22 +124,6 @@
                 <input type="text" pInputText 
                   [value]="editingActivity?.measurementUnit || ''"
                   (input)="updateMeasurementUnit($any($event.target).value)" />
-              </ng-container>
-            </td>
-
-            <td>{{ activity?.measurementType?.name }}</td>
-            
-            <td>
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.priority?.name }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <p-dropdown [options]="priorities" 
-                  [ngModel]="editingActivity?.priority?.idPriority"
-                  (ngModelChange)="updatePriority($event)"
-                  optionLabel="name" optionValue="idPriority" 
-                  placeholder="Seleccionar prioridad">
-                </p-dropdown>
               </ng-container>
             </td>
 
@@ -521,15 +458,18 @@
   </div>
 
   <!-- Tabla Consolidada -->
-  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && showConsolidatedView" class="consolidated-container">
-    <h3 class="text-xl font-bold mb-4 p-3 bg-green-100 rounded-lg border-l-4 border-green-500">
-      Vista Consolidada - Agrupación por Características Comunes
+  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && showConsolidatedView" class="consolidated-container m-4">
+    <h3 class="dependency-title text-xl font-bold mb-4 p-3 bg-green-100 rounded-lg border-l-4 border-green-500">
+      Vista Consolidada - Actividades Auto-generadas
+      <span class="text-sm font-normal text-gray-600 ml-2">
+        ({{ consolidatedActivities.length }} grupos consolidados)
+      </span>
     </h3>
     
     <p-table [value]="consolidatedActivities" [size]="selectedSize" 
       stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" 
       scrollHeight="500px" columnResizeMode="expand" dataKey="groupKey" 
-      [paginator]="true" [rows]="10" [rowHover]="true" [lazy]="false">
+      [paginator]="false" [rowHover]="true" [lazy]="false">
 
       <ng-template pTemplate="header">
         <tr class="cabecera">

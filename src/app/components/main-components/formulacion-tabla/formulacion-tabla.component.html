@@ -18,16 +18,16 @@
   <!-- 3.1 Contenido principal cuando SÍ hay formulación -->
   <div *ngIf="currentFormulation">
     <div class="grid mx-auto my-3">
-      <div class="col-4 flex justify-center mr-auto">
+      <div class="col-6 flex justify-center mr-auto">
         <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
           optionLabel="name" optionValue="value" />
       </div>
       <button *ngIf="idDependency != null && +idDependency === 20" pButton label="Programación de prestaciones económicas" icon="pi pi-calendar" 
-        (click)="openPrestacionesEconomicasModal()" class="col-4 add-button mx-2"
+        (click)="openPrestacionesEconomicasModal()" class="col-3 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
       <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="agregarActividad()"
-        [disabled]="state === 2 || state === 4 || !year || !active" class="col-4 add-button ml-auto">
+        [disabled]="state === 2 || state === 4 || !year || !active" class="col-3 add-button ml-auto">
       </button>
     </div>
 
@@ -115,7 +115,7 @@
                     <input pInputText
                       [ngModel]="getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective)"
                       type="text" [disabled]="true" style="max-width: 80%" />
-                    <button *ngIf="editing" pButton type="button" icon="pi pi-search"
+                    <button *ngIf="editing && !active" pButton type="button" icon="pi pi-search"
                       (click)="openOeAeSelectionModal(product)" label=""
                       [disabled]="state === 2 || state === 4 || !active" class="p-button-sm ml-2">
                     </button>
@@ -151,7 +151,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-dropdown [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
-                    [(ngModel)]="product.managementCenter.idManagementCenter" [style]="{ width: '100%' }"
+                    [ngModel]="getManagementCenterId(product)" 
+                    (ngModelChange)="setManagementCenterId(product, $event)" 
+                    [style]="{ width: '100%' }"
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
                 </ng-template>
                 <ng-template pTemplate="output">
@@ -164,7 +166,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-dropdown [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
-                    [(ngModel)]="product.costCenter.idCostCenter" [style]="{ width: '100%' }"
+                    [ngModel]="getCostCenterId(product)" 
+                    (ngModelChange)="setCostCenterId(product, $event)" 
+                    [style]="{ width: '100%' }"
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
                 </ng-template>
                 <ng-template pTemplate="output">
@@ -177,7 +181,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-dropdown [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
-                    [(ngModel)]="product.financialFund.idFinancialFund" [style]="{ width: '100%' }"
+                    [ngModel]="getFinancialFundId(product)" 
+                    (ngModelChange)="setFinancialFundId(product, $event)" 
+                    [style]="{ width: '100%' }"
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
                 </ng-template>
                 <ng-template pTemplate="output">
@@ -199,7 +205,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name"
-                    [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                    [disabled]="state === 2 || state === 4 || !active || !product.active" style="resize: none"></textarea>
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
                     pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
@@ -210,7 +216,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <textarea rows="1" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit"
-                    [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                    [disabled]="state === 2 || state === 4 || !active || !product.active" style="resize: none"></textarea>
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="21" [autoResize]="true"
                     pTextarea [disabled]="true"
@@ -222,7 +228,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-dropdown [options]="measurementTypes" optionLabel="name" optionValue="idMeasurementType"
-                    [(ngModel)]="product.measurementType.idMeasurementType" [style]="{ width: '100%' }"
+                    [ngModel]="getMeasurementTypeId(product)" 
+                    (ngModelChange)="setMeasurementTypeId(product, $event)" 
+                    [style]="{ width: '100%' }"
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
                 </ng-template>
                 <ng-template pTemplate="output">
@@ -235,7 +243,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-dropdown [options]="priorities" optionLabel="name" optionValue="idPriority"
-                    [(ngModel)]="product.priority.idPriority" [style]="{ width: '100%' }"
+                    [ngModel]="getPriorityId(product)" 
+                    (ngModelChange)="setPriorityId(product, $event)" 
+                    [style]="{ width: '100%' }"
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
                 </ng-template>
                 <ng-template pTemplate="output">
@@ -248,7 +258,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goals[0].value" type="number"
-                    [disabled]="state === 2 || state === 4 || (quarter !== null && 1 < quarter)" />
+                    [disabled]="state === 2 || state === 4 || (quarter !== null && 1 < quarter) || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goals[0]?.value }}</ng-template>
               </p-cellEditor>
@@ -258,7 +268,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goals[1].value" type="number"
-                    [disabled]="state === 2 || state === 4 || (quarter !== null && 2 < quarter)" />
+                    [disabled]="state === 2 || state === 4 || (quarter !== null && 2 < quarter) || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goals[1]?.value }}</ng-template>
               </p-cellEditor>
@@ -268,7 +278,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goals[2].value" type="number"
-                    [disabled]="state === 2 || state === 4 || (quarter !== null && 3 < quarter)" />
+                    [disabled]="state === 2 || state === 4 || (quarter !== null && 3 < quarter) || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goals[2]?.value }}</ng-template>
               </p-cellEditor>
@@ -278,7 +288,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goals[3].value" type="number"
-                    [disabled]="state === 2 || state === 4 || (quarter !== null && 4 < quarter)" />
+                    [disabled]="state === 2 || state === 4 || (quarter !== null && 4 < quarter) || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goals[3]?.value }}</ng-template>
               </p-cellEditor>
@@ -288,7 +298,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.remuneration" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.remuneration | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
@@ -298,7 +308,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goods" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goods | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
@@ -308,7 +318,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.services" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.services | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
@@ -393,5 +403,6 @@
     [managementCenters]="managementCenters"
     [costCenters]="costCenters"
     [measurementTypes]="measurementTypes"
-    [priorities]="priorities">
+    [priorities]="priorities"
+    (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
   </app-formulacion-ospes-tabla>

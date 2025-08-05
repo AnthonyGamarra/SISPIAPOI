@@ -477,6 +477,16 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   @ViewChild('dataTable') table!: Table;
   @ViewChild('ospesTabla') ospesTabla!: FormulacionOspesTablaComponent;
+  
+  // Método para notificar cambios en actividades al modal de prestaciones económicas
+  private notifyActivityChangesToModal(): void {
+    if (this.ospesTabla && this.ospesTabla.displayModal) {
+      // Recargar datos del modal si está abierto
+      setTimeout(() => {
+        this.ospesTabla.reloadData();
+      }, 500); // Dar tiempo para que se complete la operación actual
+    }
+  }
   // --- Action Methods ---
   agregarActividad(): void {
     if (!this.canAdd) {
@@ -560,6 +570,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
             this.products = [...this.products]; // Trigger change detection
           }
           this.toastr.success('Actividad eliminada exitosamente.', 'Éxito');
+          this.notifyActivityChangesToModal(); // Notificar cambios al modal
           this.showDeleteConfirmation = false;
           this.activityToDelete = null;
           this.activityToDeleteIndex = null;
@@ -617,14 +628,30 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         strategicObjective: { idStrategicObjective: strategicObjectiveId } as StrategicObjective
       } as StrategicAction,
       formulation: { idFormulation: this.idFormulation } as Formulation,
-      financialFund: { idFinancialFund: product.financialFund?.idFinancialFund } as FinancialFund,
-      managementCenter: { idManagementCenter: product.managementCenter?.idManagementCenter } as ManagementCenter,
-      costCenter: { idCostCenter: product.costCenter?.idCostCenter } as CostCenter,
-      measurementType: { idMeasurementType: product.measurementType?.idMeasurementType } as MeasurementType,
-      priority: { idPriority: product.priority?.idPriority } as Priority,
       sapCode: product.sapCode || '',
       correlativeCode: product.correlativeCode || ''
     };
+
+    // Para creación/actualización: solo enviar objetos con IDs válidos, omitir campos vacíos
+    if (product.financialFund?.idFinancialFund) {
+      baseActividad.financialFund = { idFinancialFund: product.financialFund.idFinancialFund } as FinancialFund;
+    }
+    
+    if (product.managementCenter?.idManagementCenter) {
+      baseActividad.managementCenter = { idManagementCenter: product.managementCenter.idManagementCenter } as ManagementCenter;
+    }
+    
+    if (product.costCenter?.idCostCenter) {
+      baseActividad.costCenter = { idCostCenter: product.costCenter.idCostCenter } as CostCenter;
+    }
+    
+    if (product.measurementType?.idMeasurementType) {
+      baseActividad.measurementType = { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType;
+    }
+    
+    if (product.priority?.idPriority) {
+      baseActividad.priority = { idPriority: product.priority.idPriority } as Priority;
+    }
 
     let activityToSave$ = this._generateSapCodeAndCorrelative(product).pipe(
       map(result => ({
@@ -683,6 +710,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                       this.products = [...this.products];
                     }
                     this.toastr.success('Actividad operativa y metas actualizadas.', 'Éxito');
+                    this.notifyActivityChangesToModal(); // Notificar cambios al modal
                   },
                   error: (err) => {
                     this.toastr.error('Error al actualizar una o más metas.', 'Error');
@@ -690,6 +718,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                 });
               } else {
                 this.toastr.success('Actividad operativa actualizada.', 'Éxito');
+                this.notifyActivityChangesToModal(); // Notificar cambios al modal
               }
             },
             error: (err) => {
@@ -737,6 +766,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                         this.products = [...this.products];
                       }
                       this.toastr.success('Actividad operativa creada, metas guardadas.', 'Éxito');
+                      this.notifyActivityChangesToModal(); // Notificar cambios al modal
                     },
                     error: (err) => {
                       this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
@@ -744,6 +774,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                   });
                 } else {
                   this.toastr.success('Actividad operativa creada.', 'Éxito');
+                  this.notifyActivityChangesToModal(); // Notificar cambios al modal
                 }
               } else {
                 this.toastr.error('El ID devuelto por la creación de la actividad no es válido.', 'Error');
@@ -926,6 +957,276 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     if (this.ospesTabla) {
       this.ospesTabla.openModal();
     }
+  }
+
+  // Función para inicializar objetos nulos/undefined
+  private initializeActivityObjects(activity: OperationalActivity): OperationalActivity {
+    return {
+      ...activity,
+      managementCenter: activity.managementCenter || {} as ManagementCenter,
+      costCenter: activity.costCenter || {} as CostCenter,
+      financialFund: activity.financialFund || {} as FinancialFund,
+      measurementType: activity.measurementType || {} as MeasurementType,
+      priority: activity.priority || {} as Priority
+    };
+  }
+
+  // Método para recibir actividades creadas/actualizadas desde el consolidado
+  onActivitiesCreatedFromConsolidated(activities: OperationalActivity[]): void {
+    if (!activities?.length) {
+      return;
+    }
+
+    const newActivities: OperationalActivity[] = [];
+    const updatedActivities: OperationalActivity[] = [];
+    const activitiesToCreatePhysically: OperationalActivity[] = [];
+
+    activities.forEach(activity => {
+      // Inicializar objetos para evitar errores de null/undefined
+      const initializedActivity = this.initializeActivityObjects(activity);
+      
+      // Si no tiene ID, necesita creación física
+      if (!initializedActivity.idOperationalActivity) {
+        activitiesToCreatePhysically.push(initializedActivity);
+        return;
+      }
+
+      // Si es un ID real (positivo), verificar si existe para actualizar
+      if (initializedActivity.idOperationalActivity > 0) {
+        const existingIndex = this.products.findIndex(p => 
+          p.idOperationalActivity === initializedActivity.idOperationalActivity
+        );
+
+        if (existingIndex >= 0) {
+          // Actualizar actividad existente físicamente
+          this.updateActivityPhysically(initializedActivity);
+          this.products[existingIndex] = { ...initializedActivity };
+          updatedActivities.push(initializedActivity);
+        }
+      } else {
+        // ID temporal negativo - agregar a la vista temporalmente
+        const existingIndex = this.products.findIndex(p => 
+          p.idOperationalActivity === initializedActivity.idOperationalActivity
+        );
+
+        if (existingIndex >= 0) {
+          this.products[existingIndex] = { ...initializedActivity };
+          updatedActivities.push(initializedActivity);
+        } else {
+          newActivities.push(initializedActivity);
+        }
+      }
+    });
+
+    // Crear actividades físicamente si es necesario
+    if (activitiesToCreatePhysically.length > 0) {
+      this.createActivitiesPhysically(activitiesToCreatePhysically);
+    }
+
+    // Agregar solo las nuevas actividades temporales
+    if (newActivities.length > 0) {
+      this.products = [...this.products, ...newActivities];
+    }
+
+    // Actualizar el contador de actividades
+    this.activitiesCountChanged.emit(this.products.length);
+
+    // Mostrar mensaje apropiado
+    if (activitiesToCreatePhysically.length > 0) {
+      this.toastr.success(
+        `Se crearon físicamente ${activitiesToCreatePhysically.length} actividades consolidadas`,
+        'Creación física'
+      );
+    } else if (newActivities.length > 0 && updatedActivities.length > 0) {
+      this.toastr.info(
+        `Consolidado: ${newActivities.length} nuevas, ${updatedActivities.length} actualizadas`,
+        'Auto-sincronización'
+      );
+    } else if (newActivities.length > 0) {
+      this.toastr.success(
+        `Se crearon automáticamente ${newActivities.length} actividades`,
+        'Auto-creación'
+      );
+    } else if (updatedActivities.length > 0) {
+      this.toastr.info(
+        `Se actualizaron ${updatedActivities.length} actividades`,
+        'Auto-actualización'
+      );
+    }
+
+    // Navegar a la última página solo si hay nuevas actividades
+    if (newActivities.length > 0 || activitiesToCreatePhysically.length > 0) {
+      setTimeout(() => {
+        if (this.table && this.table.paginator) {
+          const totalPages = Math.ceil(this.products.length / (this.table.rows || 6));
+          this.table.first = (totalPages - 1) * (this.table.rows || 6);
+        }
+      }, 100);
+    }
+
+    // Forzar detección de cambios
+    this.products = [...this.products];
+  }
+
+  // Método para crear actividades físicamente en la base de datos
+  private createActivitiesPhysically(activities: OperationalActivity[]): void {
+    if (!activities?.length) {
+      return;
+    }
+
+    activities.forEach(activity => {
+      // Limpiar actividad antes de enviar: omitir campos vacíos para creación
+      const activityToCreate = { ...activity };
+      
+      // Para creación: eliminar campos que están vacíos para evitar enviar objetos {}
+      if (!activityToCreate.managementCenter?.idManagementCenter) {
+        delete activityToCreate.managementCenter;
+      }
+      if (!activityToCreate.costCenter?.idCostCenter) {
+        delete activityToCreate.costCenter;
+      }
+      if (!activityToCreate.financialFund?.idFinancialFund) {
+        delete activityToCreate.financialFund;
+      }
+      if (!activityToCreate.measurementType?.idMeasurementType) {
+        delete activityToCreate.measurementType;
+      }
+      if (!activityToCreate.priority?.idPriority) {
+        delete activityToCreate.priority;
+      }
+      
+      this.operationalActivityService.create(activityToCreate).subscribe({
+        next: (createdActivity) => {
+          // Reemplazar la actividad temporal con la actividad creada
+          const tempIndex = this.products.findIndex(p => 
+            p.name === activity.name && 
+            p.description === activity.description &&
+            p.active === false
+          );
+          
+          if (tempIndex >= 0) {
+            this.products[tempIndex] = createdActivity;
+            this.products = [...this.products]; // Forzar detección de cambios
+          } else {
+            // Si no se encuentra, agregar la actividad creada
+            this.products.push(createdActivity);
+            this.products = [...this.products];
+          }
+          
+          console.log('Actividad consolidada creada físicamente:', createdActivity);
+        },
+        error: (err) => {
+          console.error('Error creating consolidated activity physically:', err);
+          this.toastr.error(`Error al crear actividad: ${activity.name}`, 'Error de creación');
+        }
+      });
+    });
+  }
+
+  // Método para actualizar actividad físicamente en la base de datos
+  private updateActivityPhysically(activity: OperationalActivity): void {
+    if (!activity?.idOperationalActivity) {
+      return;
+    }
+
+    // Preparar actividad para actualización: solo enviar objetos con IDs, omitir campos vacíos
+    const activityToUpdate = { ...activity };
+    
+    if (activityToUpdate.managementCenter?.idManagementCenter) {
+      activityToUpdate.managementCenter = { idManagementCenter: activityToUpdate.managementCenter.idManagementCenter } as ManagementCenter;
+    } else {
+      delete activityToUpdate.managementCenter;
+    }
+    
+    if (activityToUpdate.costCenter?.idCostCenter) {
+      activityToUpdate.costCenter = { idCostCenter: activityToUpdate.costCenter.idCostCenter } as CostCenter;
+    } else {
+      delete activityToUpdate.costCenter;
+    }
+    
+    if (activityToUpdate.financialFund?.idFinancialFund) {
+      activityToUpdate.financialFund = { idFinancialFund: activityToUpdate.financialFund.idFinancialFund } as FinancialFund;
+    } else {
+      delete activityToUpdate.financialFund;
+    }
+    
+    if (activityToUpdate.measurementType?.idMeasurementType) {
+      activityToUpdate.measurementType = { idMeasurementType: activityToUpdate.measurementType.idMeasurementType } as MeasurementType;
+    } else {
+      delete activityToUpdate.measurementType;
+    }
+    
+    if (activityToUpdate.priority?.idPriority) {
+      activityToUpdate.priority = { idPriority: activityToUpdate.priority.idPriority } as Priority;
+    } else {
+      delete activityToUpdate.priority;
+    }
+
+    this.operationalActivityService.update(activityToUpdate).subscribe({
+      next: (updatedActivity) => {
+        console.log('Actividad consolidada actualizada físicamente:', updatedActivity);
+      },
+      error: (err) => {
+        console.error('Error updating consolidated activity physically:', err);
+        this.toastr.error(`Error al actualizar actividad: ${activity.name}`, 'Error de actualización');
+      }
+    });
+  }
+
+  // --- Safe Getters y Setters para evitar errores de null/undefined ---
+  getManagementCenterId(product: OperationalActivity): number | null {
+    return product.managementCenter?.idManagementCenter ?? null;
+  }
+
+  setManagementCenterId(product: OperationalActivity, value: number | null): void {
+    if (!product.managementCenter) {
+      product.managementCenter = {} as ManagementCenter;
+    }
+    product.managementCenter.idManagementCenter = value ?? undefined;
+  }
+
+  getCostCenterId(product: OperationalActivity): number | null {
+    return product.costCenter?.idCostCenter ?? null;
+  }
+
+  setCostCenterId(product: OperationalActivity, value: number | null): void {
+    if (!product.costCenter) {
+      product.costCenter = {} as CostCenter;
+    }
+    product.costCenter.idCostCenter = value ?? undefined;
+  }
+
+  getFinancialFundId(product: OperationalActivity): number | null {
+    return product.financialFund?.idFinancialFund ?? null;
+  }
+
+  setFinancialFundId(product: OperationalActivity, value: number | null): void {
+    if (!product.financialFund) {
+      product.financialFund = {} as FinancialFund;
+    }
+    product.financialFund.idFinancialFund = value ?? undefined;
+  }
+
+  getMeasurementTypeId(product: OperationalActivity): number | null {
+    return product.measurementType?.idMeasurementType ?? null;
+  }
+
+  setMeasurementTypeId(product: OperationalActivity, value: number | null): void {
+    if (!product.measurementType) {
+      product.measurementType = {} as MeasurementType;
+    }
+    product.measurementType.idMeasurementType = value ?? undefined;
+  }
+
+  getPriorityId(product: OperationalActivity): number | null {
+    return product.priority?.idPriority ?? null;
+  }
+
+  setPriorityId(product: OperationalActivity, value: number | null): void {
+    if (!product.priority) {
+      product.priority = {} as Priority;
+    }
+    product.priority.idPriority = value ?? undefined;
   }
 
 }
