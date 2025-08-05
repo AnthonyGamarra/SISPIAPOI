@@ -115,7 +115,7 @@
                     <input pInputText
                       [ngModel]="getStrategicObjectiveCodeDisplay(product.strategicAction?.strategicObjective?.idStrategicObjective)"
                       type="text" [disabled]="true" style="max-width: 80%" />
-                    <button *ngIf="editing && !active" pButton type="button" icon="pi pi-search"
+                    <button *ngIf="editing" pButton type="button" icon="pi pi-search"
                       (click)="openOeAeSelectionModal(product)" label=""
                       [disabled]="state === 2 || state === 4 || !active" class="p-button-sm ml-2">
                     </button>
