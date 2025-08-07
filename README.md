@@ -1,59 +1,89 @@
-# Sispoiplan
+# Proyecto Front-End: Sispoiplan
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.15.
+Este proyecto es una aplicación front-end desarrollada con Angular. Está diseñado para gestionar y visualizar datos financieros mediante una interfaz interactiva y responsiva.
 
-## Development server
+## Estructura del Proyecto
 
-To start a local development server, run:
+La estructura principal del proyecto incluye los siguientes directorios y archivos:
 
+- **src/app**: Contiene la lógica principal de la aplicación.
+  - **components/main-components**: Contiene los componentes principales de la aplicación.
+    - **form9**: Componente que incluye una tabla de matriz para la gestión de datos financieros.
+      - `form9.component.scss`: Estilos específicos para el componente, incluyendo diseño responsivo y personalización de elementos interactivos.
+      - `form9.component.html`: Estructura HTML del componente, que define la tabla y los elementos interactivos.
+      - `form9.component.ts`: Lógica y funcionalidad del componente, incluyendo manejo de eventos y datos.
+  - **services**: Contiene los servicios utilizados para la comunicación con APIs y la gestión de datos.
+  - **models**: Define las interfaces y modelos de datos utilizados en la aplicación.
+
+- **src/assets**: Contiene recursos estáticos como imágenes, íconos y archivos de configuración.
+
+- **src/environments**: Contiene configuraciones específicas para diferentes entornos (desarrollo, producción).
+
+- **tsconfig.json**: Configuración principal de TypeScript para el proyecto.
+- **tsconfig.spec.json**: Configuración de TypeScript para pruebas unitarias.
+
+## Configuración del Proyecto
+
+### Requisitos Previos
+
+Antes de comenzar, asegúrate de tener instalados los siguientes programas:
+
+- [Node.js](https://nodejs.org/)
+- [Angular CLI](https://angular.io/cli)
+
+### Instalación
+
+1. Clona este repositorio en tu máquina local:
+   ```bash
+   git clone <URL_DEL_REPOSITORIO>
+   cd sispoiplan
+   ```
+
+2. Instala las dependencias del proyecto:
+   ```bash
+   npm install
+   ```
+
+### Ejecución del Proyecto
+
+Para iniciar el servidor de desarrollo, ejecuta:
 ```bash
 ng serve
 ```
+Esto iniciará la aplicación en `http://localhost:4200`.
 
-Once the server is running, open your browser and navigate to `http://10.0.2.144:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Pruebas Unitarias
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+Para ejecutar las pruebas unitarias, utiliza:
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
+## Estilos y Diseño
 
-For end-to-end (e2e) testing, run:
+Los estilos del proyecto están definidos principalmente en archivos SCSS. Por ejemplo:
 
-```bash
-ng e2e
-```
+- **`form9.component.scss`**: Contiene estilos personalizados para la tabla de matriz utilizada en el componente `Form9Component`. Incluye diseño responsivo, personalización de columnas y filas, y estilos para elementos interactivos como botones y selects.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Contribución
 
-## Additional Resources
+Si deseas contribuir al proyecto, sigue estos pasos:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+1. Crea un fork del repositorio.
+2. Crea una nueva rama para tu funcionalidad o corrección:
+   ```bash
+   git checkout -b feature/nueva-funcionalidad
+   ```
+3. Realiza tus cambios y crea un commit:
+   ```bash
+   git commit -m "Descripción de los cambios"
+   ```
+4. Envía tus cambios al repositorio remoto:
+   ```bash
+   git push origin feature/nueva-funcionalidad
+   ```
+5. Abre un pull request en el repositorio original.
+
+## Licencia
+
+Este proyecto está bajo la licencia [MIT](https://opensource.org/licenses/MIT).
