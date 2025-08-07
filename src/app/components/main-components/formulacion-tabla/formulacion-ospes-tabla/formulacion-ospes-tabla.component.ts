@@ -514,6 +514,10 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         idPriority: activity.priority?.idPriority
       } as Priority,
       
+      measurementType: {
+        idMeasurementType: activity.measurementType?.idMeasurementType
+      } as MeasurementType,
+      
       // Arrays NUEVOS
       monthlyGoals: this.createCleanMonthlyGoals(activity.monthlyGoals || []),
       monthlyBudgets: this.createCleanMonthlyBudgets(activity.monthlyBudgets || [])
@@ -536,31 +540,15 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       validationErrors.push('Unidad de medida');
     }
 
-    if (!this.editingActivity.managementCenter?.idManagementCenter) {
-      validationErrors.push('Centro gestor');
-    }
-
-    if (!this.editingActivity.costCenter?.idCostCenter) {
-      validationErrors.push('Centro de costos');
-    }
-
-    if (!this.editingActivity.financialFund?.idFinancialFund) {
-      validationErrors.push('Fondo financiero');
-    }
-
-    if (!this.editingActivity.priority?.idPriority) {
-      validationErrors.push('Prioridad');
-    }
-
     // Validar metas y presupuestos
-    const hasValidGoals = this.editingActivity.monthlyGoals?.some(goal => (goal.value || 0) > 0);
+    const hasValidGoals = this.editingActivity.monthlyGoals?.some(goal => (goal.value || 0) >= 0);
     if (!hasValidGoals) {
-      validationErrors.push('Al menos una meta mensual debe ser mayor a 0');
+      validationErrors.push('Al menos una meta mensual debe ser mayor o igual a 0');
     }
 
-    const hasValidBudgets = this.editingActivity.monthlyBudgets?.some(budget => (budget.value || 0) > 0);
+    const hasValidBudgets = this.editingActivity.monthlyBudgets?.some(budget => (budget.value || 0) >= 0);
     if (!hasValidBudgets) {
-      validationErrors.push('Al menos un presupuesto mensual debe ser mayor a 0');
+      validationErrors.push('Al menos un presupuesto mensual debe ser mayor o igual a 0');
     }
 
     if (validationErrors.length > 0) {
@@ -579,21 +567,36 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       activityToUpdate.formulation = { idFormulation: this.currentFormulation.idFormulation } as Formulation;
     }
     
-    // Asegurar que los objetos relacionados tengan solo los IDs
+    // Asegurar que los objetos relacionados tengan solo los IDs o sean undefined
     if (activityToUpdate.managementCenter?.idManagementCenter) {
       activityToUpdate.managementCenter = { idManagementCenter: activityToUpdate.managementCenter.idManagementCenter } as ManagementCenter;
+    } else {
+      activityToUpdate.managementCenter = undefined;
     }
     
     if (activityToUpdate.costCenter?.idCostCenter) {
       activityToUpdate.costCenter = { idCostCenter: activityToUpdate.costCenter.idCostCenter } as CostCenter;
+    } else {
+      activityToUpdate.costCenter = undefined;
     }
     
     if (activityToUpdate.financialFund?.idFinancialFund) {
       activityToUpdate.financialFund = { idFinancialFund: activityToUpdate.financialFund.idFinancialFund } as FinancialFund;
+    } else {
+      activityToUpdate.financialFund = undefined;
     }
     
     if (activityToUpdate.priority?.idPriority) {
       activityToUpdate.priority = { idPriority: activityToUpdate.priority.idPriority } as Priority;
+    } else {
+      activityToUpdate.priority = undefined;
+    }
+
+    // Manejar measurementType si existe
+    if (activityToUpdate.measurementType?.idMeasurementType) {
+      activityToUpdate.measurementType = { idMeasurementType: activityToUpdate.measurementType.idMeasurementType } as MeasurementType;
+    } else {
+      activityToUpdate.measurementType = undefined;
     }
 
     this.operationalActivityService.update(activityToUpdate).subscribe({
@@ -616,6 +619,9 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
           const fullPriority = this.priorities.find(p => 
             p.idPriority === activityToUpdate.priority?.idPriority
           );
+          const fullMeasurementType = this.measurementTypes.find(mt => 
+            mt.idMeasurementType === activityToUpdate.measurementType?.idMeasurementType
+          );
 
           // Mantener la estructura sin referencias circulares
           this.prestacionesEconomicasActivities[index] = {
@@ -627,6 +633,7 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
             costCenter: fullCostCenter || activityToUpdate.costCenter,
             financialFund: fullFinancialFund || activityToUpdate.financialFund,
             priority: fullPriority || activityToUpdate.priority,
+            measurementType: fullMeasurementType || activityToUpdate.measurementType,
             monthlyGoals: activityToUpdate.monthlyGoals,
             monthlyBudgets: activityToUpdate.monthlyBudgets
           };
@@ -842,6 +849,12 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   updatePriority(idPriority: number): void {
     if (this.editingActivity) {
       this.editingActivity.priority = { idPriority } as Priority;
+    }
+  }
+
+  updateMeasurementType(idMeasurementType: number): void {
+    if (this.editingActivity) {
+      this.editingActivity.measurementType = { idMeasurementType } as MeasurementType;
     }
   }
 
@@ -1132,11 +1145,11 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         } as StrategicAction : {} as StrategicAction,
         
         // Campos eliminados - van vacíos/nulos
-        financialFund: undefined,
-        managementCenter: undefined,
-        costCenter: undefined,
-        measurementType: undefined,
-        priority: undefined,
+        // financialFund: undefined,
+        // managementCenter: undefined,
+        // costCenter: undefined,
+        // measurementType: undefined,
+        // priority: undefined,
         
         // Todo el presupuesto consolidado va a servicios
         goods: 0,
@@ -1219,6 +1232,9 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
           goods: 0,
           remuneration: 0,
           services: totalMonthlyBudget,
+                    
+          // Actualizar metas trimestrales basadas en las metas mensuales consolidadas
+          goals: this.convertMonthlyToQuarterlyGoals(consolidatedItem.consolidatedGoals || []),
           
           monthlyGoals: this.createMonthlyGoalsFromConsolidated(consolidatedItem.consolidatedGoals || []),
           monthlyBudgets: this.createMonthlyBudgetsFromConsolidated(consolidatedItem.consolidatedBudgets || [])
@@ -1254,11 +1270,11 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
           } as StrategicAction : {} as StrategicAction,
           
           // Campos eliminados - van vacíos/nulos
-          financialFund: undefined,
-          managementCenter: undefined,
-          costCenter: undefined,
-          measurementType: undefined,
-          priority: undefined,
+          // financialFund: undefined,
+          // managementCenter: undefined,
+          // costCenter: undefined,
+          // measurementType: undefined,
+          // priority: undefined,
           
           goods: 0,
           remuneration: 0,
@@ -1345,11 +1361,11 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         } as StrategicAction : {} as StrategicAction,
         
         // Campos eliminados - van vacíos/nulos
-        financialFund: undefined,
-        managementCenter: undefined,
-        costCenter: undefined,
-        measurementType: undefined,
-        priority: undefined,
+        // financialFund: undefined,
+        // managementCenter: undefined,
+        // costCenter: undefined,
+        // measurementType: undefined,
+        // priority: undefined,
         
         // Todo el presupuesto consolidado va a servicios
         goods: 0,
