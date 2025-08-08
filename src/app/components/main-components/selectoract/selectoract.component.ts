@@ -134,10 +134,10 @@ export class SelectoractComponent implements OnInit {
           .sort((a, b) => (b.modification ?? 0) - (a.modification ?? 0)) // mayor a menor
           .map(f => {
             let label = '';
-            if (f.modification === 1) label = 'Formulación inicial';
-            else if (f.modification === 2) label = 'Primera modificación';
-            else if (f.modification === 3) label = 'Segunda modificación';
-            else if (f.modification === 4) label = 'Tercera modificación';
+            if (f.modification === 1) label = 'Primera Actualización';
+            else if (f.modification === 2) label = 'Segunda Actualización';
+            else if (f.modification === 3) label = 'Tercera Actualización';
+            else if (f.modification === 4) label = 'Cuarta Actualización';
             else if (f.modification > 4) label = `Modificación ${f.modification}`;
             else label = `Formulación ${f.idFormulation}`;
             return {
