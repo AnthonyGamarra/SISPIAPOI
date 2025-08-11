@@ -17,13 +17,15 @@
   display: block; /* elimina espacios en línea que generan gaps verticales */
 }
 
+
 .system-name {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
   .logo-sispoi {
-      max-width: 35%;
+      max-width: 120%; // Ajusta el ancho del logo central
+      height: 50px; // Ajusta la altura del logo central
       filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
   }
 }
