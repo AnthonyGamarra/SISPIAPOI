@@ -41,13 +41,13 @@
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="measurementTypes"
             [(ngModel)]="row.measurementType"
             optionLabel="name"
             placeholder="Comportamiento"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td><input pInputText type="number" [(ngModel)]="row.metaI" [disabled]="row.idOperationalActivity" /></td>
@@ -61,63 +61,63 @@
         <td><input pInputText type="number" [(ngModel)]="row.servicios" [disabled]="row.idOperationalActivity" /></td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="costCenters"
             [(ngModel)]="row.costCenter"
             optionLabel="costCenterCode"
             placeholder="Centro de Costo"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="managementCenters"
             [(ngModel)]="row.managementCenter"
             optionLabel="name"
             placeholder="Centro Gestor"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="financialFunds"
             [(ngModel)]="row.financialFund"
             optionLabel="name"
             placeholder="Fondo"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="measurementTypes"
             [(ngModel)]="row.measurementType"
             optionLabel="name"
             placeholder="Medida"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="priorities"
             [(ngModel)]="row.priority"
             optionLabel="name"
             placeholder="Prioridad"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td>
-          <p-dropdown
+          <p-select
             [options]="strategicActions"
             [(ngModel)]="row.strategicAction"
             optionLabel="name"
             placeholder="Acción"
             [disabled]="row.idOperationalActivity">
-          </p-dropdown>
+          </p-select>
         </td>
 
         <td class="acciones flex gap-2">

@@ -1,28 +1,28 @@
 <div class="selector-bar grid align-items-center">
   <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Órgano Central:</label>
-    <p-dropdown *ngIf="isSingleDependency; else multipleDeps" [options]="dependencyOptions"
-      [(ngModel)]="selectedDependency" [disabled]="true" class="selector-dropdown" optionLabel="label"
-      optionValue="value" (onChange)="onDependencyChange()"></p-dropdown>
+    <p-select *ngIf="isSingleDependency; else multipleDeps" [options]="dependencyOptions"
+      [(ngModel)]="selectedDependency" [disabled]="true" class="selector-select" optionLabel="label"
+      optionValue="value" (onChange)="onDependencyChange()"></p-select>
     <ng-template #multipleDeps>
-      <p-dropdown [options]="dependencyOptions" [(ngModel)]="selectedDependency" (onChange)="onDependencyChange()"
-        placeholder="Seleccione" class="selector-dropdown" optionLabel="label" optionValue="value" [filter]="true"
-        filterBy="label"></p-dropdown>
+      <p-select [options]="dependencyOptions" [(ngModel)]="selectedDependency" (onChange)="onDependencyChange()"
+        placeholder="Seleccione" class="selector-select" optionLabel="label" optionValue="value" [filter]="true"
+        filterBy="label"></p-select>
     </ng-template>
   </div>
 
   <div class="selector-group col-4 lg:col-1">
     <label class="selector-label">Año:</label>
-    <p-dropdown [options]="optionsAno" [(ngModel)]="selectedAno" (onChange)="onAnoChange()"
-      [disabled]="!selectedDependency" placeholder="Seleccione" class="selector-dropdown" optionLabel="label"
-      optionValue="value"></p-dropdown>
+    <p-select [options]="optionsAno" [(ngModel)]="selectedAno" (onChange)="onAnoChange()"
+      [disabled]="!selectedDependency" placeholder="Seleccione" class="selector-select" optionLabel="label"
+      optionValue="value"></p-select>
   </div>
 
   <div class="selector-group col-8 lg:col-3" *ngIf="formulationExists && foundFormulations.length > 0">
     <label class="selector-label">Etapa:</label>
-    <p-dropdown [options]="modificationOptions" [(ngModel)]="selectedModificationOption"
-      (onChange)="onModificationChange()" placeholder="Seleccione una modificación" class="selector-dropdown"
-      optionLabel="label" [disabled]="foundFormulations.length <= 1"></p-dropdown>
+    <p-select [options]="modificationOptions" [(ngModel)]="selectedModificationOption"
+      (onChange)="onModificationChange()" placeholder="Seleccione una modificación" class="selector-select"
+      optionLabel="label" [disabled]="foundFormulations.length <= 1"></p-select>
   </div>
 
   <div class="selector-group col-6 lg:col-2" *ngIf="
@@ -31,12 +31,12 @@
       selectedModificationOption?.value !== 1
     ">
     <label class="selector-label">A partir de:</label>
-    <input pInputText [(ngModel)]="quarterLabel" [disabled]="true" class="selector-dropdown" />
+    <input pInputText [(ngModel)]="quarterLabel" [disabled]="true" class="selector-select" />
   </div>
 
   <div class="selector-group col-6 lg:col-2" *ngIf="formulationExists && currentFormulationStateLabel">
     <label class="selector-label">Estado:</label>
-    <input pInputText [(ngModel)]="currentFormulationStateLabel" [disabled]="true" class="selector-dropdown" />
+    <input pInputText [(ngModel)]="currentFormulationStateLabel" [disabled]="true" class="selector-select" />
   </div>
 
   <div class="col-12 lg:col-12 flex flex-wrap align-items-center justify-content-end gap-2 file-actions">
@@ -70,8 +70,8 @@
     <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
       *ngIf="formulationExists && selectedModificationOption && hasActivities">
       <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
-      <p-dropdown [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
-        class="selector-dropdown mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-dropdown>
+      <p-select [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
+        class="selector-select mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-select>
       <button pButton type="button" icon="pi pi-download" label="Reporte"
         class="selector p-button-info mr-2 w-full sm:w-auto" (click)="downloadOcR1()"
         [disabled]="isDownloadingR1"></button>
@@ -100,9 +100,9 @@
     </div>
     <div class="p-field mt-3">
       <label for="newState" class="mr-5">Nuevo Estado:</label>
-      <p-dropdown id="newState" [options]="formulationStateOptions" [(ngModel)]="selectedFormulationState"
+      <p-select id="newState" [options]="formulationStateOptions" [(ngModel)]="selectedFormulationState"
         placeholder="Seleccione un nuevo estado" optionLabel="name" optionValue="idFormulationState"
-        appendTo="body"></p-dropdown>
+        appendTo="body"></p-select>
     </div>
   </div>
   <ng-template pTemplate="footer">

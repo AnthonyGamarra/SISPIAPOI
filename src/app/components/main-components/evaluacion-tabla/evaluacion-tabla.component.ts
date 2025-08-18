@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ToastrService } from 'ngx-toastr';
 import { InputTextModule } from 'primeng/inputtext';
@@ -54,7 +54,7 @@ interface Accion {
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule,
+    SelectModule,
     TableModule,
     InputTextModule,
     ButtonModule,
@@ -787,7 +787,6 @@ export class EvaluacionTablaComponent implements OnChanges {
         const formattedActivityId = String(nextCorrelative).padStart(3, '0');
 
         const sapCode = `${formattedObjectiveCode}${formattedActionCode}${formattedCostCenterCode}${formattedActivityId}`;
-        console.log(correlativeCodeStr);
 
         return { sapCode: sapCode, correlativeCode: formattedActivityId };
       }),

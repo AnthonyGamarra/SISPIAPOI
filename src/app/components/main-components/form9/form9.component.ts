@@ -118,7 +118,6 @@ export class Form9Component implements OnInit, OnChanges { // Implement OnChange
   }
 
   private fetchBudgetData(id: number): void {
-    console.log(`Fetching data for idOperationalActivity: ${id}`);
     Promise.all([
       this.budgetCategoryService.getAll().toPromise(),
       this.budgetItemService.getAll().toPromise(),

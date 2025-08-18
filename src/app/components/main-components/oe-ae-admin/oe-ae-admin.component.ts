@@ -10,7 +10,7 @@ import { TableModule } from 'primeng/table';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastrService } from 'ngx-toastr';
@@ -31,7 +31,7 @@ import { TextareaModule } from 'primeng/textarea';
     CardModule,
     DialogModule,
     CheckboxModule,
-    DropdownModule,
+    SelectModule,
     DatePickerModule,
     ConfirmDialogModule,
     TextareaModule

@@ -1,7 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { Table, TableModule } from 'primeng/table';
 import { ToastrService } from 'ngx-toastr';
 import { InputTextModule } from 'primeng/inputtext';
@@ -64,7 +64,7 @@ interface Accion {
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule,
+    SelectModule,
     TableModule,
     InputTextModule,
     ButtonModule,
@@ -929,7 +929,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   }
 
   onSeleccionar(id: number, product: OperationalActivity) {
-    // This method seems to be for the inline dropdown in the table, not the modal
+    // This method seems to be for the inline select in the table, not the modal
     // It updates the product's strategicAction based on the selected ID
     if (!product.strategicAction) {
       product.strategicAction = {} as StrategicAction;
@@ -1112,8 +1112,6 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
             this.products.push(createdActivity);
             this.products = [...this.products];
           }
-          
-          console.log('Actividad consolidada creada físicamente:', createdActivity);
         },
         error: (err) => {
           console.error('Error creating consolidated activity physically:', err);

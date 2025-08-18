@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +37,7 @@ import { Formulation } from '../../../models/logic/formulation.model';
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule,
+    SelectModule,
     InputTextModule,
     TableModule,
     ButtonModule

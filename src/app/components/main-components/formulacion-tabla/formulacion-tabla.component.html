@@ -18,16 +18,16 @@
   <!-- 3.1 Contenido principal cuando SÍ hay formulación -->
   <div *ngIf="currentFormulation">
     <div class="grid mx-auto my-3">
-      <div class="col-6 flex justify-center mr-auto">
+      <div class="col-12 md:col-8 flex justify-center mr-auto">
         <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
           optionLabel="name" optionValue="value" />
       </div>
       <button *ngIf="idDependency != null && +idDependency === 20" pButton label="Programación de prestaciones económicas" icon="pi pi-calendar" 
-        (click)="openPrestacionesEconomicasModal()" class="col-3 add-button ml-auto"
+        (click)="openPrestacionesEconomicasModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
       <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="agregarActividad()"
-        [disabled]="state === 2 || state === 4 || !year || !active" class="col-3 add-button ml-auto">
+        [disabled]="state === 2 || state === 4 || !year || !active" class="col-6 md:col-2 add-button ml-auto">
       </button>
     </div>
 
@@ -150,11 +150,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
+                  <p-select [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
                     [ngModel]="getManagementCenterId(product)" 
                     (ngModelChange)="setManagementCenterId(product, $event)" 
                     [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
@@ -165,11 +165,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
+                  <p-select [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
                     [ngModel]="getCostCenterId(product)" 
                     (ngModelChange)="setCostCenterId(product, $event)" 
                     [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getCostCenterName(product.costCenter?.idCostCenter) }}
@@ -180,11 +180,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
+                  <p-select [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
                     [ngModel]="getFinancialFundId(product)" 
                     (ngModelChange)="setFinancialFundId(product, $event)" 
                     [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
@@ -205,7 +205,7 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name"
-                    [disabled]="state === 2 || state === 4 || !active || (product.active !== false && product.idOperationalActivity > 0)" style="resize: none"></textarea>
+                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0" style="resize: none"></textarea>
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
                     pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
@@ -227,11 +227,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown [options]="measurementTypes" optionLabel="name" optionValue="idMeasurementType"
+                  <p-select [options]="measurementTypes" optionLabel="name" optionValue="idMeasurementType"
                     [ngModel]="getMeasurementTypeId(product)" 
                     (ngModelChange)="setMeasurementTypeId(product, $event)" 
                     [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getMeasurementTypeName(product.measurementType?.idMeasurementType) }}
@@ -242,11 +242,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown [options]="priorities" optionLabel="name" optionValue="idPriority"
+                  <p-select [options]="priorities" optionLabel="name" optionValue="idPriority"
                     [ngModel]="getPriorityId(product)" 
                     (ngModelChange)="setPriorityId(product, $event)" 
                     [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-dropdown>
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getPriorityName(product.priority?.idPriority) }}
@@ -354,16 +354,16 @@
     [resizable]="true" class="dialog-header" draggable="false">
     <div class="p-fluid p-grid">
       <div class="mt-5"> <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
-        <p-dropdown id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
+        <p-select id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
           optionValue="idStrategicObjective" [(ngModel)]="tempSelectedStrategicObjectiveId"
           (onChange)="onModalStrategicObjectiveChange($event)" placeholder="Selecciona un objetivo" [filter]="true"
-          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-dropdown>
+          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-select>
       </div>
       <div class="mt-5"> <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
-        <p-dropdown id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
+        <p-select id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
           optionValue="idStrategicAction" [(ngModel)]="tempSelectedStrategicActionId"
           [disabled]="!tempSelectedStrategicObjectiveId" placeholder="Selecciona una acción" [filter]="true"
-          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-dropdown>
+          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-select>
       </div>
     </div>
     <ng-template pTemplate="footer"> <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()"

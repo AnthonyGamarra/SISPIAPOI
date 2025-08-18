@@ -5,8 +5,8 @@
         Administrar Maestros - {{ currentFormulationType?.name }} del año:
       </h2>
       <span class="col-auto my-auto">
-        <p-dropdown [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
-          placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
+        <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
+          placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-select>
       </span>
     </div>
     <div class="grid mx-auto my-3">
@@ -198,19 +198,19 @@
     <div class="p-fluid p-grid">
       <div class="mt-5">
         <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
-        <p-dropdown id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
+        <p-select id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
           optionValue="idStrategicObjective" [(ngModel)]="tempSelectedStrategicObjectiveId"
           (onChange)="onModalStrategicObjectiveChange($event)" placeholder="Selecciona un objetivo" [filter]="true"
           filterBy="name" appendTo="body" class="p-fluid mt-5">
-        </p-dropdown>
+        </p-select>
       </div>
       <div class="mt-5">
         <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
-        <p-dropdown id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
+        <p-select id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
           optionValue="idStrategicAction" [(ngModel)]="tempSelectedStrategicActionId"
           [disabled]="!tempSelectedStrategicObjectiveId" placeholder="Selecciona una acción" [filter]="true"
           filterBy="name" appendTo="body" class="p-fluid mt-5">
-        </p-dropdown>
+        </p-select>
       </div>
     </div>
     <ng-template pTemplate="footer">

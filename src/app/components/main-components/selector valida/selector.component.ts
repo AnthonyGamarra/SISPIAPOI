@@ -2,7 +2,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
@@ -24,7 +24,7 @@ import { MinMaxYears } from '../../../models/logic/min-max-years.model';
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule,
+    SelectModule,
     ButtonModule,
     LottieComponent,
     InputTextModule

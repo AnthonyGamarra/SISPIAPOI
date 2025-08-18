@@ -3,76 +3,76 @@
 <div class="selector-bar grid align-items-center">
   <div class="selector-group col-12 lg:col-3">
     <label class="selector-label">Dependencia:</label>
-    <p-dropdown
+    <p-select
       [options]="dependencyOptions"
       [(ngModel)]="selectedDependency"
       (onChange)="actualizarActividades()"
       placeholder="Seleccione"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
       [filter]="true"
       filterBy="label">
-    </p-dropdown>
+    </p-select>
   </div>
 
 
   <div class="selector-group col-1 lg:col-1">
     <label class="selector-label">Año:</label>
-    <p-dropdown
+    <p-select
       [options]="optionsAno"
       [(ngModel)]="selectedAno"
       (onChange)="actualizarActividades()"
       placeholder="Seleccione"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value">
-    </p-dropdown>
+    </p-select>
   </div>
 
 
   <div class="selector-group col-8 lg:col-2">
     <label class="selector-label">Modificación:</label>
-    <p-dropdown
+    <p-select
       [options]="modificationOptions"
       [(ngModel)]="selectedModificationOption"
       (onChange)="onModificationChange()"
       placeholder="Seleccione una modificación"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
       [disabled]="foundFormulations.length <= 1"
-    ></p-dropdown>
+    ></p-select>
   </div>
 
   <div class="selector-group col-2 lg:col-2">
     <label class="selector-label">Centro de gestión:</label>
-    <p-dropdown
+    <p-select
       [options]="managementCenterOptions"
       [(ngModel)]="selectedManagementCenterId"
       (onChange)="onManagementCenterChange($event)"
       placeholder="Seleccione"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
       [disabled]="managementCenterOptions.length === 0">
-    </p-dropdown>
+    </p-select>
   </div>
 
   <div class="selector-group col-6 lg:col-3">
     <label class="selector-label">Actividad registrada:</label>
-    <p-dropdown
+    <p-select
       [options]="activityOptions"
       [(ngModel)]="selectedActivityId"
       (onChange)="onActivityChange($event)"
       placeholder="Seleccione"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
       [disabled]="activityOptions.length === 0"
       [filter]="true"
       filterBy="label">
-    </p-dropdown>
+    </p-select>
   </div>
   <div>
     <button

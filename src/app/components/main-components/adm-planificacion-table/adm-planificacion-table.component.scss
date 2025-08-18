@@ -50,13 +50,13 @@
 
 /* adm-planificacion-table.component.scss */
 
-// Basic styling for the dropdown in the table to manage width
-.formulation-state-dropdown {
+// Basic styling for the select in the table to manage width
+.formulation-state-select {
   min-width: 120px; /* Minimum width to ensure readability */
   // max-width: 180px; /* Optional: Set a max-width if names can be very long but you want to cap it */
   
-  // These styles ensure text within the dropdown's selected value doesn't cause overflow
-  .p-dropdown-label {
+  // These styles ensure text within the select's selected value doesn't cause overflow
+  .p-select-label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -86,11 +86,11 @@
     width: auto !important;
   }
   .p-datatable-tbody > tr > td:nth-child(3) { // State column
-    min-width: 130px; // Ensure enough space for the dropdown
+    min-width: 130px; // Ensure enough space for the select
     width: auto !important;
   }
 
-  .formulation-state-dropdown {
+  .formulation-state-select {
     width: 100%; // Ensure it takes full width of its parent td
     min-width: unset; // Allow it to shrink if the column is very narrow
   }

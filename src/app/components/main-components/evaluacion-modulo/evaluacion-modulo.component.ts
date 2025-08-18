@@ -12,17 +12,8 @@ export class EvaluacionModuloComponent {
 
   onClick() {
   this.router.navigate(['/evaluacion']).then(success => {
-    if (success) {
-      console.log('Navegación a /evaluacion exitosa');
-    } else {
-      console.warn('Navegación a /evaluacion falló');
-    }
   }).catch(err => {
     console.error('Error durante la navegación:', err);
   });
-  }
-  onModuleClick(module: string) {
-  console.log('Módulo seleccionado:', module);
-    // Aquí puedes agregar navegación o lógica específica
   }
 }

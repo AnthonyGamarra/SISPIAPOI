@@ -5,8 +5,8 @@
          <div class="grid">
             <div class="col-6">
                <span>Año:</span>
-               <p-dropdown [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
-                  placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-dropdown>
+               <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()"
+                  placeholder="Seleccionar Año" [showClear]="false" class="mx-5"></p-select>
             </div>
          </div>
       </div>
@@ -170,9 +170,9 @@
    <div class="p-fluid">
       <div class="p-field">
          <label for="newQuarter" class="mr-8 lg:mr-8">Abierto desde:</label>
-         <p-dropdown id="newQuarter" [options]="quarterOptions" [(ngModel)]="newModificationQuarter" optionLabel="label"
+         <p-select id="newQuarter" [options]="quarterOptions" [(ngModel)]="newModificationQuarter" optionLabel="label"
             optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
-         </p-dropdown>
+         </p-select>
       </div>
    </div>
 
@@ -189,9 +189,9 @@
    <div class="p-fluid">
       <div class="p-field">
          <label for="newQuarterOODDGestion" class="mr-8 lg:mr-8">Abierto desde:</label>
-         <p-dropdown id="newQuarterOODDGestion" [options]="quarterOptions" [(ngModel)]="newModificationQuarterOODDGestion" optionLabel="label"
+         <p-select id="newQuarterOODDGestion" [options]="quarterOptions" [(ngModel)]="newModificationQuarterOODDGestion" optionLabel="label"
             optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
-         </p-dropdown>
+         </p-select>
       </div>
    </div>
 
@@ -208,9 +208,9 @@
    <div class="p-fluid">
       <div class="p-field">
          <label for="newQuarterPrestacionesEconomicas" class="mr-8 lg:mr-8">Abierto desde:</label>
-         <p-dropdown id="newQuarterPrestacionesEconomicas" [options]="quarterOptions" [(ngModel)]="newModificationQuarterPrestacionesEconomicas" optionLabel="label"
+         <p-select id="newQuarterPrestacionesEconomicas" [options]="quarterOptions" [(ngModel)]="newModificationQuarterPrestacionesEconomicas" optionLabel="label"
             optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
-         </p-dropdown>
+         </p-select>
       </div>
    </div>
 

@@ -3,7 +3,7 @@
 import { Component, EventEmitter, OnInit, Output, inject, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
@@ -33,7 +33,7 @@ import { OcReportService } from '../../../core/services/logic/oc-report.service'
   imports: [
     CommonModule,
     FormsModule,
-    DropdownModule,
+    SelectModule,
     ButtonModule,
     InputTextModule,
     DialogModule,

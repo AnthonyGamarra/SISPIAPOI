@@ -2,7 +2,7 @@
 <div class="oe-ae-admin-container mx-auto">
   <div class="p-mb-4 flex flex-column gap-3">
     <div class="flex align-items-center gap-2">
-      <p-dropdown [options]="years" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)" [showClear]="false" optionLabel="label" [style]="{width: '150px'}"></p-dropdown>
+      <p-select [options]="years" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)" [showClear]="false" optionLabel="label" [style]="{width: '150px'}"></p-select>
       <button pButton label="Replicar" icon="pi pi-copy" class="add-button" (click)="openReplicateDialog()"></button>
     </div>
 

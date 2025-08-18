@@ -4,6 +4,31 @@
   overflow-y: auto;
 }
 
+// Estilos para validación de trimestres
+.month-locked {
+  background-color: #f0f0f0 !important;
+  
+  .locked-input {
+    background-color: #f5f5f5 !important;
+    color: #888 !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    
+    &:disabled {
+      background-color: #f5f5f5 !important;
+      color: #888 !important;
+    }
+  }
+}
+
+.month-editable {
+  background-color: #ffffcc;
+  
+  input {
+    background-color: #ffffff;
+  }
+}
+
 .dependency-section {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -95,9 +120,9 @@ input[pInputText], textarea[pTextarea] {
   }
 }
 
-// Estilos para dropdowns en modo edición
+// Estilos para selects en modo edición
 :host ::ng-deep {
-  .p-dropdown {
+  .p-select {
     width: 100% !important;
     
     &.p-focus {
@@ -105,19 +130,19 @@ input[pInputText], textarea[pTextarea] {
       box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2) !important;
     }
     
-    .p-dropdown-label {
+    .p-select-label {
       padding: 4px 8px;
       font-size: 0.875rem;
     }
     
-    .p-dropdown-trigger {
+    .p-select-trigger {
       width: 24px;
     }
   }
   
-  .p-dropdown-panel {
-    .p-dropdown-items {
-      .p-dropdown-item {
+  .p-select-panel {
+    .p-select-items {
+      .p-select-item {
         padding: 6px 12px;
         font-size: 0.875rem;
         

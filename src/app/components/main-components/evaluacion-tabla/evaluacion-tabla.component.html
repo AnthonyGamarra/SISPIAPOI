@@ -191,14 +191,14 @@
             <td >
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown
+                  <p-select
                     [options]="financialFunds"
                     optionLabel="name"
                     optionValue="idFinancialFund"
                     [(ngModel)]="product.financialFund.idFinancialFund"
                     [style]="{ width: '100%' }"
                     [disabled]="state === 3"
-                    appendTo="body"> </p-dropdown>
+                    appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
@@ -209,14 +209,14 @@
             <td >
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown
+                  <p-select
                     [options]="managementCenters"
                     optionLabel="name"
                     optionValue="idManagementCenter"
                     [(ngModel)]="product.managementCenter.idManagementCenter"
                     [style]="{ width: '100%' }"
                     [disabled]="state === 3"
-                    appendTo="body"> </p-dropdown>
+                    appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
@@ -227,14 +227,14 @@
             <td >
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown
+                  <p-select
                     [options]="costCenters"
                     optionLabel="name"
                     optionValue="idCostCenter"
                     [(ngModel)]="product.costCenter.idCostCenter"
                     [style]="{ width: '100%' }"
                     [disabled]="state === 3"
-                    appendTo="body"> </p-dropdown>
+                    appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getCostCenterName(product.costCenter?.idCostCenter) }}
@@ -245,14 +245,14 @@
             <td >
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown
+                  <p-select
                     [options]="measurementTypes"
                     optionLabel="name"
                     optionValue="idMeasurementType"
                     [(ngModel)]="product.measurementType.idMeasurementType"
                     [style]="{ width: '100%' }"
                     [disabled]="state === 3"
-                    appendTo="body"> </p-dropdown>
+                    appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getMeasurementTypeName(product.measurementType?.idMeasurementType) }}
@@ -263,14 +263,14 @@
             <td >
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-dropdown
+                  <p-select
                     [options]="priorities"
                     optionLabel="name"
                     optionValue="idPriority"
                     [(ngModel)]="product.priority.idPriority"
                     [style]="{ width: '100%' }"
                     [disabled]="state === 3"
-                    appendTo="body"> </p-dropdown>
+                    appendTo="body"> </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getPriorityName(product.priority?.idPriority) }}
@@ -459,7 +459,7 @@
 </div>
 <p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true" [resizable]="true" class="dialog-header" draggable="false">
   <div class="p-fluid p-grid"> <div class="mt-5"> <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
-      <p-dropdown
+      <p-select
         id="strategicObjective"
         [options]="strategicObjectives"
         optionLabel="name"
@@ -470,10 +470,10 @@
         [filter]="true"
         filterBy="name"
         appendTo="body"
-        class="p-fluid mt-5"> </p-dropdown>
+        class="p-fluid mt-5"> </p-select>
     </div>
     <div class="mt-5"> <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
-      <p-dropdown
+      <p-select
         id="strategicAction"
         [options]="filteredStrategicActions"
         optionLabel="name"
@@ -484,7 +484,7 @@
         [filter]="true"
         filterBy="name"
         appendTo="body"
-        class="p-fluid mt-5"> </p-dropdown>
+        class="p-fluid mt-5"> </p-select>
     </div>
   </div>
   <ng-template pTemplate="footer"> <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()" styleClass="p-button-text" class="cancel-button"></button>

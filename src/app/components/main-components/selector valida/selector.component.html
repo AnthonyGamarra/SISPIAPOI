@@ -1,39 +1,39 @@
 <div class="selector-bar grid align-items-center">
   <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Dependencia:</label>
-    <p-dropdown *ngIf="isSingleDependency; else multipleDeps"
+    <p-select *ngIf="isSingleDependency; else multipleDeps"
       [options]="dependencyOptions"
       [(ngModel)]="selectedDependency"
       [disabled]="true"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
-    ></p-dropdown>
+    ></p-select>
     <ng-template #multipleDeps>
-      <p-dropdown
+      <p-select
         [options]="dependencyOptions"
         [(ngModel)]="selectedDependency"
         (onChange)="verificarFormulacion()"
         placeholder="Seleccione"
-        class="selector-dropdown"
+        class="selector-select"
         optionLabel="label"
         optionValue="value"
         [filter]="true"
-        filterBy="label" ></p-dropdown>
+        filterBy="label" ></p-select>
     </ng-template>
   </div>
 
   <div class="selector-group col-4 lg:col-2">
     <label class="selector-label">Año:</label>
-    <p-dropdown
+    <p-select
       [options]="optionsAno"
       [(ngModel)]="selectedAno"
       (onChange)="verificarFormulacion()"
       placeholder="Seleccione"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       optionValue="value"
-    ></p-dropdown>
+    ></p-select>
   </div>
 
   <div class="col-3 lg:col-5" *ngIf="! formulationExists && foundFormulations.length == 0">
@@ -42,15 +42,15 @@
 
   <div class="selector-group col-8 lg:col-2" *ngIf="formulationExists && foundFormulations.length > 0">
     <label class="selector-label">Etapa:</label>
-    <p-dropdown
+    <p-select
       [options]="modificationOptions"
       [(ngModel)]="selectedModificationOption"
       (onChange)="onModificationChange()"
       placeholder="Seleccione una modificación"
-      class="selector-dropdown"
+      class="selector-select"
       optionLabel="label"
       [disabled]="foundFormulations.length <= 1"
-    ></p-dropdown>
+    ></p-select>
   </div>
 
   <div class="selector-group col-7 lg:col-3" *ngIf="formulationExists && quarterLabel">
@@ -59,7 +59,7 @@
       pInputText
       [(ngModel)]="quarterLabel"
       [disabled]="true"
-      class="selector-dropdown"
+      class="selector-select"
     />
   </div>
 

@@ -8,13 +8,17 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TextareaModule } from 'primeng/textarea';
 import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { FileUploadModule } from 'primeng/fileupload';
 import { ToastrService } from 'ngx-toastr';
 
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
 import { DependencyService } from '../../../../core/services/logic/dependency.service';
 import { OperationalActivityService } from '../../../../core/services/logic/operational-activity.service';
+import { ExcelExportService } from '../middlewares/excel-export.service';
+import { ExcelImportService, ImportResult } from '../middlewares/excel-import.service';
+import { AuthService } from '../../../../core/services/authentication/auth.service';
 
 import { Formulation } from '../../../../models/logic/formulation.model';
 import { OperationalActivity } from '../../../../models/logic/operationalActivity.model';
@@ -27,6 +31,7 @@ import { MeasurementType } from '../../../../models/logic/measurementType.model'
 import { Priority } from '../../../../models/logic/priority.model';
 import { MonthlyGoal } from '../../../../models/logic/monthlyGoal.model';
 import { MonthlyBudget } from '../../../../models/logic/monthlyBudget.model';
+import { FormulationState } from '../../../../models/logic/formulationState.model';
 
 import { forkJoin, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -46,8 +51,9 @@ import { map } from 'rxjs/operators';
     ProgressSpinnerModule,
     TextareaModule,
     InputTextModule,
-    DropdownModule,
-    RadioButtonModule
+    SelectModule,
+    RadioButtonModule,
+    FileUploadModule
   ]
 })
 export class FormulacionOspesTablaComponent implements OnDestroy {
@@ -78,6 +84,24 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   showConsolidatedView: boolean = false;
   consolidatedActivities: any[] = [];
   
+  // Propiedades para importación de Excel
+  showImportModal: boolean = false;
+  isImporting: boolean = false;
+  fileUploading: boolean = false;
+  selectedFile: File | null = null;
+  importPreviewData: any[] = [];
+  importErrors: string[] = [];
+  importWarnings: string[] = [];
+  
+  // Propiedades para progreso de importación
+  importProgress: number = 0;
+  importProgressMessage: string = '';
+  
+  // Propiedades para cambio de estado de formulación
+  showChangeStateModal: boolean = false;
+  selectedFormulationState: number | null = null;
+  formulationStateOptions: FormulationState[] = [];
+  
   // Propiedades para manejo automático de actividades
   private activitiesCreatedFromConsolidated: boolean = false;
   private consolidatedActivitiesHash: string = '';
@@ -90,6 +114,9 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private operationalActivityService = inject(OperationalActivityService);
+  private excelExportService = inject(ExcelExportService);
+  private excelImportService = inject(ExcelImportService);
+  private authService = inject(AuthService);
 
   ngOnDestroy(): void {
     this.stopAutoObservation();
@@ -102,8 +129,21 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     }
 
     this.displayModal = true;
+    this.loadFormulationStates(); // Cargar estados disponibles
     this.loadPrestacionesEconomicasData();
     this.startAutoObservation(); // Iniciar observación automática
+  }
+
+  // Método para cargar los estados de formulación disponibles
+  private loadFormulationStates(): void {
+    // Aquí deberías llamar a tu servicio para obtener los estados
+    // Por ahora uso datos hardcodeados basados en tu descripción
+    this.formulationStateOptions = [
+      { idFormulationState: 1, active: true, name: 'Abierto para formulación' },
+      { idFormulationState: 2, active: true, name: 'Aceptado y bloqueado' },
+      { idFormulationState: 3, active: true, name: 'Pendiente de corrección' },
+      { idFormulationState: 4, active: true, name: 'Cerrado' }
+    ];
   }
 
   // Método público para recargar datos desde el componente padre
@@ -446,6 +486,11 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     this.selectedActivityForDetails = null;
     this.lastActivitiesHash = '';
     this.isUpdatingActivities = false; // Resetear bandera de actualización
+    
+    // Resetear estado de importación
+    this.resetImportState();
+    this.showImportModal = false;
+    
     this.modalClosed.emit();
   }
 
@@ -466,6 +511,12 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   }
 
   editActivity(activity: OperationalActivity): void {
+    // Verificar si la formulación permite edición
+    if (!this.isFormulationEditable()) {
+      this.toastr.warning('No se puede editar actividades porque la formulación está inactiva.', 'Formulación inactiva');
+      return;
+    }
+
     // Crear una copia SIMPLE sin referencias circulares
     this.editingActivity = {
       idOperationalActivity: activity.idOperationalActivity,
@@ -659,6 +710,12 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   }
 
   deleteActivity(activity: OperationalActivity): void {
+    // Verificar si la formulación permite edición
+    if (!this.isFormulationEditable()) {
+      this.toastr.warning('No se puede eliminar actividades porque la formulación está inactiva.', 'Formulación inactiva');
+      return;
+    }
+
     if (!activity.idOperationalActivity) {
       return;
     }
@@ -690,6 +747,33 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   getStrategicObjectiveName(id?: number): string {
     if (!id) return '';
     return this.strategicObjectives.find(o => o.idStrategicObjective === id)?.name || '';
+  }
+
+  // Métodos para validación de trimestres
+  isMonthEditable(monthIndex: number): boolean {
+    if (!this.currentFormulation?.modification || this.currentFormulation.modification <= 1) {
+      return true; // Si no hay modificación o es la primera versión, todos los meses son editables
+    }
+
+    const quarter = this.currentFormulation.quarter || 1;
+    const startMonth = (quarter - 1) * 3; // Mes inicial del trimestre actual
+
+    // Desde el trimestre actual en adelante son editables
+    return monthIndex >= startMonth;
+  }
+
+  getMonthEditableClass(monthIndex: number): string {
+    if (!this.isMonthEditable(monthIndex)) {
+      return 'month-locked';
+    }
+    return 'month-editable';
+  }
+
+  isQuarterEditable(quarter: number): boolean {
+    if (!this.currentFormulation?.modification || this.currentFormulation.modification <= 1) {
+      return true;
+    }
+    return this.currentFormulation.quarter === quarter;
   }
 
   getStrategicActionName(id?: number): string {
@@ -742,6 +826,132 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return months[monthOrder - 1] || `Mes ${monthOrder}`;
+  }
+
+  // Métodos para formatear información de formulación
+  getFormulationStageDisplay(): string {
+    if (!this.currentFormulation?.modification) {
+      return 'Formulación inicial';
+    }
+    
+    const modification = this.currentFormulation.modification;
+    if (modification <= 1) {
+      return 'Formulación inicial';
+    }
+    
+    const ordinals = ['', 'Primera', 'Segunda', 'Tercera', 'Cuarta', 'Quinta', 'Sexta', 'Séptima', 'Octava', 'Novena', 'Décima'];
+    const ordinal = ordinals[modification - 1] || `${modification - 1}ª`;
+    return `${ordinal} modificatoria`;
+  }
+
+  getQuarterDisplay(): string {
+    if (!this.currentFormulation?.quarter) {
+      return 'I Trimestre';
+    }
+    
+    const quarter = this.currentFormulation.quarter;
+    const romanNumerals = ['', 'I', 'II', 'III', 'IV'];
+    const roman = romanNumerals[quarter] || `${quarter}`;
+    return `${roman} Trimestre`;
+  }
+
+  // Método para verificar si la formulación permite edición
+  isFormulationEditable(): boolean {
+    if (!this.currentFormulation?.active) {
+      return false; // Si no está activa, no se puede editar
+    }
+    
+    // Estados que permiten edición: 1=Abierto para formulación, 3=Pendiente de corrección
+    const editableStates = [1, 3];
+    const stateId = this.currentFormulation?.formulationState?.idFormulationState;
+    
+    return editableStates.includes(stateId || 0);
+  }
+
+  // Método para verificar si el usuario es administrador
+  isAdmin(): boolean {
+    return this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
+  }
+
+  // Métodos para el estado de formulación
+  getFormulationStateLabel(): string {
+    if (!this.currentFormulation?.formulationState) {
+      return 'Sin estado';
+    }
+    return this.currentFormulation.formulationState.name || 'Estado desconocido';
+  }
+
+  getFormulationStateIcon(): string {
+    const stateId = this.currentFormulation?.formulationState?.idFormulationState;
+    switch (stateId) {
+      case 1: return 'pi pi-unlock'; // Abierto para formulación
+      case 2: return 'pi pi-lock'; // Aceptado y bloqueado
+      case 3: return 'pi pi-exclamation-triangle'; // Pendiente de corrección
+      case 4: return 'pi pi-times-circle'; // Cerrado
+      default: return 'pi pi-question-circle';
+    }
+  }
+
+  getFormulationStateColor(): string {
+    const stateId = this.currentFormulation?.formulationState?.idFormulationState;
+    switch (stateId) {
+      case 1: return '#28a745'; // Verde - Abierto
+      case 2: return '#17a2b8'; // Azul - Aceptado y bloqueado
+      case 3: return '#ffc107'; // Amarillo - Pendiente de corrección
+      case 4: return '#dc3545'; // Rojo - Cerrado
+      default: return '#6c757d'; // Gris - Desconocido
+    }
+  }
+
+  getEditabilityMessage(): string {
+    if (!this.currentFormulation?.active) {
+      return 'Esta formulación no está activa. No se permite editar actividades ni importar datos. (SOLO VISUALIZACIÓN)';
+    }
+    
+    const stateId = this.currentFormulation?.formulationState?.idFormulationState;
+    switch (stateId) {
+      case 2:
+        return 'Esta formulación está aceptada y bloqueada. No se permite realizar modificaciones.';
+      case 4:
+        return 'Esta formulación está cerrada. No se permite realizar modificaciones.';
+      default:
+        return 'Esta formulación no permite edición en su estado actual.';
+    }
+  }
+
+  // Método para cambiar el estado de la formulación
+  changeFormulationState(): void {
+    if (!this.selectedFormulationState || !this.currentFormulation?.idFormulation) {
+      return;
+    }
+
+    // Crear una copia de la formulación actual con el nuevo estado
+    const updateData: Formulation = {
+      ...this.currentFormulation,
+      formulationState: {
+        idFormulationState: this.selectedFormulationState
+      } as FormulationState
+    };
+
+    this.formulationService.update(updateData).subscribe({
+      next: (updatedFormulation) => {
+        // Actualizar la formulación actual
+        if (this.currentFormulation && updatedFormulation.formulationState) {
+          this.currentFormulation.formulationState = updatedFormulation.formulationState;
+        }
+        
+        this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
+        this.showChangeStateModal = false;
+        this.selectedFormulationState = null;
+        
+        // Recargar datos si es necesario
+        this.reloadData();
+      },
+      error: (err) => {
+        console.error('Error updating formulation state:', err);
+        this.toastr.error('Error al actualizar el estado de la formulación.', 'Error');
+      }
+    });
   }
 
   // Funciones para calcular valores agregados (evita loops en template)
@@ -891,6 +1101,28 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     return activity.monthlyBudgets.reduce((total, budget) => total + (budget.value || 0), 0);
   }
 
+  // Método para generar nombres descriptivos para actividades consolidadas
+  private generateConsolidatedName(originalName: string): string {
+    if (!originalName) {
+      return 'Actividad Consolidada';
+    }
+
+    const name = originalName.toLowerCase().trim();
+    
+    if (name.includes('sepelio')) {
+      return 'Nombre de actividad para sepelio';
+    } else if (name.includes('maternidad')) {
+      return 'Nombre de actividad para maternidad';
+    } else if (name.includes('incapacidad temporal')) {
+      return 'Nombre de actividad para incapacidad temporal';
+    } else if (name.includes('lactancia')) {
+      return 'Nombre de actividad para lactancia';
+    } else {
+      // Para otros casos, mantener el nombre original con prefijo descriptivo
+      return `Nombre de actividad para ${originalName.toLowerCase()}`;
+    }
+  }
+
   // Métodos para vista consolidada
   generateConsolidatedActivities(): void {
     if (!this.prestacionesEconomicasActivities?.length) {
@@ -929,7 +1161,7 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         const consolidatedItem = {
           groupKey,
           strategicAction: activity.strategicAction,
-          name: activity.name,
+          name: this.generateConsolidatedName(activity.name),
           measurementUnit: activity.measurementUnit,
           activityCount: 1,
           consolidatedGoals: new Array(12).fill(0),
@@ -1436,5 +1668,410 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       value: value || 0,
       operationalActivity: {} as OperationalActivity
     } as MonthlyBudget));
+  }
+
+  // Método para exportar a Excel la vista detallada
+  exportToExcel(): void {
+    if (this.showConsolidatedView) {
+      // Exportar vista consolidada
+      this.excelExportService.exportConsolidatedActivitiesToExcel(
+        this.consolidatedActivities,
+        undefined,
+        this.currentFormulation
+      );
+    } else {
+      // Exportar vista detallada
+      this.excelExportService.exportOperationalActivitiesToExcel(
+        this.prestacionesEconomicasActivities,
+        this.groupedActivitiesByDependency,
+        this.dependencyNamesList,
+        undefined,
+        this.currentFormulation
+      );
+    }
+  }
+
+  // Métodos para importación de Excel
+  openImportModal(): void {
+    // Verificar si la formulación permite edición
+    if (!this.isFormulationEditable()) {
+      this.toastr.warning('No se puede importar datos porque la formulación está inactiva.', 'Formulación inactiva');
+      return;
+    }
+
+    this.showImportModal = true;
+    this.resetImportState();
+  }
+
+  closeImportModal(): void {
+    this.showImportModal = false;
+    this.resetImportState();
+  }
+
+  private resetImportState(): void {
+    this.selectedFile = null;
+    this.importPreviewData = [];
+    this.importErrors = [];
+    this.importWarnings = [];
+    this.isImporting = false;
+    this.fileUploading = false;
+    this.importProgress = 0;
+    this.importProgressMessage = '';
+  }
+
+  onFileSelected(event: any): void {
+    // Para p-fileUpload, el archivo viene en event.files[0]
+    const file = event.files?.[0] || event.currentFiles?.[0];
+    
+    if (file) {
+      this.fileUploading = true;
+      
+      // Validar que sea un archivo Excel
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        this.toastr.error('Por favor seleccione un archivo Excel válido (.xlsx o .xls)', 'Error');
+        this.fileUploading = false;
+        // Limpiar el archivo seleccionado del p-fileUpload
+        if (event.clear) {
+          event.clear();
+        }
+        return;
+      }
+
+      this.selectedFile = file;
+      this.previewImportData();
+    } else {
+      this.fileUploading = false;
+    }
+  }
+
+  private previewImportData(): void {
+    if (!this.selectedFile) return;
+
+    this.isImporting = true;
+    
+    const importMethod = this.showConsolidatedView 
+      ? this.excelImportService.importConsolidatedActivitiesFromExcel(this.selectedFile)
+      : this.excelImportService.importActivitiesFromExcel(this.selectedFile);
+
+    importMethod.subscribe({
+      next: (result: ImportResult) => {
+        this.isImporting = false;
+        this.importPreviewData = result.activities;
+        this.importErrors = result.errors;
+        this.importWarnings = result.warnings;
+
+        if (result.success && result.activities.length > 0) {
+          this.toastr.info(`Se encontraron ${result.activities.length} actividades para importar.`, 'Vista previa');
+        }
+      },
+      error: (error) => {
+        this.isImporting = false;
+        console.error('Error al procesar archivo:', error);
+        this.toastr.error('Error al procesar el archivo Excel.', 'Error');
+      }
+    });
+  }
+
+  confirmImport(): void {
+    if (!this.importPreviewData.length || !this.currentFormulation) {
+      this.toastr.warning('No hay datos para importar o no hay formulación seleccionada.', 'Advertencia');
+      return;
+    }
+
+    if (this.importErrors.length > 0) {
+      this.toastr.error('Corrija los errores antes de proceder con la importación.', 'Error');
+      return;
+    }
+
+    this.isImporting = true;
+    this.importProgress = 0;
+    this.importProgressMessage = 'Iniciando importación...';
+
+    // Actualizar solo los datos del modal, NO crear actividades físicas
+    this.updateModalDataFromImport();
+  }
+
+  private updateModalDataFromImport(): void {
+    if (!this.importPreviewData.length) {
+      this.isImporting = false;
+      this.closeImportModal();
+      return;
+    }
+
+    this.importProgressMessage = 'Preparando datos para actualización...';
+
+    try {
+      const activitiesToUpdate: OperationalActivity[] = [];
+      const processedActivityIds = new Set<number>(); // Para evitar duplicados
+      let matchedCount = 0;
+
+      // Mapear datos importados a las actividades existentes del modal
+      this.importPreviewData.forEach((importedActivity) => {
+        // Buscar actividades existentes que coincidan
+        const matchingActivities = this.prestacionesEconomicasActivities.filter(activity => {
+          // Comparar por subsidio (nombre) y unidad de medida
+          return activity.name?.toLowerCase().trim() === importedActivity.subsidio?.toLowerCase().trim() &&
+                 activity.measurementUnit?.toLowerCase().trim() === importedActivity.measurementUnit?.toLowerCase().trim();
+        });
+
+        // Si se encuentran actividades coincidentes, actualizar sus datos
+        if (matchingActivities.length > 0) {
+          matchingActivities.forEach(activity => {
+            // Evitar procesar la misma actividad múltiples veces
+            if (activity.idOperationalActivity && processedActivityIds.has(activity.idOperationalActivity)) {
+              return; // Ya procesada, saltar
+            }
+
+            // Actualizar metas mensuales
+            if (activity.monthlyGoals) {
+              activity.monthlyGoals.forEach((goal, index) => {
+                if (index < importedActivity.monthlyGoals.length) {
+                  goal.value = importedActivity.monthlyGoals[index];
+                }
+              });
+            }
+
+            // Actualizar presupuestos mensuales
+            if (activity.monthlyBudgets) {
+              activity.monthlyBudgets.forEach((budget, index) => {
+                if (index < importedActivity.monthlyBudgets.length) {
+                  budget.value = importedActivity.monthlyBudgets[index];
+                }
+              });
+            }
+
+            // Agregar a la lista de actividades para actualizar en BD (solo si no está ya)
+            if (activity.idOperationalActivity && !processedActivityIds.has(activity.idOperationalActivity)) {
+              activitiesToUpdate.push(activity);
+              processedActivityIds.add(activity.idOperationalActivity);
+              matchedCount++;
+            }
+          });
+        }
+      });
+
+      // Actualizar actividades en la base de datos
+      if (activitiesToUpdate.length > 0) {
+        this.importProgressMessage = `Encontradas ${activitiesToUpdate.length} actividades únicas para actualizar en base de datos...`;
+        this.updateActivitiesInDatabase(activitiesToUpdate, matchedCount);
+      } else {
+        this.isImporting = false;
+        this.toastr.warning('No se encontraron actividades coincidentes para actualizar.', 'Advertencia');
+        this.closeImportModal();
+      }
+
+    } catch (error) {
+      console.error('Error al actualizar datos del modal:', error);
+      this.isImporting = false;
+      this.toastr.error('Error al actualizar los datos del modal.', 'Error');
+    }
+  }
+
+  private updateActivitiesInDatabase(activities: OperationalActivity[], expectedCount: number): void {
+    const totalActivities = activities.length;
+    const batchSize = 20; // Procesar 20 actividades por lote
+    const delayBetweenBatches = 10; // 10ms de delay entre lotes
+
+    this.importProgressMessage = `Procesando ${totalActivities} actividades en lotes de ${batchSize}...`;
+    
+    // Procesar actividades en lotes para mejor rendimiento
+    this.processActivityUpdatesInBatches(activities, 0, 0, 0, totalActivities, expectedCount, batchSize, delayBetweenBatches);
+  }
+
+  private processActivityUpdatesInBatches(
+    activities: OperationalActivity[], 
+    batchStartIndex: number,
+    successCount: number, 
+    errorCount: number, 
+    totalActivities: number, 
+    expectedCount: number,
+    batchSize: number,
+    delayBetweenBatches: number
+  ): void {
+    // Si hemos procesado todas las actividades, finalizar
+    if (batchStartIndex >= activities.length) {
+      this.finishImportAndUpdateProcess(successCount, errorCount, expectedCount);
+      return;
+    }
+
+    // Calcular el rango del lote actual
+    const batchEndIndex = Math.min(batchStartIndex + batchSize, activities.length);
+    const currentBatch = activities.slice(batchStartIndex, batchEndIndex);
+    const batchNumber = Math.floor(batchStartIndex / batchSize) + 1;
+    const totalBatches = Math.ceil(activities.length / batchSize);
+
+    console.log(`Procesando lote ${batchNumber}/${totalBatches} (${currentBatch.length} actividades)`);
+    
+    // Actualizar progreso del lote
+    this.importProgress = Math.round((batchStartIndex / totalActivities) * 100);
+    this.importProgressMessage = `Lote ${batchNumber}/${totalBatches}: procesando ${currentBatch.length} actividades...`;
+
+    // Contadores para este lote
+    let batchSuccessCount = 0;
+    let batchErrorCount = 0;
+    const batchTotal = currentBatch.length;
+
+    // Procesar todas las actividades del lote simultáneamente
+    currentBatch.forEach((activity, indexInBatch) => {
+      const globalIndex = batchStartIndex + indexInBatch;
+      
+      // Preparar actividad para actualizar
+      const activityToUpdate = this.prepareActivityForUpdate(activity);
+
+      // Actualizar en la base de datos
+      this.operationalActivityService.update(activityToUpdate).subscribe({
+        next: () => {
+          batchSuccessCount++;
+          console.log(`✓ Actividad ${globalIndex + 1}/${totalActivities} actualizada exitosamente`);
+          
+          // Si es la última del lote, procesar siguiente lote
+          if (batchSuccessCount + batchErrorCount === batchTotal) {
+            const newSuccessCount = successCount + batchSuccessCount;
+            const newErrorCount = errorCount + batchErrorCount;
+            
+            console.log(`Lote ${batchNumber} completado: ${batchSuccessCount} éxitos, ${batchErrorCount} errores`);
+            
+            // Delay antes del siguiente lote
+            setTimeout(() => {
+              this.processActivityUpdatesInBatches(
+                activities, 
+                batchEndIndex, 
+                newSuccessCount, 
+                newErrorCount, 
+                totalActivities, 
+                expectedCount, 
+                batchSize, 
+                delayBetweenBatches
+              );
+            }, delayBetweenBatches);
+          }
+        },
+        error: (error) => {
+          batchErrorCount++;
+          console.error(`✗ Error al actualizar actividad ${globalIndex + 1}/${totalActivities}:`, error);
+          
+          // Si es la última del lote, procesar siguiente lote
+          if (batchSuccessCount + batchErrorCount === batchTotal) {
+            const newSuccessCount = successCount + batchSuccessCount;
+            const newErrorCount = errorCount + batchErrorCount;
+            
+            console.log(`Lote ${batchNumber} completado: ${batchSuccessCount} éxitos, ${batchErrorCount} errores`);
+            
+            // Delay antes del siguiente lote
+            setTimeout(() => {
+              this.processActivityUpdatesInBatches(
+                activities, 
+                batchEndIndex, 
+                newSuccessCount, 
+                newErrorCount, 
+                totalActivities, 
+                expectedCount, 
+                batchSize, 
+                delayBetweenBatches
+              );
+            }, delayBetweenBatches);
+          }
+        }
+      });
+    });
+  }
+
+  private prepareActivityForUpdate(activity: OperationalActivity): OperationalActivity {
+    // Preparar actividad para actualizar (similar al método saveActivity)
+    const activityToUpdate = { ...activity };
+    
+    // Asegurar que la formulación esté incluida
+    if (activity?.formulation?.idFormulation) {
+      activityToUpdate.formulation = { idFormulation: activity.formulation.idFormulation } as Formulation;
+    } else if (this.currentFormulation?.idFormulation) {
+      activityToUpdate.formulation = { idFormulation: this.currentFormulation.idFormulation } as Formulation;
+    }
+    
+    // Limpiar objetos relacionados para evitar problemas de serialización
+    if (activityToUpdate.managementCenter?.idManagementCenter) {
+      activityToUpdate.managementCenter = { idManagementCenter: activityToUpdate.managementCenter.idManagementCenter } as ManagementCenter;
+    } else {
+      activityToUpdate.managementCenter = undefined;
+    }
+    
+    if (activityToUpdate.costCenter?.idCostCenter) {
+      activityToUpdate.costCenter = { idCostCenter: activityToUpdate.costCenter.idCostCenter } as CostCenter;
+    } else {
+      activityToUpdate.costCenter = undefined;
+    }
+    
+    if (activityToUpdate.financialFund?.idFinancialFund) {
+      activityToUpdate.financialFund = { idFinancialFund: activityToUpdate.financialFund.idFinancialFund } as FinancialFund;
+    } else {
+      activityToUpdate.financialFund = undefined;
+    }
+    
+    if (activityToUpdate.priority?.idPriority) {
+      activityToUpdate.priority = { idPriority: activityToUpdate.priority.idPriority } as Priority;
+    } else {
+      activityToUpdate.priority = undefined;
+    }
+
+    if (activityToUpdate.measurementType?.idMeasurementType) {
+      activityToUpdate.measurementType = { idMeasurementType: activityToUpdate.measurementType.idMeasurementType } as MeasurementType;
+    } else {
+      activityToUpdate.measurementType = undefined;
+    }
+
+    return activityToUpdate;
+  }
+
+  private finishImportAndUpdateProcess(successCount: number, errorCount: number, totalMatched: number): void {
+    this.isImporting = false;
+    this.importProgress = 100;
+    this.importProgressMessage = 'Finalizando importación...';
+    
+    // Reagrupar actividades por dependencia después de la actualización
+    this.groupActivitiesByDependency();
+    
+    // Regenerar vista consolidada si está activa
+    if (this.showConsolidatedView) {
+      this.generateConsolidatedActivities();
+    }
+
+    // Mostrar resultados
+    if (successCount > 0) {
+      this.toastr.success(
+        `Se actualizaron ${successCount} actividades en el modal y en la base de datos.`, 
+        'Importación exitosa'
+      );
+    }
+    
+    if (errorCount > 0) {
+      this.toastr.warning(
+        `${errorCount} actividades no se pudieron actualizar en la base de datos.`, 
+        'Advertencia'
+      );
+    }
+
+    if (totalMatched > successCount + errorCount) {
+      this.toastr.info(
+        `Se encontraron ${totalMatched} coincidencias, se procesaron ${successCount + errorCount}.`, 
+        'Información'
+      );
+    }
+    
+    // Pequeño delay antes de cerrar para mostrar el 100%
+    setTimeout(() => {
+      this.closeImportModal();
+    }, 1000);
+  }
+
+  removeImportPreviewItem(index: number): void {
+    this.importPreviewData.splice(index, 1);
+    
+    if (this.importPreviewData.length === 0) {
+      this.resetImportState();
+    }
   }
 }

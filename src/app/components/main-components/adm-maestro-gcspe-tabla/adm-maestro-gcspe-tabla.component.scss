@@ -36,11 +36,11 @@ td .p-celleditor-input {
   outline: none;
 }
 
-.p-dropdown .p-dropdown-label {
+.p-select .p-select-label {
   padding: 8px 10px;
 }
 
-.p-dropdown:not(.p-disabled).p-focus {
+.p-select:not(.p-disabled).p-focus {
   border-color: #007acc;
   box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
 }

@@ -3,7 +3,7 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { AuthService } from '../../../core/services/authentication/auth.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DependencyService } from '../../../core/services/logic/dependency.service';
@@ -14,7 +14,7 @@ import { OperationalActivity } from '../../../models/logic/operationalActivity.m
 @Component({
   selector: 'app-selectoract',
   standalone: true,
-  imports: [CommonModule, DropdownModule, FormsModule, ButtonModule, InputTextModule],
+  imports: [CommonModule, SelectModule, FormsModule, ButtonModule, InputTextModule],
   templateUrl: './selectoract.component.html',
   styleUrl: './selectoract.component.scss'
 })
@@ -128,7 +128,7 @@ export class SelectoractComponent implements OnInit {
       next: formulaciones => {
         this.foundFormulations = formulaciones || [];
         this.formulationExists = this.foundFormulations.length > 0;
-        // Modificación dropdown
+        // Modificación select
         this.modificationOptions = this.foundFormulations
           .slice() // copiar
           .sort((a, b) => (b.modification ?? 0) - (a.modification ?? 0)) // mayor a menor
@@ -156,7 +156,7 @@ export class SelectoractComponent implements OnInit {
           this.selectedManagementCenterId = null;
           return;
         }
-        // Usar la formulación seleccionada en el dropdown de modificación
+        // Usar la formulación seleccionada en el select de modificación
         const formulacion = this.foundFormulations.find(f => f.idFormulation === this.selectedModificationOption) || this.foundFormulations[0];
         this.operationalActivityService.searchByFormulation(formulacion.idFormulation!).subscribe({
           next: actividades => {

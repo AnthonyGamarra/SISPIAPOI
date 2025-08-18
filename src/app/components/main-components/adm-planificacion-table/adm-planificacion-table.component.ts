@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -42,7 +42,7 @@ import { OperationalActivity } from '../../../models/logic/operationalActivity.m
     CommonModule,
     FormsModule,
     TableModule,
-    DropdownModule,
+    SelectModule,
     ButtonModule,
     DialogModule,
     InputNumberModule,
