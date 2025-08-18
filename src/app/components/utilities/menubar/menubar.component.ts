@@ -24,8 +24,11 @@ export class MenubarComponent {
   userMenuItems: MenuItem[] = [];
   settingsMenuItems: MenuItem[] = [];
   showBackButton: boolean = true;
+  userName: string = '';
 
   ngOnInit() {
+    this.loadUserName();
+    
     this.userMenuItems = [
       // { label: 'Perfil', icon: 'pi pi-user', command: () => this.onProfile() },
       { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.onLogout() }
@@ -45,6 +48,22 @@ export class MenubarComponent {
 
     // Verificar la ruta inicial
     this.showBackButton = this.router.url !== '/menu';
+  }
+
+  private loadUserName(): void {
+    const accessToken = this.authService.accessToken;
+    if (accessToken) {
+      try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        // Intentar obtener el nombre del usuario desde diferentes campos posibles del token
+        this.userName = payload.name || payload.username || payload.sub || payload.user || 'Usuario';
+      } catch (e) {
+        console.error('Error decoding token to get user name:', e);
+        this.userName = 'Usuario';
+      }
+    } else {
+      this.userName = 'Usuario';
+    }
   }
 
   onProfile() {

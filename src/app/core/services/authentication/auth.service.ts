@@ -44,11 +44,7 @@ export class AuthService {
   logout(data: AuthTokens) {
     return this.http.post(`${this.BASE_URL}/logout-tokens`, data, { responseType: 'text' }).pipe(
       tap(() => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user_role'); // Clear the stored role on logout
-        localStorage.removeItem('dependencies'); // Clear dependencies on logout
-        this.tokens.set(null);
+        this.clearTokens();
         this.toastr.success('Sesión cerrada correctamente. ¡Hasta pronto!', 'Cierre de sesión');
         this.router.navigate(['/login']);
       })
@@ -64,7 +60,55 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.accessToken;
+    const token = this.accessToken;
+    if (!token) {
+      return false;
+    }
+    
+    // Verificar si el token ha expirado
+    if (this.isTokenExpiredInternal(token)) {
+      // Si el token ha expirado, limpiar automáticamente
+      this.clearTokens();
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * Verifica si el token actual ha expirado (método público)
+   * @returns True si el token ha expirado o no existe, false si aún es válido
+   */
+  isTokenExpired(): boolean {
+    const token = this.accessToken;
+    if (!token) {
+      return true;
+    }
+    return this.isTokenExpiredInternal(token);
+  }
+
+  /**
+   * Verifica si el token JWT ha expirado
+   * @param token El token JWT a verificar
+   * @returns True si el token ha expirado, false si aún es válido
+   */
+  private isTokenExpiredInternal(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000); // Tiempo actual en segundos
+      
+      // 'exp' es el tiempo de expiración en segundos desde epoch
+      if (payload.exp) {
+        return payload.exp < currentTime;
+      }
+      
+      // Si no tiene campo 'exp', considerar que no ha expirado
+      return false;
+    } catch (e) {
+      console.error('Error decoding token to check expiration:', e);
+      // Si hay error al decodificar, considerar que ha expirado
+      return true;
+    }
   }
 
   /**
@@ -98,9 +142,55 @@ export class AuthService {
     return false;
   }
 
+  /**
+   * Limpia los tokens si han expirado
+   */
+  private clearExpiredTokens(): void {
+    if (this.isTokenExpired()) {
+      this.clearTokens();
+    }
+  }
+
+  /**
+   * Limpia todos los tokens del localStorage
+   */
+  private clearTokens(): void {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('dependencies');
+    this.tokens.set(null);
+  }
+
+  /**
+   * Obtiene el tiempo restante antes de que expire el token (en segundos)
+   * @returns Segundos restantes, o 0 si el token ha expirado o no existe
+   */
+  getTokenExpirationTime(): number {
+    const token = this.accessToken;
+    if (!token) {
+      return 0;
+    }
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp) {
+        const remaining = payload.exp - currentTime;
+        return remaining > 0 ? remaining : 0;
+      }
+      
+      return 0;
+    } catch (e) {
+      console.error('Error getting token expiration time:', e);
+      return 0;
+    }
+  }
+
   getDependenciesFromToken(): number[] {
-    // Suponiendo que el token está en localStorage y tiene un campo 'dependencies' como array de números
-    const token = localStorage.getItem('token');
+    // Usar el access_token correcto en lugar de 'token'
+    const token = this.accessToken;
     if (!token) return [];
     try {
       // Decodificar el payload del JWT

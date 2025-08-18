@@ -17,6 +17,11 @@
   display: block; /* elimina espacios en línea que generan gaps verticales */
 }
 
+.logo-sispoi-mobile {
+  display: none !important; /* Oculto por defecto en desktop */
+  height: 33px;
+}
+
 
 .system-name {
   position: absolute;
@@ -24,8 +29,8 @@
   transform: translateX(-50%);
   text-align: center;
   .logo-sispoi {
-      max-width: 120%; // Ajusta el ancho del logo central
-      height: 50px; // Ajusta la altura del logo central
+      max-width: 100%; // Ajusta el ancho del logo central
+      height: 45px; // Ajusta la altura del logo central
       filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
   }
 }
@@ -51,7 +56,25 @@
   border: 1px solid white;
 }
 
+.p-button-text {
+  max-height: 34px;
+}
+
 @media (max-width: 768px) {
+
+  .logo-essalud {
+    display: none !important; /* Ocultar logo EsSalud en móviles */
+  }
+
+  .logo-sispoi-mobile {
+    display: block !important; /* Mostrar logo SISPOI en la posición izquierda en móviles */
+    height: 35px;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
+  }
+
+  .system-name {
+    display: none; /* Ocultar logo central en móviles */
+  }
 
   .logo img {
     height: 25px;
@@ -60,12 +83,6 @@
     padding-top: 0;
     padding-bottom: 0;
     display: block; /* elimina espacios en línea que generan gaps verticales */
-  }
-
-  .system-name {
-    .logo-sispoi {
-        max-width: 55%;
-    }
   }
   
 }
