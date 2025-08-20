@@ -78,7 +78,7 @@
         <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
           <tr [pEditableRow]="product">
             <td >
-              <div class="flex items-center justify-center gap-2">
+              <div class="flex justify-content-center gap-2">
                 <button
                   *ngIf="!editing && state !== 3" pButton
                   pRipple

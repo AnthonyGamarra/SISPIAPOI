@@ -33,6 +33,7 @@ import { ActivityValidatorMiddleware } from './middlewares/activity-validator.mi
 
 // Subcomponentes
 import { FormulacionOspesTablaComponent } from './formulacion-ospes-tabla/formulacion-ospes-tabla.component';
+import { FormulacionSocialesTablaComponent } from './formulacion-sociales-tabla/formulacion-sociales-tabla.component';
 
 import { StrategicObjective } from '../../../models/logic/strategicObjective.model';
 import { StrategicAction } from '../../../models/logic/strategicAction.model';
@@ -76,7 +77,8 @@ interface Accion {
     TextareaModule,
     TooltipModule,
     ProgressSpinnerModule,
-    FormulacionOspesTablaComponent
+    FormulacionOspesTablaComponent,
+    FormulacionSocialesTablaComponent
   ]
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {
@@ -477,14 +479,22 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   @ViewChild('dataTable') table!: Table;
   @ViewChild('ospesTabla') ospesTabla!: FormulacionOspesTablaComponent;
+  @ViewChild('socialesTabla') socialesTabla!: FormulacionSocialesTablaComponent;
   
-  // Método para notificar cambios en actividades al modal de prestaciones económicas
+  // Método para notificar cambios en actividades a los modales
   private notifyActivityChangesToModal(): void {
+    // Notificar al modal de prestaciones económicas
     if (this.ospesTabla && this.ospesTabla.displayModal) {
-      // Recargar datos del modal si está abierto
       setTimeout(() => {
         this.ospesTabla.reloadData();
-      }, 500); // Dar tiempo para que se complete la operación actual
+      }, 500);
+    }
+    
+    // Notificar al modal de prestaciones sociales
+    if (this.socialesTabla && this.socialesTabla.displayModal) {
+      setTimeout(() => {
+        this.socialesTabla.reloadData();
+      }, 500);
     }
   }
   // --- Action Methods ---
@@ -956,6 +966,13 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   openPrestacionesEconomicasModal(): void {
     if (this.ospesTabla) {
       this.ospesTabla.openModal();
+    }
+  }
+
+  // --- Prestaciones Sociales Modal Methods ---
+  openPrestacionesSocialesModal(): void {
+    if (this.socialesTabla) {
+      this.socialesTabla.openModal();
     }
   }
 

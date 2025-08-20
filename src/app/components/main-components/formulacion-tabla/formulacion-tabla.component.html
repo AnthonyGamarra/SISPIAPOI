@@ -7,11 +7,14 @@
   <!-- 2. Mostrar spinner mientras se está buscando la formulación -->
   <div *ngIf="(ano && idDependency) && (isLoadingFormulation || isSearchingFormulation)" class="text-center p-6">
     <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
-    <p class="mt-3 text-gray-600">{{ isSearchingFormulation ? 'Buscando formulación...' : 'Verificando formulación...' }}</p>
+    <p class="mt-3 text-gray-600">{{ isSearchingFormulation ? 'Buscando formulación...' : 'Verificando formulación...'
+      }}</p>
   </div>
 
   <!-- 3.2 Mostrar mensaje cuando NO hay formulación (después de buscar) -->
-  <div *ngIf="(ano && idDependency) && !currentFormulation && !isLoadingFormulation && !isSearchingFormulation && hasSearchedFormulation" class="text-center p-6">
+  <div
+    *ngIf="(ano && idDependency) && !currentFormulation && !isLoadingFormulation && !isSearchingFormulation && hasSearchedFormulation"
+    class="text-center p-6">
     <h3 class="text-lg font-semibold text-gray-600">No se ha iniciado una formulación para el año: {{ ano }}</h3>
   </div>
 
@@ -22,8 +25,14 @@
         <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
           optionLabel="name" optionValue="value" />
       </div>
-      <button *ngIf="idDependency != null && +idDependency === 20" pButton label="Programación de prestaciones económicas" icon="pi pi-calendar" 
+      <button *ngIf="idDependency != null && +idDependency === 20" pButton
+        label="Programación de prestaciones económicas" icon="pi pi-calendar"
         (click)="openPrestacionesEconomicasModal()" class="col-6 md:col-2 add-button ml-auto"
+        [disabled]="!currentFormulation || !ano">
+      </button>
+      <button *ngIf="idDependency != null && +idDependency === 22" pButton
+        label="Programación de prestaciones sociales" icon="pi pi-calendar"
+        (click)="openPrestacionesSocialesModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
       <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="agregarActividad()"
@@ -88,7 +97,7 @@
           <tr [pEditableRow]="product">
 
             <td>
-              <div class="flex items-center justify-center gap-2">
+              <div class="flex justify-content-center gap-2">
                 <button *ngIf="!editing && (state === 1 || state === 3) && active" pButton pRipple type="button"
                   pInitEditableRow icon="pi pi-pencil" (click)="onRowEditInit(product)" text rounded
                   severity="secondary">
@@ -151,10 +160,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
-                    [ngModel]="getManagementCenterId(product)" 
-                    (ngModelChange)="setManagementCenterId(product, $event)" 
-                    [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
+                    [ngModel]="getManagementCenterId(product)" (ngModelChange)="setManagementCenterId(product, $event)"
+                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                  </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
@@ -166,10 +174,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
-                    [ngModel]="getCostCenterId(product)" 
-                    (ngModelChange)="setCostCenterId(product, $event)" 
-                    [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
+                    [ngModel]="getCostCenterId(product)" (ngModelChange)="setCostCenterId(product, $event)"
+                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                  </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getCostCenterName(product.costCenter?.idCostCenter) }}
@@ -181,10 +188,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
-                    [ngModel]="getFinancialFundId(product)" 
-                    (ngModelChange)="setFinancialFundId(product, $event)" 
-                    [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
+                    [ngModel]="getFinancialFundId(product)" (ngModelChange)="setFinancialFundId(product, $event)"
+                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                  </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
@@ -205,7 +211,8 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name"
-                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0" style="resize: none"></textarea>
+                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
+                    style="resize: none"></textarea>
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
                     pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
@@ -216,7 +223,8 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <textarea rows="1" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit"
-                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0" style="resize: none"></textarea>
+                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
+                    style="resize: none"></textarea>
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="21" [autoResize]="true"
                     pTextarea [disabled]="true"
@@ -228,10 +236,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="measurementTypes" optionLabel="name" optionValue="idMeasurementType"
-                    [ngModel]="getMeasurementTypeId(product)" 
-                    (ngModelChange)="setMeasurementTypeId(product, $event)" 
-                    [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
+                    [ngModel]="getMeasurementTypeId(product)" (ngModelChange)="setMeasurementTypeId(product, $event)"
+                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                  </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getMeasurementTypeName(product.measurementType?.idMeasurementType) }}
@@ -243,10 +250,9 @@
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="priorities" optionLabel="name" optionValue="idPriority"
-                    [ngModel]="getPriorityId(product)" 
-                    (ngModelChange)="setPriorityId(product, $event)" 
-                    [style]="{ width: '100%' }"
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"> </p-select>
+                    [ngModel]="getPriorityId(product)" (ngModelChange)="setPriorityId(product, $event)"
+                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                  </p-select>
                 </ng-template>
                 <ng-template pTemplate="output">
                   {{ getPriorityName(product.priority?.idPriority) }}
@@ -393,16 +399,15 @@
   </p-dialog>
 
   <!-- Subcomponente para Prestaciones Económicas -->
-  <app-formulacion-ospes-tabla 
-    #ospesTabla
-    [currentFormulation]="currentFormulation"
-    [selectedSize]="selectedSize"
-    [strategicObjectives]="strategicObjectives"
-    [strategicActions]="strategicActions"
-    [financialFunds]="financialFunds"
-    [managementCenters]="managementCenters"
-    [costCenters]="costCenters"
-    [measurementTypes]="measurementTypes"
-    [priorities]="priorities"
-    (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
+  <app-formulacion-ospes-tabla #ospesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
+    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions" [financialFunds]="financialFunds"
+    [managementCenters]="managementCenters" [costCenters]="costCenters" [measurementTypes]="measurementTypes"
+    [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
   </app-formulacion-ospes-tabla>
+
+  <!-- Subcomponente para Prestaciones Sociales -->
+  <app-formulacion-sociales-tabla #socialesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
+    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions" [financialFunds]="financialFunds"
+    [managementCenters]="managementCenters" [costCenters]="costCenters" [measurementTypes]="measurementTypes"
+    [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
+  </app-formulacion-sociales-tabla>

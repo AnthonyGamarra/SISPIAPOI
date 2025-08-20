@@ -1,8 +1,9 @@
 .adm-container {
   padding: 2rem 0.5rem;
   max-width: 90rem;
+
   @media screen and (max-width: 768px) {
-    max-width: 90vw;    
+    max-width: 90vw;
   }
 }
 
@@ -11,13 +12,13 @@
 }
 
 ::ng-deep .p-paginator-page.p-paginator-page-selected {
-    background: var(--secondary-light) !important;
-    color: var(--primary) !important;
+  background: var(--secondary-light) !important;
+  color: var(--primary) !important;
 }
 
 .add-button {
   background-color: var(--primary) !important;
-  color: white !important;  
+  color: white !important;
   border: none !important;
   border: 1px solid transparent !important;
   padding: 10px;
@@ -52,9 +53,10 @@
 
 // Basic styling for the select in the table to manage width
 .formulation-state-select {
-  min-width: 120px; /* Minimum width to ensure readability */
+  min-width: 120px;
+  /* Minimum width to ensure readability */
   // max-width: 180px; /* Optional: Set a max-width if names can be very long but you want to cap it */
-  
+
   // These styles ensure text within the select's selected value doesn't cause overflow
   .p-select-label {
     overflow: hidden;
@@ -70,22 +72,27 @@
     overflow-x: auto;
   }
 
-  .p-datatable-sm .p-datatable-thead > tr > th,
-  .p-datatable-sm .p-datatable-tbody > tr > td {
+  .p-datatable-sm .p-datatable-thead>tr>th,
+  .p-datatable-sm .p-datatable-tbody>tr>td {
     padding: 0.5rem; // Adjust padding for smaller cells
     font-size: 0.8rem; // Smaller font size
   }
 
   // Adjust column widths for smaller screens, use !important to override PrimeNG defaults
-  .p-datatable-tbody > tr > td:nth-child(1) { // Dependency column
+  .p-datatable-tbody>tr>td:nth-child(1) {
+    // Dependency column
     min-width: 150px; // Ensure enough space for dependency name
     width: auto !important; // Let content dictate width more freely
   }
-  .p-datatable-tbody > tr > td:nth-child(2) { // Quarter column
+
+  .p-datatable-tbody>tr>td:nth-child(2) {
+    // Quarter column
     min-width: 80px;
     width: auto !important;
   }
-  .p-datatable-tbody > tr > td:nth-child(3) { // State column
+
+  .p-datatable-tbody>tr>td:nth-child(3) {
+    // State column
     min-width: 130px; // Ensure enough space for the select
     width: auto !important;
   }
@@ -141,7 +148,7 @@
 
 ::ng-deep .p-confirmdialog-accept-button {
   background-color: var(--primary) !important;
-  color: white !important;  
+  color: white !important;
   border: none !important;
   border: 1px solid transparent !important;
 }

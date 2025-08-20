@@ -21,19 +21,19 @@ import { FormulationService } from '../../../core/services/logic/formulation.ser
 import { FormulationStateService } from '../../../core/services/logic/formulation-state.service';
 import { DependencyTypeService } from '../../../core/services/logic/dependency-type.service';
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
-import { DependencyService } from '../../../core/services/logic/dependency.service'; // << AÑADIR ESTA LÍNEA
-import { ActivityDetailService } from '../../../core/services/logic/activity-detail.service'; // << AÑADIR ESTA LÍNEA
-import { OperationalActivityService } from '../../../core/services/logic/operational-activity.service'; // << AÑADIR ESTA LÍNEA
 import { FormulationTypeService } from '../../../core/services/logic/formulation-type.service';
+
+// Importar los nuevos middlewares
+import { ProcessOCService } from '../../../core/middlewares/processOC';
+import { ProcessOODDService } from '../../../core/middlewares/processOODD';
+import { ProcessPEService } from '../../../core/middlewares/processPE';
+import { ProcessPSOService } from '../../../core/middlewares/processPSO';
 
 import { Formulation } from '../../../models/logic/formulation.model';
 import { DependencyType } from '../../../models/logic/dependencyType.model';
 import { FormulationState } from '../../../models/logic/formulationState.model';
 import { FormulationType } from '../../../models/logic/formulationType.model';
 import { Observable, forkJoin } from 'rxjs';
-import { Dependency } from '../../../models/logic/dependency.model'; // << AÑADIR ESTA LÍNEA
-import { ActivityDetail } from '../../../models/logic/activityDetail.model';
-import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
 
 @Component({
   selector: 'app-adm-planificacion-table',
@@ -106,13 +106,16 @@ export class AdmPlanificacionTableComponent implements OnInit {
   displayNewModificationDialog: boolean = false;
   displayNewModificationDialogOODDGestion: boolean = false;
   displayNewModificationDialogPrestacionesEconomicas: boolean = false;
+  displayNewModificationDialogPrestacionesSociales: boolean = false;
   showSuccessAnimation = false;
   newModificationQuarter: number | null = null;
   newModificationQuarterOODDGestion: number | null = null;
   newModificationQuarterPrestacionesEconomicas: number | null = null;
+  newModificationQuarterPrestacionesSociales: number | null = null;
   public canInitiateFormulation = false; // << NUEVA BANDERA
   public canInitiateFormulationOODDGestion = false; // << NUEVA BANDERA PARA OODDGestion
   public canInitiateFormulationPrestacionesEconomicas = false; // << NUEVA BANDERA PARA Prestaciones Económicas
+  public canInitiateFormulationPrestacionesSociales = false; // << NUEVA BANDERA PARA Prestaciones Sociales
 
   public Object = Object;
 
@@ -124,9 +127,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
     private formulationTypeService: FormulationTypeService,
     private confirmationService: ConfirmationService,
     private yearsService: StrategicObjectiveService,
-    private dependencyService: DependencyService, // << INYECTAR EL SERVICIO
-    private activityDetailService: ActivityDetailService, // << INYECTAR EL SERVICIO
-    private operationalActivityService: OperationalActivityService // << INYECTAR EL SERVICIO
+    private processOCService: ProcessOCService,
+    private processOODDService: ProcessOODDService,
+    private processPEService: ProcessPEService,
+    private processPSOService: ProcessPSOService
   ) {
     const currentYear = new Date().getFullYear();
     this.selectedYear = currentYear;
@@ -202,12 +206,20 @@ export class AdmPlanificacionTableComponent implements OnInit {
       f.formulationType?.idFormulationType === 4 &&
       f.dependency?.ospe === true
     );
+    const prestacionesSocialesFormulations = filteredByYear.filter(f =>
+      f.dependency?.dependencyType?.idDependencyType === 2 &&
+      f.formulationType?.idFormulationType === 5 &&
+      f.dependency?.ospe === false
+    );
 
     // Solo permitir iniciar formulación OODDGestion si existen formulaciones OC pero no OODDGestion
     this.canInitiateFormulationOODDGestion = OODDGestionFormulations.length === 0;
-    
+
     // Solo permitir iniciar formulación Prestaciones Económicas si existen formulaciones OC pero no Prestaciones Económicas
     this.canInitiateFormulationPrestacionesEconomicas = prestacionesEconomicasFormulations.length === 0;
+
+    // Solo permitir iniciar formulación Prestaciones Sociales si no existen formulaciones de Prestaciones Sociales
+    this.canInitiateFormulationPrestacionesSociales = prestacionesSocialesFormulations.length === 0;
 
     // Initialize the structure
     this.dependencyTypes.forEach(depType => {
@@ -366,68 +378,21 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   private processNewModificationOC(): void {
-    let maxModification = 0;
-    // Solo considerar formulaciones OC y tipo 1
-    const ocFormulations = this.formulations.filter(f =>
-      f.year === this.selectedYear &&
-      f.dependency?.dependencyType?.idDependencyType === 1 &&
-      f.formulationType?.idFormulationType === 1
-    );
-
-    ocFormulations.forEach(f => {
-      if (f.modification && f.modification > maxModification) {
-        maxModification = f.modification;
+    this.processOCService.processNewModificationOC(
+      this.formulations,
+      this.selectedYear,
+      this.newModificationQuarter!,
+      this.quarterLabels
+    ).subscribe({
+      next: () => {
+        this.displayNewModificationDialog = false;
+        this.loadInitialData();
+      },
+      error: (err: any) => {
+        this.displayNewModificationDialog = false;
+        console.error('Error from processOCService:', err);
       }
     });
-
-    if (maxModification === 0) {
-      this.toastr.warning(`No hay formulaciones OC para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
-      this.displayNewModificationDialog = false;
-      return;
-    }
-
-    if (maxModification >= 8) {
-      this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para OC en el año ${this.selectedYear}.`, 'Advertencia');
-      this.displayNewModificationDialog = false;
-      return;
-    }
-
-    const formulationsToModify = ocFormulations.filter(
-      f => f.modification === maxModification
-    );
-
-    if (formulationsToModify.length === 0) {
-      this.toastr.warning(`No se encontraron formulaciones OC con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
-      this.displayNewModificationDialog = false;
-      return;
-    }
-
-    const modificationRequests: Observable<Formulation>[] = [];
-    formulationsToModify.forEach(formulation => {
-      if (formulation.idFormulation !== undefined) {
-        modificationRequests.push(
-          this.formulationService.addModification(formulation.idFormulation, this.newModificationQuarter!)
-        );
-      }
-    });
-
-    if (modificationRequests.length > 0) {
-      forkJoin(modificationRequests).subscribe({
-        next: (results) => {
-          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias OC para el trimestre ${this.quarterLabels[this.newModificationQuarter!]}.`, 'Éxito');
-          this.displayNewModificationDialog = false;
-          this.loadInitialData();
-        },
-        error: (err) => {
-          this.toastr.error('Error al crear nuevas modificatorias OC.', 'Error');
-          console.error('Error adding new modifications', err);
-          this.displayNewModificationDialog = false;
-        }
-      });
-    } else {
-      this.toastr.info('No hay formulaciones OC para procesar la nueva modificatoria.', 'Info');
-      this.displayNewModificationDialog = false;
-    }
   }
 
   // << NUEVO: Métodos para modificatorias OODDGestion
@@ -467,69 +432,21 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   private processNewModificationOODDGestion(): void {
-    let maxModification = 0;
-    // Solo considerar formulaciones OODDGestion y tipo 2 (OODDGestion ACTIVIDADES DE GESTIÓN) con ospe = false
-    const OODDGestionFormulations = this.formulations.filter(f =>
-      f.year === this.selectedYear &&
-      f.dependency?.dependencyType?.idDependencyType === 2 &&
-      f.formulationType?.idFormulationType === 2 &&
-      f.dependency?.ospe === false
-    );
-
-    OODDGestionFormulations.forEach(f => {
-      if (f.modification && f.modification > maxModification) {
-        maxModification = f.modification;
+    this.processOODDService.processNewModificationOODDGestion(
+      this.formulations,
+      this.selectedYear,
+      this.newModificationQuarterOODDGestion!,
+      this.quarterLabels
+    ).subscribe({
+      next: () => {
+        this.displayNewModificationDialogOODDGestion = false;
+        this.loadInitialData();
+      },
+      error: (err: any) => {
+        this.displayNewModificationDialogOODDGestion = false;
+        console.error('Error from processOODDService:', err);
       }
     });
-
-      if (maxModification === 0) {
-        this.toastr.warning(`No hay formulaciones OODDGestion para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
-        this.displayNewModificationDialogOODDGestion = false;
-        return;
-      }
-
-      if (maxModification >= 8) {
-        this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para OODDGestion en el año ${this.selectedYear}.`, 'Advertencia');
-        this.displayNewModificationDialogOODDGestion = false;
-        return;
-      }
-
-    const formulationsToModify = OODDGestionFormulations.filter(
-      f => f.modification === maxModification
-    );
-
-    if (formulationsToModify.length === 0) {
-      this.toastr.warning(`No se encontraron formulaciones OODDGestion con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
-      this.displayNewModificationDialogOODDGestion = false;
-      return;
-    }
-
-    const modificationRequests: Observable<Formulation>[] = [];
-    formulationsToModify.forEach(formulation => {
-      if (formulation.idFormulation !== undefined) {
-        modificationRequests.push(
-          this.formulationService.addModification(formulation.idFormulation, this.newModificationQuarterOODDGestion!)
-        );
-      }
-    });
-
-    if (modificationRequests.length > 0) {
-      forkJoin(modificationRequests).subscribe({
-        next: (results) => {
-          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias OODDGestion para el trimestre ${this.quarterLabels[this.newModificationQuarterOODDGestion!]}.`, 'Éxito');
-          this.displayNewModificationDialogOODDGestion = false;
-          this.loadInitialData();
-        },
-        error: (err) => {
-          this.toastr.error('Error al crear nuevas modificatorias OODDGestion.', 'Error');
-          console.error('Error adding new modifications OODDGestion', err);
-          this.displayNewModificationDialogOODDGestion = false;
-        }
-      });
-    } else {
-      this.toastr.info('No hay formulaciones OODDGestion para procesar la nueva modificatoria.', 'Info');
-      this.displayNewModificationDialogOODDGestion = false;
-    }
   }
 
   // << NUEVO: Métodos para modificatorias Prestaciones Económicas
@@ -568,70 +485,96 @@ export class AdmPlanificacionTableComponent implements OnInit {
     });
   }
 
-  private processNewModificationPrestacionesEconomicas(): void {
-    let maxModification = 0;
-    // Solo considerar formulaciones Prestaciones Económicas (tipo 2, tipo 4) con ospe = true
-    const prestacionesEconomicasFormulations = this.formulations.filter(f =>
-      f.year === this.selectedYear &&
-      f.dependency?.dependencyType?.idDependencyType === 2 &&
-      f.formulationType?.idFormulationType === 4 &&
-      f.dependency?.ospe === true
-    );
+  // << NUEVO: Métodos para modificatorias Prestaciones Sociales
+  openNewModificationDialogPrestacionesSociales(): void {
+    this.newModificationQuarterPrestacionesSociales = null;
+    this.displayNewModificationDialogPrestacionesSociales = true;
+  }
 
-    prestacionesEconomicasFormulations.forEach(f => {
-      if (f.modification && f.modification > maxModification) {
-        maxModification = f.modification;
-      }
-    });
-
-      if (maxModification === 0) {
-        this.toastr.warning(`No hay formulaciones de Prestaciones Económicas para el año ${this.selectedYear} para generar una modificatoria.`, 'Advertencia');
-        this.displayNewModificationDialogPrestacionesEconomicas = false;
-        return;
-      }
-
-      if (maxModification >= 8) {
-        this.toastr.warning(`Ya se ha alcanzado el límite máximo de modificatorias (8) para Prestaciones Económicas en el año ${this.selectedYear}.`, 'Advertencia');
-        this.displayNewModificationDialogPrestacionesEconomicas = false;
-        return;
-      }
-
-    const formulationsToModify = prestacionesEconomicasFormulations.filter(
-      f => f.modification === maxModification
-    );
-
-    if (formulationsToModify.length === 0) {
-      this.toastr.warning(`No se encontraron formulaciones de Prestaciones Económicas con la mayor modificatoria (${maxModification}) para el año ${this.selectedYear}.`, 'Advertencia');
-      this.displayNewModificationDialogPrestacionesEconomicas = false;
+  addNewModificationPrestacionesSociales(): void {
+    if (this.newModificationQuarterPrestacionesSociales === null || this.newModificationQuarterPrestacionesSociales < 1 || this.newModificationQuarterPrestacionesSociales > 4) {
+      this.toastr.warning('Por favor ingrese un trimestre válido (I-IV).', 'Advertencia');
       return;
     }
 
-    const modificationRequests: Observable<Formulation>[] = [];
-    formulationsToModify.forEach(formulation => {
-      if (formulation.idFormulation !== undefined) {
-        modificationRequests.push(
-          this.formulationService.addModification(formulation.idFormulation, this.newModificationQuarterPrestacionesEconomicas!)
-        );
+    this.confirmationService.confirm({
+      message: `¿Está seguro de crear una nueva modificatoria para prestaciones sociales para el ${this.quarterLabels[this.newModificationQuarterPrestacionesSociales]} para todas las formulaciones de Prestaciones Sociales del año ${this.selectedYear}?`,
+      header: 'Confirmar Nueva Modificatoria Prestaciones Sociales',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.processNewModificationPrestacionesSociales();
+      },
+      reject: () => {
+        this.toastr.info('Creación de nueva modificatoria para Prestaciones Sociales cancelada.', 'Cancelado');
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
+    });
+  }
+
+  onInitiateFormulationPrestacionesSociales(): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de que desea habilitar la formulación para Prestaciones Sociales para el año ${this.selectedYear}?`,
+      header: 'Confirmar Habilitación de Formulación',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.processInitiateFormulationPrestacionesSociales();
+      },
+      reject: () => {
+        this.toastr.info('Habilitación de formulación para Prestaciones Sociales cancelada.', 'Cancelado');
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
+    });
+  }
+
+  private processInitiateFormulationPrestacionesSociales(): void {
+    this.processPSOService.processInitiateFormulationPrestacionesSociales(
+      this.selectedYear
+    ).subscribe({
+      next: () => {
+        this.loadInitialData();
+      },
+      error: (err: any) => {
+        console.error('Error from processPSOService:', err);
       }
     });
+  }
 
-    if (modificationRequests.length > 0) {
-      forkJoin(modificationRequests).subscribe({
-        next: (results) => {
-          this.toastr.success(`Se crearon ${results.length} nuevas modificatorias para Prestaciones Económicas para el trimestre ${this.quarterLabels[this.newModificationQuarterPrestacionesEconomicas!]}.`, 'Éxito');
-          this.displayNewModificationDialogPrestacionesEconomicas = false;
-          this.loadInitialData();
-        },
-        error: (err) => {
-          this.toastr.error('Error al crear nuevas modificatorias para Prestaciones Económicas.', 'Error');
-          console.error('Error adding new modifications Prestaciones Económicas', err);
-          this.displayNewModificationDialogPrestacionesEconomicas = false;
-        }
-      });
-    } else {
-      this.toastr.info('No hay formulaciones de Prestaciones Económicas para procesar la nueva modificatoria.', 'Info');
-      this.displayNewModificationDialogPrestacionesEconomicas = false;
-    }
+  private processNewModificationPrestacionesSociales(): void {
+    this.processPSOService.processNewModificationPrestacionesSociales(
+      this.formulations,
+      this.selectedYear,
+      this.newModificationQuarterPrestacionesSociales!,
+      this.quarterLabels
+    ).subscribe({
+      next: () => {
+        this.displayNewModificationDialogPrestacionesSociales = false;
+        this.loadInitialData();
+      },
+      error: (err: any) => {
+        this.displayNewModificationDialogPrestacionesSociales = false;
+        console.error('Error from processPSOService:', err);
+      }
+    });
   }
 
   // << NUEVO: Método para iniciar la formulación para todas las dependencias
@@ -665,41 +608,12 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   private processInitiateFormulationOC(): void {
-    this.dependencyService.getAll().subscribe({
-      next: (allDependencies: Dependency[]) => {
-        const creationRequests: Observable<Formulation>[] = [];
-        const formulationStateInitial = { idFormulationState: 1 } as FormulationState;
-
-        // Filtrar solo dependencias OC
-        const ocDependencies = allDependencies.filter(dep => dep.dependencyType?.idDependencyType === 1);
-
-        ocDependencies.forEach(dependency => {
-          const newFormulation: Formulation = {
-            year: this.selectedYear,
-            dependency: dependency,
-            formulationState: formulationStateInitial,
-            active: true,
-            modification: 1,
-            quarter: 1,
-            formulationType: { idFormulationType: 1 } // Asegurar tipo 1
-          };
-          creationRequests.push(this.formulationService.create(newFormulation));
-        });
-
-        forkJoin(creationRequests).subscribe({
-          next: (results) => {
-            this.toastr.success(`Se crearon ${results.length} formulaciones iniciales OC correctamente.`, 'Éxito');
-            this.loadInitialData(); // Recargar datos para ver los cambios
-          },
-          error: (err) => {
-            this.toastr.error('Error al iniciar la formulación OC.', 'Error');
-            console.error('Error initiating formulations', err);
-          }
-        });
+    this.processOCService.processInitiateFormulationOC(this.selectedYear).subscribe({
+      next: () => {
+        this.loadInitialData(); // Recargar datos para ver los cambios
       },
-      error: (err) => {
-        this.toastr.error('Error al cargar la lista de dependencias.', 'Error');
-        console.error('Error fetching dependencies', err);
+      error: (err: any) => {
+        console.error('Error from processOCService:', err);
       }
     });
   }
@@ -735,135 +649,12 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   private processInitiateFormulationOODDGestion(): void {
-    // Primero obtener todas las dependencias OODDGestion con ospe = false
-    this.dependencyService.getAll().subscribe({
-      next: (allDependencies: Dependency[]) => {
-        const OODDGestionDependencies = allDependencies.filter(dep => 
-          dep.dependencyType?.idDependencyType === 2 && 
-          dep.ospe === false
-        );
-
-        if (OODDGestionDependencies.length === 0) {
-          this.toastr.warning('No se encontraron dependencias OODDGestion para crear formulaciones.', 'Advertencia');
-          return;
-        }
-
-        // Crear formulaciones para todas las dependencias OODDGestion
-        const formulationCreationRequests: Observable<Formulation>[] = [];
-        const formulationStateInitial = { idFormulationState: 1 } as FormulationState;
-
-        OODDGestionDependencies.forEach(dependency => {
-          const newFormulation: Formulation = {
-            year: this.selectedYear,
-            dependency: dependency,
-            formulationState: formulationStateInitial,
-            active: true,
-            modification: 1,
-            quarter: 1,
-            formulationType: { idFormulationType: 2 } // Tipo 2 para OODDGestion
-          };
-          formulationCreationRequests.push(this.formulationService.create(newFormulation));
-        });
-
-        // Ejecutar creación de formulaciones
-        forkJoin(formulationCreationRequests).subscribe({
-          next: (formulationsCreated) => {
-            // Ahora obtener los ActivityDetail del año seleccionado para crear actividades operativas
-            this.activityDetailService.getAll().subscribe({
-              next: (activityDetails: ActivityDetail[]) => {
-                const filteredDetails = activityDetails.filter(ad =>
-                  ad.year === this.selectedYear &&
-                  ad.formulationType?.idFormulationType === 2
-                );
-
-                if (filteredDetails.length === 0) {
-                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones OODDGestion pero no hay actividades de gestión definidas para el año ${this.selectedYear}.`, 'Formulaciones Creadas');
-                  this.loadInitialData();
-                  return;
-                }
-
-                // Crear actividades operativas basadas en ActivityDetail para cada formulación
-                const operationalActivityCreationRequests: Observable<OperationalActivity>[] = [];
-
-                formulationsCreated.forEach(formulation => {
-                  filteredDetails.forEach(activityDetail => {
-                    // Crear nuevos goals sin ID para evitar el error de entidad detached
-                    const newGoals = (activityDetail.goals || []).map(goal => ({
-                      goalOrder: goal.goalOrder,
-                      value: goal.value,
-                      active: goal.active || true
-                      // NO incluir idGoal para crear nuevos goals
-                    }));
-
-                    // Crear nuevos monthlyGoals sin ID
-                    const newMonthlyGoals = (activityDetail.monthlyGoals || []).map(monthlyGoal => ({
-                      goalOrder: monthlyGoal.goalOrder,
-                      value: monthlyGoal.value,
-                      active: monthlyGoal.active || true
-                      // NO incluir idMonthlyGoal para crear nuevos monthlyGoals
-                    }));
-
-                    const operationalActivity: OperationalActivity = {
-                      sapCode: '', // Se generará automáticamente en el backend
-                      correlativeCode: '', // Se generará automáticamente en el backend
-                      name: activityDetail.name,
-                      description: activityDetail.description || '',
-                      active: true,
-                      strategicAction: activityDetail.strategicAction, // Usar directamente el strategicAction del activityDetail
-                      formulation: {
-                        idFormulation: formulation.idFormulation
-                      } as any,
-                      measurementType: activityDetail.measurementUnit ? {
-                        idMeasurementType: 1
-                      } as any : undefined,
-                      measurementUnit: activityDetail.measurementUnit || '',
-                      goods: 0,
-                      remuneration: 0,
-                      services: 0,
-                      goals: newGoals,
-                      monthlyGoals: newMonthlyGoals
-                      // financialFund, managementCenter, costCenter, priority, activityFamily se envían vacíos (opcionales)
-                    };
-
-                    operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity));
-                  });
-                });
-
-                if (operationalActivityCreationRequests.length > 0) {
-                  forkJoin(operationalActivityCreationRequests).subscribe({
-                    next: (activitiesCreated) => {
-                      this.toastr.success(
-                        `Se crearon ${formulationsCreated.length} formulaciones OODDGestion y ${activitiesCreated.length} actividades operativas correctamente.`,
-                        'Éxito Completo'
-                      );
-                      this.loadInitialData();
-                    },
-                    error: (err) => {
-                      this.toastr.error('Error al crear las actividades operativas OODDGestion. Verifique que los valores por defecto sean válidos.', 'Error');
-                      console.error('Error creating operational activities', err);
-                      console.error('Error details:', err.error);
-                    }
-                  });
-                } else {
-                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones OODDGestion correctamente.`, 'Éxito');
-                  this.loadInitialData();
-                }
-              },
-              error: (err) => {
-                this.toastr.error('Error al cargar los detalles de actividad.', 'Error');
-                console.error('Error fetching activity details', err);
-              }
-            });
-          },
-          error: (err) => {
-            this.toastr.error('Error al crear las formulaciones OODDGestion.', 'Error');
-            console.error('Error creating OODDGestion formulations', err);
-          }
-        });
+    this.processOODDService.processInitiateFormulationOODDGestion(this.selectedYear).subscribe({
+      next: () => {
+        this.loadInitialData();
       },
-      error: (err) => {
-        this.toastr.error('Error al cargar la lista de dependencias.', 'Error');
-        console.error('Error fetching dependencies', err);
+      error: (err: any) => {
+        console.error('Error from processOODDService:', err);
       }
     });
   }
@@ -899,135 +690,30 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   private processInitiateFormulationPrestacionesEconomicas(): void {
-    // Primero obtener todas las dependencias OODD con ospe = true
-    this.dependencyService.getAll().subscribe({
-      next: (allDependencies: Dependency[]) => {
-        const prestacionesEconomicasDependencies = allDependencies.filter(dep => 
-          dep.dependencyType?.idDependencyType === 2 && 
-          dep.ospe === true
-        );
-
-        if (prestacionesEconomicasDependencies.length === 0) {
-          this.toastr.warning('No se encontraron dependencias OODD con ospe = true para crear formulaciones de Prestaciones Económicas.', 'Advertencia');
-          return;
-        }
-
-        // Crear formulaciones para todas las dependencias de Prestaciones Económicas
-        const formulationCreationRequests: Observable<Formulation>[] = [];
-        const formulationStateInitial = { idFormulationState: 1 } as FormulationState;
-
-        prestacionesEconomicasDependencies.forEach(dependency => {
-          const newFormulation: Formulation = {
-            year: this.selectedYear,
-            dependency: dependency,
-            formulationState: formulationStateInitial,
-            active: true,
-            modification: 1,
-            quarter: 1,
-            formulationType: { idFormulationType: 4 } // Tipo 4 para Prestaciones Económicas
-          };
-          formulationCreationRequests.push(this.formulationService.create(newFormulation));
-        });
-
-        // Ejecutar creación de formulaciones
-        forkJoin(formulationCreationRequests).subscribe({
-          next: (formulationsCreated) => {
-            // Ahora obtener los ActivityDetail del año seleccionado para crear actividades operativas
-            this.activityDetailService.getAll().subscribe({
-              next: (activityDetails: ActivityDetail[]) => {
-                const filteredDetails = activityDetails.filter(ad =>
-                  ad.year === this.selectedYear &&
-                  ad.formulationType?.idFormulationType === 4
-                );
-
-                if (filteredDetails.length === 0) {
-                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones de Prestaciones Económicas pero no hay actividades de prestaciones económicas definidas para el año ${this.selectedYear}.`, 'Formulaciones Creadas');
-                  this.loadInitialData();
-                  return;
-                }
-
-                // Crear actividades operativas basadas en ActivityDetail para cada formulación
-                const operationalActivityCreationRequests: Observable<OperationalActivity>[] = [];
-
-                formulationsCreated.forEach(formulation => {
-                  filteredDetails.forEach(activityDetail => {
-                    // Crear nuevos goals sin ID para evitar el error de entidad detached
-                    const newGoals = (activityDetail.goals || []).map(goal => ({
-                      goalOrder: goal.goalOrder,
-                      value: goal.value,
-                      active: goal.active || true
-                      // NO incluir idGoal para crear nuevos goals
-                    }));
-
-                    // Crear nuevos monthlyGoals sin ID
-                    const newMonthlyGoals = (activityDetail.monthlyGoals || []).map(monthlyGoal => ({
-                      goalOrder: monthlyGoal.goalOrder,
-                      value: monthlyGoal.value,
-                      active: monthlyGoal.active || true
-                      // NO incluir idMonthlyGoal para crear nuevos monthlyGoals
-                    }));
-
-                    const operationalActivity: OperationalActivity = {
-                      sapCode: '', // Se generará automáticamente en el backend
-                      correlativeCode: '', // Se generará automáticamente en el backend
-                      name: activityDetail.name,
-                      description: activityDetail.description || '',
-                      active: true,
-                      strategicAction: activityDetail.strategicAction, // Usar directamente el strategicAction del activityDetail
-                      formulation: {
-                        idFormulation: formulation.idFormulation
-                      } as any,
-                      measurementType: activityDetail.measurementUnit ? {
-                        idMeasurementType: 1
-                      } as any : undefined,
-                      measurementUnit: activityDetail.measurementUnit || '',
-                      goods: 0,
-                      remuneration: 0,
-                      services: 0,
-                      goals: newGoals,
-                      monthlyGoals: newMonthlyGoals
-                      // financialFund, managementCenter, costCenter, priority, activityFamily se envían vacíos (opcionales)
-                    };
-
-                    operationalActivityCreationRequests.push(this.operationalActivityService.create(operationalActivity));
-                  });
-                });
-
-                if (operationalActivityCreationRequests.length > 0) {
-                  forkJoin(operationalActivityCreationRequests).subscribe({
-                    next: (activitiesCreated) => {
-                      this.toastr.success(
-                        `Se crearon ${formulationsCreated.length} formulaciones de Prestaciones Económicas y ${activitiesCreated.length} actividades operativas correctamente.`,
-                        'Éxito Completo'
-                      );
-                      this.loadInitialData();
-                    },
-                    error: (err) => {
-                      this.toastr.error('Error al crear las actividades operativas de Prestaciones Económicas. Verifique que los valores por defecto sean válidos.', 'Error');
-                      console.error('Error creating operational activities for Prestaciones Económicas', err);
-                      console.error('Error details:', err.error);
-                    }
-                  });
-                } else {
-                  this.toastr.success(`Se crearon ${formulationsCreated.length} formulaciones de Prestaciones Económicas correctamente.`, 'Éxito');
-                  this.loadInitialData();
-                }
-              },
-              error: (err) => {
-                this.toastr.error('Error al cargar los detalles de actividad para Prestaciones Económicas.', 'Error');
-                console.error('Error fetching activity details for Prestaciones Económicas', err);
-              }
-            });
-          },
-          error: (err) => {
-            this.toastr.error('Error al crear las formulaciones de Prestaciones Económicas.', 'Error');
-            console.error('Error creating Prestaciones Económicas formulations', err);
-          }
-        });
+    this.processPEService.processInitiateFormulationPrestacionesEconomicas(this.selectedYear).subscribe({
+      next: () => {
+        this.loadInitialData();
       },
-      error: (err) => {
-        this.toastr.error('Error al cargar la lista de dependencias para Prestaciones Económicas.', 'Error');
-        console.error('Error fetching dependencies for Prestaciones Económicas', err);
+      error: (err: any) => {
+        console.error('Error from processPEService:', err);
+      }
+    });
+  }
+
+  private processNewModificationPrestacionesEconomicas(): void {
+    this.processPEService.processNewModificationPrestacionesEconomicas(
+      this.formulations,
+      this.selectedYear,
+      this.newModificationQuarterPrestacionesEconomicas!,
+      this.quarterLabels
+    ).subscribe({
+      next: () => {
+        this.displayNewModificationDialogPrestacionesEconomicas = false;
+        this.loadInitialData();
+      },
+      error: (err: any) => {
+        this.displayNewModificationDialogPrestacionesEconomicas = false;
+        console.error('Error from processPEService:', err);
       }
     });
   }

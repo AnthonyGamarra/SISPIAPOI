@@ -41,24 +41,40 @@
 
                   <div class="flex justify-content-end flex-wrap gap-2">
 
-                     <button *ngIf="canInitiateFormulationOODDGestion && depTypeName === 'OODD' &&  formTypeName === 'OODD ACTIVIDADES DE GESTIÓN'" pButton
-                        label="Iniciar formulación de actividades de gestión" icon="pi pi-plus"
+                     <button
+                        *ngIf="canInitiateFormulationOODDGestion && depTypeName === 'OODD' &&  formTypeName === 'OODD ACTIVIDADES DE GESTIÓN'"
+                        pButton label="Iniciar formulación de actividades de gestión" icon="pi pi-plus"
                         class="add-button" (click)="onInitiateFormulationOODDGestion()">
                      </button>
 
-                     <button *ngIf="!canInitiateFormulationOODDGestion && depTypeName === 'OODD' &&  formTypeName === 'OODD ACTIVIDADES DE GESTIÓN'" pButton
-                        label="Nueva Modificatoria de actividades de gestión" icon="pi pi-plus"
+                     <button
+                        *ngIf="!canInitiateFormulationOODDGestion && depTypeName === 'OODD' &&  formTypeName === 'OODD ACTIVIDADES DE GESTIÓN'"
+                        pButton label="Nueva Modificatoria de actividades de gestión" icon="pi pi-plus"
                         class="add-button" (click)="openNewModificationDialogOODDGestion()">
                      </button>
 
-                     <button *ngIf="canInitiateFormulationPrestacionesEconomicas && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES ECONÓMICAS'" pButton
-                        label="Iniciar formulación para prestaciones económicas" icon="pi pi-plus"
+                     <button
+                        *ngIf="canInitiateFormulationPrestacionesEconomicas && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES ECONÓMICAS'"
+                        pButton label="Iniciar formulación para prestaciones económicas" icon="pi pi-plus"
                         class="add-button" (click)="onInitiateFormulationPrestacionesEconomicas()">
                      </button>
 
-                     <button *ngIf="!canInitiateFormulationPrestacionesEconomicas && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES ECONÓMICAS'" pButton
-                        label="Nueva Modificatoria para prestaciones económicas" icon="pi pi-plus"
+                     <button
+                        *ngIf="!canInitiateFormulationPrestacionesEconomicas && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES ECONÓMICAS'"
+                        pButton label="Nueva Modificatoria para prestaciones económicas" icon="pi pi-plus"
                         class="add-button" (click)="openNewModificationDialogPrestacionesEconomicas()">
+                     </button>
+
+                     <button
+                        *ngIf="canInitiateFormulationPrestacionesSociales && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES SOCIALES'"
+                        pButton label="Iniciar formulación para prestaciones sociales" icon="pi pi-plus"
+                        class="add-button" (click)="onInitiateFormulationPrestacionesSociales()">
+                     </button>
+
+                     <button
+                        *ngIf="!canInitiateFormulationPrestacionesSociales && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES SOCIALES'"
+                        pButton label="Nueva Modificatoria para prestaciones sociales" icon="pi pi-plus"
+                        class="add-button" (click)="openNewModificationDialogPrestacionesSociales()">
                      </button>
 
                   </div>
@@ -183,14 +199,15 @@
    </ng-template>
 </p-dialog>
 
-<p-dialog header="Nueva Modificatoria de Actividades de Gestión OODDGestion" [(visible)]="displayNewModificationDialogOODDGestion" [modal]="true"
-   [style]="{width: '35vw'}" [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false"
-   [resizable]="false">
+<p-dialog header="Nueva Modificatoria de Actividades de Gestión OODDGestion"
+   [(visible)]="displayNewModificationDialogOODDGestion" [modal]="true" [style]="{width: '35vw'}"
+   [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false" [resizable]="false">
    <div class="p-fluid">
       <div class="p-field">
          <label for="newQuarterOODDGestion" class="mr-8 lg:mr-8">Abierto desde:</label>
-         <p-select id="newQuarterOODDGestion" [options]="quarterOptions" [(ngModel)]="newModificationQuarterOODDGestion" optionLabel="label"
-            optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
+         <p-select id="newQuarterOODDGestion" [options]="quarterOptions" [(ngModel)]="newModificationQuarterOODDGestion"
+            optionLabel="label" optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body"
+            class="ml-6 lg:ml-8">
          </p-select>
       </div>
    </div>
@@ -198,18 +215,20 @@
    <ng-template pTemplate="footer">
       <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
          (click)="displayNewModificationDialogOODDGestion = false" class="cancel-button"></button>
-      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationOODDGestion()" class="add-button"></button>
+      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationOODDGestion()"
+         class="add-button"></button>
    </ng-template>
 </p-dialog>
 
-<p-dialog header="Nueva Modificatoria para Prestaciones Económicas" [(visible)]="displayNewModificationDialogPrestacionesEconomicas" [modal]="true"
-   [style]="{width: '35vw'}" [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false"
-   [resizable]="false">
+<p-dialog header="Nueva Modificatoria para Prestaciones Económicas"
+   [(visible)]="displayNewModificationDialogPrestacionesEconomicas" [modal]="true" [style]="{width: '35vw'}"
+   [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false" [resizable]="false">
    <div class="p-fluid">
       <div class="p-field">
          <label for="newQuarterPrestacionesEconomicas" class="mr-8 lg:mr-8">Abierto desde:</label>
-         <p-select id="newQuarterPrestacionesEconomicas" [options]="quarterOptions" [(ngModel)]="newModificationQuarterPrestacionesEconomicas" optionLabel="label"
-            optionValue="value" placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
+         <p-select id="newQuarterPrestacionesEconomicas" [options]="quarterOptions"
+            [(ngModel)]="newModificationQuarterPrestacionesEconomicas" optionLabel="label" optionValue="value"
+            placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
          </p-select>
       </div>
    </div>
@@ -217,7 +236,29 @@
    <ng-template pTemplate="footer">
       <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
          (click)="displayNewModificationDialogPrestacionesEconomicas = false" class="cancel-button"></button>
-      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationPrestacionesEconomicas()" class="add-button"></button>
+      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationPrestacionesEconomicas()"
+         class="add-button"></button>
+   </ng-template>
+</p-dialog>
+
+<p-dialog header="Nueva Modificatoria para Prestaciones Sociales"
+   [(visible)]="displayNewModificationDialogPrestacionesSociales" [modal]="true" [style]="{width: '35vw'}"
+   [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" [draggable]="false" [resizable]="false">
+   <div class="p-fluid">
+      <div class="p-field">
+         <label for="newQuarterPrestacionesSociales" class="mr-8 lg:mr-8">Abierto desde:</label>
+         <p-select id="newQuarterPrestacionesSociales" [options]="quarterOptions"
+            [(ngModel)]="newModificationQuarterPrestacionesSociales" optionLabel="label" optionValue="value"
+            placeholder="Trimestre" [showClear]="false" appendTo="body" class="ml-6 lg:ml-8">
+         </p-select>
+      </div>
+   </div>
+
+   <ng-template pTemplate="footer">
+      <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
+         (click)="displayNewModificationDialogPrestacionesSociales = false" class="cancel-button"></button>
+      <button pButton label="Crear" icon="pi pi-check" (click)="addNewModificationPrestacionesSociales()"
+         class="add-button"></button>
    </ng-template>
 </p-dialog>
 
