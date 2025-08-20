@@ -24,8 +24,8 @@ export class DependencyService {
         return this.http.post<Dependency>(this.BASE_URL, objective);
       }
     
-      update(id: number, objective: Dependency): Observable<Dependency> {
-        return this.http.put<Dependency>(`${this.BASE_URL}/${id}`, objective);
+      update(objective: Dependency): Observable<Dependency> {
+        return this.http.put<Dependency>(`${this.BASE_URL}`, objective);
       }
     
       delete(id: number): Observable<void> {

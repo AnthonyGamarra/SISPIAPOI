@@ -1,26 +1,46 @@
-.table-container {
-  margin: 0px 18px;
-}
-
 tbody td {
   padding: 12px 20px;
   color: #333;
-  text-align: center; /* Keep for horizontal centering of text nodes */
-  border: 1px solid #f0f0f0; /* Lighter border for cells */
+  text-align: center;
+  /* Keep for horizontal centering of text nodes */
+  border: 1px solid #f0f0f0;
+  /* Lighter border for cells */
   font-size: 0.95em;
-  word-wrap: break-word; /* Ensures long text breaks */
-  max-width: 150px; /* Optional: limit max width for content cells */
+  word-wrap: break-word;
+  /* Ensures long text breaks */
+  max-width: 150px;
+  /* Optional: limit max width for content cells */
 
   /* Flexbox para centrado vertical y horizontal */
   display: flex;
-  align-items: center; /* Centra el contenido verticalmente */
-  justify-content: center; /* Centra los elementos flex directos horizontalmente */
+  align-items: center;
+  /* Centra el contenido verticalmente */
+  justify-content: center;
+  /* Centra los elementos flex directos horizontalmente */
 }
 
 /* Specific styles for editable cells */
 td .p-celleditor-input {
   width: 100%;
   padding: 0;
+}
+
+.title-section {
+  height: 34px;
+  display: flex;
+  align-items: center;
+}
+
+/* Estilos para la sección de dependencias con alto fijo */
+.dependencies-section {
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dependencies-section .table-container {
+  flex: 1;
+  overflow: hidden;
 }
 
 /* Styling for PrimeNG components within the table */
@@ -38,15 +58,6 @@ td .p-celleditor-input {
   border-color: #007acc;
   box-shadow: 0 0 0 0.2rem rgba(0, 122, 204, 0.25);
   outline: none;
-}
-
-.p-select {
-  width: 100% !important;
-  min-width: 100px; /* Adjusted minimum width for better fit */
-  box-sizing: border-box;
-  border: 1px solid #c0c0c0;
-  border-radius: 4px;
-  font-size: 0.9em;
 }
 
 .p-select .p-select-label {
@@ -75,6 +86,7 @@ td .p-celleditor-input {
   color: #007bff;
   border-color: #007bff;
 }
+
 .p-button[icon="pi pi-pencil"]:hover {
   background-color: #e6f2ff;
 }
@@ -83,6 +95,7 @@ td .p-celleditor-input {
   color: #28a745;
   border-color: #28a745;
 }
+
 .p-button[icon="pi pi-check"]:hover {
   background-color: #e6ffe6;
 }
@@ -91,6 +104,7 @@ td .p-celleditor-input {
   color: #dc3545;
   border-color: #dc3545;
 }
+
 .p-button[icon="pi pi-times"]:hover {
   background-color: #ffe6e6;
 }
@@ -99,6 +113,7 @@ td .p-celleditor-input {
   color: #dc3545;
   border-color: #dc3545;
 }
+
 .p-button[icon="pi pi-trash"]:hover {
   background-color: #ffe6e6;
 }
@@ -108,6 +123,7 @@ td .p-celleditor-input {
   color: white;
   border-color: var(--primary-darker);
 }
+
 .p-button[icon="pi pi-search"]:hover {
   background-color: var(--primary-darker);
 }
@@ -117,7 +133,8 @@ input[type="radio"] {
   margin-right: 0.5rem;
   accent-color: #007acc;
   cursor: pointer;
-  width: 16px; /* Slightly larger for easier clicking */
+  width: 16px;
+  /* Slightly larger for easier clicking */
   height: 16px;
   vertical-align: middle;
 }
@@ -145,10 +162,9 @@ label {
 
 .add-button {
   background-color: var(--primary) !important;
-  color: white !important;  
+  color: white !important;
   border: none !important;
   border: 1px solid transparent !important;
-  margin-right: 17px;
   min-width: 10%;
   max-width: 12%;
 }
@@ -160,6 +176,27 @@ label {
 }
 
 .add-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-uo-button {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+  min-width: 20%;
+  max-width: 25%;
+}
+
+.add-uo-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-uo-button:disabled {
   background-color: var(--secondary-light) !important;
   color: white !important;
   border: 1px solid white !important;
@@ -180,7 +217,7 @@ label {
   border: 1px solid white !important;
 }
 
-::ng-deep .cabecera th{
+::ng-deep .cabecera th {
   color: #ffffff !important;
   background-color: #00529B !important;
   font-weight: bold !important;
@@ -196,10 +233,16 @@ label {
 
   .add-button {
     padding: 10px;
-    max-width: 30%;
+    max-width: 50%;
+  }
+
+  .add-uo-button {
+    padding: 5px;
+    max-width: 50%;
   }
 
 }
+
 ::ng-deep .p-togglebutton .p-togglebutton-label {
   font-size: 14px !important;
   padding: 2px 0px !important;
@@ -217,10 +260,14 @@ label {
 .confirmation-content {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra los elementos hijos horizontalmente */
-  justify-content: center; /* Centra los elementos hijos verticalmente (si el espacio lo permite) */
-  text-align: center; /* Asegura que el texto también se centre */
-  padding: 20px; /* Añade un poco de relleno para que no esté pegado a los bordes del diálogo */
+  align-items: center;
+  /* Centra los elementos hijos horizontalmente */
+  justify-content: center;
+  /* Centra los elementos hijos verticalmente (si el espacio lo permite) */
+  text-align: center;
+  /* Asegura que el texto también se centre */
+  padding: 20px;
+  /* Añade un poco de relleno para que no esté pegado a los bordes del diálogo */
 }
 
 @media (max-width: 768px) {
@@ -234,16 +281,21 @@ label {
 /* Usamos ::ng-deep para afectar el componente p-dialog */
 ::ng-deep .p-dialog .p-dialog-footer {
   display: flex;
-  justify-content: center; /* Centra los botones horizontalmente */
+  justify-content: center;
+  /* Centra los botones horizontalmente */
 }
 
 /* Personalización de colores para el botón "No" */
 .custom-cancel-button {
-  background-color: var(--warning-light) !important; /* Un color rojo suave */
+  background-color: var(--warning-light) !important;
+  /* Un color rojo suave */
   color: white !important;
   border: 1px solid var(--warning) !important;
-  border-radius: 6px; /* Bordes ligeramente redondeados */
-  padding: 10px 20px; /* Relleno para el botón */
+  border-radius: 6px;
+  /* Bordes ligeramente redondeados */
+  padding: 10px 20px;
+
+  /* Relleno para el botón */
   &:hover {
     background-color: var(--warning) !important;
     border: 1px solid var(--warning-darker) !important;
@@ -252,11 +304,15 @@ label {
 
 /* Personalización de colores para el botón "Sí" */
 .custom-confirm-button {
-  background-color: var(--success-light) !important; /* Un color rojo suave */
+  background-color: var(--success-light) !important;
+  /* Un color rojo suave */
   color: white !important;
   border: 1px solid var(--success) !important;
-  border-radius: 6px; /* Bordes ligeramente redondeados */
-  padding: 10px 20px; /* Relleno para el botón */
+  border-radius: 6px;
+  /* Bordes ligeramente redondeados */
+  padding: 10px 20px;
+
+  /* Relleno para el botón */
   &:hover {
     background-color: var(--success) !important;
     border: 1px solid var(--success-darker) !important;
@@ -272,23 +328,31 @@ label {
 
 // Add or modify styles for the dialog
 ::ng-deep .dialog-header {
-  .p-dialog { // Target the PrimeNG dialog component itself
+  .p-dialog {
+    // Target the PrimeNG dialog component itself
     min-width: 75vw;
     max-width: 80vw;
     max-height: 50vh;
 
     @media (max-width: 768px) {
-      max-width: 95vw !important; /* Make dialog wider on small screens */
-      max-height: 90vh !important; /* Allow more height on small screens */
-      top: 5vh !important; /* Adjust vertical position for better viewing */
+      max-width: 95vw !important;
+      /* Make dialog wider on small screens */
+      max-height: 90vh !important;
+      /* Allow more height on small screens */
+      top: 5vh !important;
+      /* Adjust vertical position for better viewing */
     }
   }
 
   .p-dialog-footer {
-    justify-content: flex-end; /* Align buttons to the right by default */
+    justify-content: flex-end;
+
+    /* Align buttons to the right by default */
     @media (max-width: 768px) {
-      justify-content: center !important; /* Center buttons on small screens */
-      padding: 1rem; /* Add some padding */
+      justify-content: center !important;
+      /* Center buttons on small screens */
+      padding: 1rem;
+      /* Add some padding */
     }
   }
 }
@@ -299,21 +363,26 @@ label {
 }
 
 :host ::ng-deep {
+
   .p-datatable-body,
   .p-datatable-thead,
   .p-datatable-tfoot {
-    .p-datatable-thead, .p-datatable-tbody {
-        > tr {
-            display: table;
-            width: 100%;
-            table-layout: fixed; /* <-- CLAVE: Esto asegura que el ancho sea fijo */
-        }
+
+    .p-datatable-thead,
+    .p-datatable-tbody {
+      >tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        /* <-- CLAVE: Esto asegura que el ancho sea fijo */
+      }
     }
-    
-    td, th {
+
+    td,
+    th {
       // Forzar que el contenido de las celdas no se desborde y se envuelva.
-      white-space: normal !important; 
-      word-break: break-word !important; 
+      white-space: normal !important;
+      word-break: break-word !important;
       overflow-wrap: break-word !important;
     }
   }
@@ -333,7 +402,7 @@ label {
 
   // Forzar que el p-datatable-wrapper o p-datatable-scrollable-body-table tenga un layout fijo
   .p-datatable-scrollable-body-table {
-    table-layout: fixed !important; 
+    table-layout: fixed !important;
   }
 }
 
@@ -346,6 +415,6 @@ label {
 }
 
 ::ng-deep .p-paginator-page.p-paginator-page-selected {
-    background: var(--secondary-light) !important;
-    color: var(--primary) !important;
+  background: var(--secondary-light) !important;
+  color: var(--primary) !important;
 }

@@ -7,5 +7,6 @@ export interface Dependency {
   active?: boolean;
   dependencyType: DependencyType;
   ospe?: boolean;
+  social?: boolean;
 }
 

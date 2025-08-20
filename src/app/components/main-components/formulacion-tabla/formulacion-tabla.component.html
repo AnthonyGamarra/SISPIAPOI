@@ -357,13 +357,13 @@
         <p-select id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
           optionValue="idStrategicObjective" [(ngModel)]="tempSelectedStrategicObjectiveId"
           (onChange)="onModalStrategicObjectiveChange($event)" placeholder="Selecciona un objetivo" [filter]="true"
-          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-select>
+          filterBy="name" appendTo="body" class="w-full mt-5"> </p-select>
       </div>
       <div class="mt-5"> <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
         <p-select id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
           optionValue="idStrategicAction" [(ngModel)]="tempSelectedStrategicActionId"
           [disabled]="!tempSelectedStrategicObjectiveId" placeholder="Selecciona una acción" [filter]="true"
-          filterBy="name" appendTo="body" class="p-fluid mt-5"> </p-select>
+          filterBy="name" appendTo="body" class="w-full mt-5"> </p-select>
       </div>
     </div>
     <ng-template pTemplate="footer"> <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()"

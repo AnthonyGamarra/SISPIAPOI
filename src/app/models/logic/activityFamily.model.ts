@@ -3,5 +3,6 @@ export interface ActivityFamily {
   name: string;
   description?: string;
   active?: boolean;
+  type?: string;
 }
 

@@ -31,7 +31,7 @@
   .logo-sispoi {
       max-width: 100%; // Ajusta el ancho del logo central
       height: 45px; // Ajusta la altura del logo central
-      filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
+      // filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
   }
 }
 
@@ -69,7 +69,7 @@
   .logo-sispoi-mobile {
     display: block !important; /* Mostrar logo SISPOI en la posición izquierda en móviles */
     height: 35px;
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
+    // filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8));
   }
 
   .system-name {

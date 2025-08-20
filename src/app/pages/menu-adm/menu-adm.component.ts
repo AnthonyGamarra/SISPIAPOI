@@ -6,10 +6,11 @@ import { AuthService } from '../../core/services/authentication/auth.service';
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 
-import { AdmMaestrosODModuloComponent } from '../../components/modules/adm-maestros-oc-modulo/adm-maestros-od-modulo.component';
+import { AdmMaestrosAGModuloComponent } from '../../components/modules/adm-maestros-ag-modulo/adm-maestros-ag-modulo.component';
 import { AdmPlanificacionModuloComponent } from '../../components/modules/adm-planificacion-modulo/adm-planificacion-modulo.component';
 import { AdmOEAEModuloComponent } from '../../components/modules/adm-oe-ae-modulo/adm-oe-ae-modulo.component';
 import { AdmMaestrosPEModuloComponent } from '../../components/modules/adm-maestros-pe-modulo/adm-maestros-pe-modulo.component';
+import { AdmMaestrosPSOModuloComponent } from '../../components/modules/adm-maestros-pso-modulo/adm-maestros-pso-modulo.component';
 
 @Component({
   selector: 'app-menu-adm',
@@ -18,10 +19,11 @@ import { AdmMaestrosPEModuloComponent } from '../../components/modules/adm-maest
     CommonModule,
     FooterComponent,
     MenubarComponent,
-    AdmMaestrosODModuloComponent,
+    AdmMaestrosAGModuloComponent,
     AdmPlanificacionModuloComponent,
     AdmOEAEModuloComponent,
-    AdmMaestrosPEModuloComponent
+    AdmMaestrosPEModuloComponent,
+    AdmMaestrosPSOModuloComponent
 ],
   templateUrl: './menu-adm.component.html',
   styleUrl: './menu-adm.component.scss'

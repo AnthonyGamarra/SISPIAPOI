@@ -18,7 +18,7 @@
 @media (max-width: 768px) {
   .modulos {
     min-height: 90vh; // menos alto en móvil
-    gap: 0.5rem;
+    gap: 0rem;
   }
   .modulos > * {
     flex: 0 0 100%;
