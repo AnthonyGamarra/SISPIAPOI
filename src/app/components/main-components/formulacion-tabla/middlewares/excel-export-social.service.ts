@@ -169,7 +169,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos (por defecto 1)
    */
   private setupSheetStylesAndProtection(worksheet: ExcelJS.Worksheet, formulation?: any, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const editableFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFCC' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const lockedFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F0F0' } };
@@ -241,38 +241,51 @@ export class ExcelExportService {
     // 2. Desbloquear y aplicar estilos solo a los rangos de edición permitidos por trimestre.
     // Rango 1: Columnas de metas editables según el trimestre
     for (let R = startRow + 1; R <= worksheet.rowCount; R++) {
-      // Metas editables
-      editableMonths.goals.forEach(colNumber => {
-        const cell = worksheet.getCell(R, colNumber);
-        cell.protection = { locked: false };
-        cell.fill = editableFill;
-      });
-
-      // Presupuestos editables
-      editableMonths.budgets.forEach(colNumber => {
-        const cell = worksheet.getCell(R, colNumber);
-        cell.protection = { locked: false };
-        cell.fill = editableFill;
-      });
-
-      // Aplicar estilo de bloqueado a meses no editables
-      for (let C = 5; C <= 16; C++) { // Metas
-        if (!editableMonths.goals.includes(C)) {
-          const cell = worksheet.getCell(R, C);
-          cell.fill = lockedFill;
-        }
-      }
+      // Verificar si es una fila vacía (separador) - primera columna vacía
+      const firstCell = worksheet.getCell(R, 1);
+      const isEmptyRow = !firstCell.value || firstCell.value === '';
       
-      for (let C = 18; C <= 29; C++) { // Presupuestos
-        if (!editableMonths.budgets.includes(C)) {
+      if (!isEmptyRow) {
+        // Metas editables
+        editableMonths.goals.forEach(colNumber => {
+          const cell = worksheet.getCell(R, colNumber);
+          cell.protection = { locked: false };
+          cell.fill = editableFill;
+        });
+
+        // Presupuestos editables
+        editableMonths.budgets.forEach(colNumber => {
+          const cell = worksheet.getCell(R, colNumber);
+          cell.protection = { locked: false };
+          cell.fill = editableFill;
+        });
+
+        // Aplicar estilo de bloqueado a meses no editables
+        for (let C = 5; C <= 16; C++) { // Metas
+          if (!editableMonths.goals.includes(C)) {
+            const cell = worksheet.getCell(R, C);
+            cell.fill = lockedFill;
+          }
+        }
+        
+        for (let C = 18; C <= 29; C++) { // Presupuestos
+          if (!editableMonths.budgets.includes(C)) {
+            const cell = worksheet.getCell(R, C);
+            cell.fill = lockedFill;
+          }
+        }
+      } else {
+        // Para filas vacías (separadores), aplicar estilo especial y mantener bloqueadas
+        for (let C = 1; C <= 30; C++) {
           const cell = worksheet.getCell(R, C);
-          cell.fill = lockedFill;
+          cell.protection = { locked: true };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F8F8' } }; // Gris muy claro
         }
       }
     }
 
     // 3. Proteger la hoja de cálculo para que los bloqueos surtan efecto.
-    worksheet.protect('gpc123', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: false,
       selectUnlockedCells: true,
       insertRows: true,
@@ -291,7 +304,7 @@ export class ExcelExportService {
     this.addMainTitle(worksheet, 'CONSOLIDADO - PRESTACIONES SOCIALES');
 
     const headers = [
-      'Unidad operativa', 'Actividades Priorizadas de Gestión', 'Unidad de Medida', 'Actividades Agrupadas',
+      'Unidad operativa', 'Actividades Priorizadas de Gestión', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -310,10 +323,9 @@ export class ExcelExportService {
 
     consolidatedActivities.forEach(consolidatedItem => {
       const rowData = [
-        consolidatedItem.familyName || 'Sin familia',
-        consolidatedItem.name || '',
-        consolidatedItem.measurementUnit || '',
-        consolidatedItem.activityCount || 0,
+        consolidatedItem.activityFamily || 'Sin familia', // Unidad operativa
+        consolidatedItem.name || '', // Actividades Priorizadas de Gestión
+        consolidatedItem.measurementUnit || '', // Unidad de Medida
         ...(consolidatedItem.consolidatedGoals || Array(12).fill(0)),
         '',
         ...(consolidatedItem.consolidatedBudgets || Array(12).fill(0)),
@@ -339,7 +351,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos (por defecto 1)
    */
   private setupConsolidatedSheetStylesAndProtection(worksheet: ExcelJS.Worksheet, formulation?: any, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const boldFont: Partial<ExcelJS.Font> = { bold: true };
     const blackBorder: Partial<ExcelJS.Borders> = {
@@ -359,7 +371,7 @@ export class ExcelExportService {
         if (rowNumber === startRow) { // Fila de encabezado
           cell.fill = headerFill;
           cell.font = boldFont;
-        } else if (rowNumber > startRow && (colNumber === 17 || colNumber === 30)) { // Columnas de totales
+        } else if (rowNumber > startRow && (colNumber === 16 || colNumber === 29)) { // Columnas de totales
           cell.fill = grayFill;
           cell.font = boldFont;
         }
@@ -367,13 +379,13 @@ export class ExcelExportService {
 
       // Añadir fórmulas para los totales (las fórmulas funcionarán incluso en celdas bloqueadas)
       if (rowNumber > startRow) {
-        row.getCell(17).value = { formula: `SUM(E${rowNumber}:P${rowNumber})` };
-        row.getCell(30).value = { formula: `SUM(R${rowNumber}:AC${rowNumber})` };
+        row.getCell(16).value = { formula: `SUM(D${rowNumber}:O${rowNumber})` };
+        row.getCell(29).value = { formula: `SUM(Q${rowNumber}:AB${rowNumber})` };
       }
     });
 
     // Proteger toda la hoja. Ahora no se permite seleccionar celdas desbloqueadas porque no hay ninguna.
-    worksheet.protect('', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: true,
       selectUnlockedCells: false,
       insertRows: false,
@@ -382,10 +394,9 @@ export class ExcelExportService {
 
     // Configurar los anchos de columna
     const columnWidths = [
-      { width: 30 }, // Unidad operativa
-      { width: 50 }, // Actividades Priorizadas de Gestión
+      { width: 60 }, // Unidad operativa
+      { width: 65 }, // Actividades Priorizadas de Gestión
       { width: 20 }, // Unidad de Medida
-      { width: 12 }, // Actividades Agrupadas
       { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas Ene-Abr
       { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas May-Ago
       { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas Sep-Dic
@@ -409,8 +420,8 @@ export class ExcelExportService {
   private setColumnWidths(worksheet: ExcelJS.Worksheet): void {
     const columnWidths = [
       { width: 30 }, // Dependencia
-      { width: 50 }, // Actividades Priorizadas de Gestión
-      { width: 60 }, // Unidad operativa
+      { width: 65 }, // Unidad operativa
+      { width: 60 }, // Actividades Priorizadas de Gestión
       { width: 20 }, // Unidad de Medida
       { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas Ene-Abr
       { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas May-Ago
@@ -473,17 +484,17 @@ export class ExcelExportService {
     titleCell.fill = { 
       type: 'pattern', 
       pattern: 'solid', 
-      fgColor: { argb: '1F497D' } 
+      fgColor: { argb: '00529B' } 
     };
     titleCell.alignment = { 
       horizontal: 'center', 
       vertical: 'middle' 
     };
     titleCell.border = {
-      top: { style: 'thick', color: { argb: '1F497D' } },
-      bottom: { style: 'thick', color: { argb: '1F497D' } },
-      left: { style: 'thick', color: { argb: '1F497D' } },
-      right: { style: 'thick', color: { argb: '1F497D' } }
+      top: { style: 'thick', color: { argb: '00529B' } },
+      bottom: { style: 'thick', color: { argb: '00529B' } },
+      left: { style: 'thick', color: { argb: '00529B' } },
+      right: { style: 'thick', color: { argb: '00529B' } }
     };
     
     // Hacer la fila del título más alta
@@ -559,7 +570,7 @@ export class ExcelExportService {
     this.addMainTitle(consolidatedSheet, 'CONSOLIDADO - PRESTACIONES SOCIALES');
     
     const headers = [
-      'Dependencia', 'Unidad operativa', 'Total Actividades', 'Unidad de Medida',
+      'Unidad operativa', 'Actividades Priorizadas de Gestión', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -576,57 +587,56 @@ export class ExcelExportService {
 
     let currentRow = 4;
 
-    // Generar datos consolidados por dependencia y familia
+    // Consolidar por nombre de actividad/subsidio
+    const activityGroups: { [activityName: string]: OperationalActivity[] } = {};
+    
+    // Agrupar todas las actividades por nombre
     dependencyNames.forEach(dependencyName => {
       const dependencyActivities = groupedActivities[dependencyName];
       if (dependencyActivities && dependencyActivities.length > 0) {
-        
-        // Agrupar por familia dentro de la dependencia
-        const familyGroups: { [familyName: string]: OperationalActivity[] } = {};
         dependencyActivities.forEach(activity => {
-          const familyName = activity.activityFamily?.name || 'Sin familia';
-          if (!familyGroups[familyName]) {
-            familyGroups[familyName] = [];
+          const activityName = activity.name || 'Sin nombre';
+          if (!activityGroups[activityName]) {
+            activityGroups[activityName] = [];
           }
-          familyGroups[familyName].push(activity);
-        });
-
-        // Crear fila consolidada por cada familia
-        Object.keys(familyGroups).forEach(familyName => {
-          const familyActivities = familyGroups[familyName];
-          
-          // Consolidar metas y presupuestos
-          const consolidatedGoals = Array(12).fill(0);
-          const consolidatedBudgets = Array(12).fill(0);
-          
-          familyActivities.forEach(activity => {
-            activity.monthlyGoals?.forEach((goal, index) => {
-              consolidatedGoals[index] += goal.value || 0;
-            });
-            activity.monthlyBudgets?.forEach((budget, index) => {
-              consolidatedBudgets[index] += budget.value || 0;
-            });
-          });
-          
-          const consolidatedRow = [
-            dependencyName,
-            familyName,
-            familyActivities.length,
-            familyActivities[0]?.measurementUnit || 'Unidad',
-            ...consolidatedGoals,
-            '',
-            ...consolidatedBudgets,
-            ''
-          ];
-          
-          const row = consolidatedSheet.getRow(currentRow);
-          consolidatedRow.forEach((data, colIndex) => {
-            row.getCell(colIndex + 1).value = data;
-          });
-          
-          currentRow++;
+          activityGroups[activityName].push(activity);
         });
       }
+    });
+
+    // Crear una fila por cada actividad única
+    Object.keys(activityGroups).forEach(activityName => {
+      const activities = activityGroups[activityName];
+      
+      // Consolidar metas y presupuestos
+      const consolidatedGoals = Array(12).fill(0);
+      const consolidatedBudgets = Array(12).fill(0);
+      
+      activities.forEach(activity => {
+        activity.monthlyGoals?.forEach((goal, index) => {
+          consolidatedGoals[index] += goal.value || 0;
+        });
+        activity.monthlyBudgets?.forEach((budget, index) => {
+          consolidatedBudgets[index] += budget.value || 0;
+        });
+      });
+      
+      const consolidatedRow = [
+        activities[0]?.activityFamily?.name || 'Sin familia', // Unidad operativa
+        activityName, // Actividades Priorizadas de Gestión
+        activities[0]?.measurementUnit || 'Unidad', // Unidad de Medida
+        ...consolidatedGoals,
+        '',
+        ...consolidatedBudgets,
+        ''
+      ];
+      
+      const row = consolidatedSheet.getRow(currentRow);
+      consolidatedRow.forEach((data, colIndex) => {
+        row.getCell(colIndex + 1).value = data;
+      });
+      
+      currentRow++;
     });
 
     this.setupConsolidatedSheetStyles(consolidatedSheet, 3); // Empezar desde fila 3
@@ -638,7 +648,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos
    */
   private setupConsolidatedSheetStyles(worksheet: ExcelJS.Worksheet, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const boldFont: Partial<ExcelJS.Font> = { bold: true };
     const blackBorder: Partial<ExcelJS.Borders> = {
@@ -658,7 +668,7 @@ export class ExcelExportService {
         if (rowNumber === startRow) { // Fila de encabezado
           cell.fill = headerFill;
           cell.font = boldFont;
-        } else if (rowNumber > startRow && (colNumber === 17 || colNumber === 30)) { // Columnas de totales
+        } else if (rowNumber > startRow && (colNumber === 16 || colNumber === 29)) { // Columnas de totales
           cell.fill = grayFill;
           cell.font = boldFont;
         }
@@ -666,13 +676,13 @@ export class ExcelExportService {
 
       // Añadir fórmulas para los totales (las fórmulas funcionarán incluso en celdas bloqueadas)
       if (rowNumber > startRow) {
-        row.getCell(17).value = { formula: `SUM(E${rowNumber}:P${rowNumber})` };
-        row.getCell(30).value = { formula: `SUM(R${rowNumber}:AC${rowNumber})` };
+        row.getCell(16).value = { formula: `SUM(D${rowNumber}:O${rowNumber})` };
+        row.getCell(29).value = { formula: `SUM(Q${rowNumber}:AB${rowNumber})` };
       }
     });
 
     // Proteger toda la hoja. No se permite editar nada en el consolidado.
-    worksheet.protect('gpc123', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: true,
       selectUnlockedCells: false,
       insertRows: false,
@@ -680,7 +690,24 @@ export class ExcelExportService {
       formatCells: false,
     });
 
-    // Configurar los anchos de columna
-    this.setColumnWidths(worksheet);
+    // Configurar los anchos de columna para consolidado
+    const columnWidths = [
+      { width: 60 }, // Unidad operativa
+      { width: 65 }, // Actividades Priorizadas de Gestión
+      { width: 20 }, // Unidad de Medida
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas Ene-Abr
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas May-Ago
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Metas Sep-Dic
+      { width: 20 }, // Total Metas
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Presup Ene-Abr
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Presup May-Ago
+      { width: 15 }, { width: 15 }, { width: 15 }, { width: 15 }, // Presup Sep-Dic
+      { width: 20 }  // Total Presupuesto
+    ];
+    worksheet.columns.forEach((column, index) => {
+      if (columnWidths[index]) {
+        column.width = columnWidths[index].width;
+      }
+    });
   }
 }

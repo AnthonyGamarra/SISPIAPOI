@@ -169,7 +169,7 @@ export class ExcelImportService {
 
     // Encabezados esperados para la vista detallada
     const expectedHeaders = [
-      'Dependencia', 'Actividades Priorizadas de Gestión', 'Unidad operativa', 'Unidad de Medida',
+      'Dependencia', 'Unidad operativa', 'Actividades Priorizadas de Gestión', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -203,7 +203,7 @@ export class ExcelImportService {
 
     // Encabezados esperados para la vista consolidada
     const expectedHeaders = [
-      'Actividades Priorizadas de Gestión', 'Unidad de Medida', 'Actividades Agrupadas',
+      'Actividades Priorizadas de Gestión', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -239,9 +239,9 @@ export class ExcelImportService {
 
       const activity: ImportedActivity = {
         dependencyName: this.getCellValue(row, 1),
-        subsidio: this.getCellValue(row, 2),
-        unidadOperativa: this.getCellValue(row, 3), // Nueva columna
-        measurementUnit: this.getCellValue(row, 4), // Ahora en columna 4
+        unidadOperativa: this.getCellValue(row, 2), // Unidad operativa ahora en columna 2
+        subsidio: this.getCellValue(row, 3), // Actividades ahora en columna 3
+        measurementUnit: this.getCellValue(row, 4), // Unidad de Medida en columna 4
         monthlyGoals: [],
         monthlyBudgets: []
       };
@@ -288,14 +288,14 @@ export class ExcelImportService {
         monthlyBudgets: []
       };
 
-      // Extraer metas mensuales (columnas 4-15)
-      for (let col = 4; col <= 15; col++) {
+      // Extraer metas mensuales (columnas 3-14)
+      for (let col = 3; col <= 14; col++) {
         const value = this.getCellNumericValue(row, col);
         activity.monthlyGoals.push(value);
       }
 
-      // Extraer presupuestos mensuales (columnas 17-28)
-      for (let col = 17; col <= 28; col++) {
+      // Extraer presupuestos mensuales (columnas 16-27)
+      for (let col = 16; col <= 27; col++) {
         const value = this.getCellNumericValue(row, col);
         activity.monthlyBudgets.push(value);
       }
@@ -364,7 +364,7 @@ export class ExcelImportService {
 
   private isEmptyRow(row: ExcelJS.Row): boolean {
     // Verificar si todas las celdas principales están vacías
-    const subsidio = this.getCellValue(row, 2);
+    const subsidio = this.getCellValue(row, 3); // Actividades ahora en columna 3
     const measurementUnit = this.getCellValue(row, 4);
     
     return !subsidio.trim() && !measurementUnit.trim();

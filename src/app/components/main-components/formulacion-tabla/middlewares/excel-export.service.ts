@@ -168,7 +168,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos (por defecto 1)
    */
   private setupSheetStylesAndProtection(worksheet: ExcelJS.Worksheet, formulation?: any, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const editableFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFCC' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const lockedFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F0F0F0' } };
@@ -240,38 +240,51 @@ export class ExcelExportService {
     // 2. Desbloquear y aplicar estilos solo a los rangos de edición permitidos por trimestre.
     // Rango 1: Columnas de metas editables según el trimestre
     for (let R = startRow + 1; R <= worksheet.rowCount; R++) {
-      // Metas editables
-      editableMonths.goals.forEach(colNumber => {
-        const cell = worksheet.getCell(R, colNumber);
-        cell.protection = { locked: false };
-        cell.fill = editableFill;
-      });
-
-      // Presupuestos editables
-      editableMonths.budgets.forEach(colNumber => {
-        const cell = worksheet.getCell(R, colNumber);
-        cell.protection = { locked: false };
-        cell.fill = editableFill;
-      });
-
-      // Aplicar estilo de bloqueado a meses no editables
-      for (let C = 4; C <= 15; C++) { // Metas
-        if (!editableMonths.goals.includes(C)) {
-          const cell = worksheet.getCell(R, C);
-          cell.fill = lockedFill;
-        }
-      }
+      // Verificar si es una fila vacía (separador) - primera columna vacía
+      const firstCell = worksheet.getCell(R, 1);
+      const isEmptyRow = !firstCell.value || firstCell.value === '';
       
-      for (let C = 17; C <= 28; C++) { // Presupuestos
-        if (!editableMonths.budgets.includes(C)) {
+      if (!isEmptyRow) {
+        // Metas editables
+        editableMonths.goals.forEach(colNumber => {
+          const cell = worksheet.getCell(R, colNumber);
+          cell.protection = { locked: false };
+          cell.fill = editableFill;
+        });
+
+        // Presupuestos editables
+        editableMonths.budgets.forEach(colNumber => {
+          const cell = worksheet.getCell(R, colNumber);
+          cell.protection = { locked: false };
+          cell.fill = editableFill;
+        });
+
+        // Aplicar estilo de bloqueado a meses no editables
+        for (let C = 4; C <= 15; C++) { // Metas
+          if (!editableMonths.goals.includes(C)) {
+            const cell = worksheet.getCell(R, C);
+            cell.fill = lockedFill;
+          }
+        }
+        
+        for (let C = 17; C <= 28; C++) { // Presupuestos
+          if (!editableMonths.budgets.includes(C)) {
+            const cell = worksheet.getCell(R, C);
+            cell.fill = lockedFill;
+          }
+        }
+      } else {
+        // Para filas vacías (separadores), aplicar estilo especial y mantener bloqueadas
+        for (let C = 1; C <= 29; C++) {
           const cell = worksheet.getCell(R, C);
-          cell.fill = lockedFill;
+          cell.protection = { locked: true };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8F8F8' } }; // Gris muy claro
         }
       }
     }
 
     // 3. Proteger la hoja de cálculo para que los bloqueos surtan efecto.
-    worksheet.protect('', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: false,
       selectUnlockedCells: true,
       insertRows: true,
@@ -290,7 +303,7 @@ export class ExcelExportService {
     this.addMainTitle(worksheet, 'CONSOLIDADO - PRESTACIONES ECONÓMICAS');
 
     const headers = [
-      'Subsidio', 'Unidad de Medida', 'Actividades Agrupadas',
+      'Subsidio', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -337,7 +350,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos (por defecto 1)
    */
   private setupConsolidatedSheetStylesAndProtection(worksheet: ExcelJS.Worksheet, formulation?: any, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const boldFont: Partial<ExcelJS.Font> = { bold: true };
     const blackBorder: Partial<ExcelJS.Borders> = {
@@ -357,7 +370,7 @@ export class ExcelExportService {
         if (rowNumber === startRow) { // Fila de encabezado
           cell.fill = headerFill;
           cell.font = boldFont;
-        } else if (rowNumber > startRow && (colNumber === 16 || colNumber === 29)) { // Columnas de totales
+        } else if (rowNumber > startRow && (colNumber === 15 || colNumber === 28)) { // Columnas de totales
           cell.fill = grayFill;
           cell.font = boldFont;
         }
@@ -365,13 +378,13 @@ export class ExcelExportService {
 
       // Añadir fórmulas para los totales (las fórmulas funcionarán incluso en celdas bloqueadas)
       if (rowNumber > startRow) {
-        row.getCell(16).value = { formula: `SUM(D${rowNumber}:O${rowNumber})` };
-        row.getCell(29).value = { formula: `SUM(Q${rowNumber}:AB${rowNumber})` };
+        row.getCell(15).value = { formula: `SUM(C${rowNumber}:N${rowNumber})` };
+        row.getCell(28).value = { formula: `SUM(P${rowNumber}:AA${rowNumber})` };
       }
     });
 
     // Proteger toda la hoja. Ahora no se permite seleccionar celdas desbloqueadas porque no hay ninguna.
-    worksheet.protect('gpc123', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: true,
       selectUnlockedCells: false,
       insertRows: false,
@@ -387,7 +400,9 @@ export class ExcelExportService {
       { width: 18 }
     ];
     worksheet.columns.forEach((column, index) => {
-      column.width = columnWidths[index].width;
+      if (columnWidths[index]) {
+        column.width = columnWidths[index].width;
+      }
     });
   }
   
@@ -453,17 +468,17 @@ export class ExcelExportService {
     titleCell.fill = { 
       type: 'pattern', 
       pattern: 'solid', 
-      fgColor: { argb: '1F497D' } 
+      fgColor: { argb: '00529B' } 
     };
     titleCell.alignment = { 
       horizontal: 'center', 
       vertical: 'middle' 
     };
     titleCell.border = {
-      top: { style: 'thick', color: { argb: '1F497D' } },
-      bottom: { style: 'thick', color: { argb: '1F497D' } },
-      left: { style: 'thick', color: { argb: '1F497D' } },
-      right: { style: 'thick', color: { argb: '1F497D' } }
+      top: { style: 'thick', color: { argb: '00529B' } },
+      bottom: { style: 'thick', color: { argb: '00529B' } },
+      left: { style: 'thick', color: { argb: '00529B' } },
+      right: { style: 'thick', color: { argb: '00529B' } }
     };
     
     // Hacer la fila del título más alta
@@ -539,7 +554,7 @@ export class ExcelExportService {
     this.addMainTitle(consolidatedSheet, 'CONSOLIDADO - PRESTACIONES ECONÓMICAS');
     
     const headers = [
-      'Dependencia', 'Total Actividades', 'Unidad de Medida',
+      'Subsidio', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -556,41 +571,55 @@ export class ExcelExportService {
 
     let currentRow = 4;
 
-    // Generar datos consolidados por dependencia
+    // Consolidar por nombre de subsidio/actividad
+    const subsidyGroups: { [subsidyName: string]: OperationalActivity[] } = {};
+    
+    // Agrupar todas las actividades por nombre de subsidio
     dependencyNames.forEach(dependencyName => {
       const dependencyActivities = groupedActivities[dependencyName];
       if (dependencyActivities && dependencyActivities.length > 0) {
-        
-        // Consolidar metas y presupuestos
-        const consolidatedGoals = Array(12).fill(0);
-        const consolidatedBudgets = Array(12).fill(0);
-        
         dependencyActivities.forEach(activity => {
-          activity.monthlyGoals?.forEach((goal, index) => {
-            consolidatedGoals[index] += goal.value || 0;
-          });
-          activity.monthlyBudgets?.forEach((budget, index) => {
-            consolidatedBudgets[index] += budget.value || 0;
-          });
+          const subsidyName = activity.name || 'Sin nombre';
+          if (!subsidyGroups[subsidyName]) {
+            subsidyGroups[subsidyName] = [];
+          }
+          subsidyGroups[subsidyName].push(activity);
         });
-        
-        const consolidatedRow = [
-          dependencyName,
-          dependencyActivities.length,
-          dependencyActivities[0]?.measurementUnit || 'Unidad',
-          ...consolidatedGoals,
-          '',
-          ...consolidatedBudgets,
-          ''
-        ];
-        
-        const row = consolidatedSheet.getRow(currentRow);
-        consolidatedRow.forEach((data, colIndex) => {
-          row.getCell(colIndex + 1).value = data;
-        });
-        
-        currentRow++;
       }
+    });
+
+    // Crear una fila por cada subsidio único
+    Object.keys(subsidyGroups).forEach(subsidyName => {
+      const subsidyActivities = subsidyGroups[subsidyName];
+      
+      // Consolidar metas y presupuestos
+      const consolidatedGoals = Array(12).fill(0);
+      const consolidatedBudgets = Array(12).fill(0);
+      
+      subsidyActivities.forEach(activity => {
+        activity.monthlyGoals?.forEach((goal, index) => {
+          consolidatedGoals[index] += goal.value || 0;
+        });
+        activity.monthlyBudgets?.forEach((budget, index) => {
+          consolidatedBudgets[index] += budget.value || 0;
+        });
+      });
+      
+      const consolidatedRow = [
+        subsidyName,
+        subsidyActivities[0]?.measurementUnit || 'Unidad',
+        ...consolidatedGoals,
+        '',
+        ...consolidatedBudgets,
+        ''
+      ];
+      
+      const row = consolidatedSheet.getRow(currentRow);
+      consolidatedRow.forEach((data, colIndex) => {
+        row.getCell(colIndex + 1).value = data;
+      });
+      
+      currentRow++;
     });
 
     this.setupConsolidatedSheetStyles(consolidatedSheet, 3); // Empezar desde fila 3
@@ -602,7 +631,7 @@ export class ExcelExportService {
    * @param startRow Fila donde empiezan los datos
    */
   private setupConsolidatedSheetStyles(worksheet: ExcelJS.Worksheet, startRow: number = 1): void {
-    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'B4C6E7' } };
+    const headerFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: '7A9CC6' } };
     const grayFill: ExcelJS.FillPattern = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6E6' } };
     const boldFont: Partial<ExcelJS.Font> = { bold: true };
     const blackBorder: Partial<ExcelJS.Borders> = {
@@ -622,7 +651,7 @@ export class ExcelExportService {
         if (rowNumber === startRow) { // Fila de encabezado
           cell.fill = headerFill;
           cell.font = boldFont;
-        } else if (rowNumber > startRow && (colNumber === 16 || colNumber === 29)) { // Columnas de totales
+        } else if (rowNumber > startRow && (colNumber === 15 || colNumber === 28)) { // Columnas de totales
           cell.fill = grayFill;
           cell.font = boldFont;
         }
@@ -630,13 +659,13 @@ export class ExcelExportService {
 
       // Añadir fórmulas para los totales (las fórmulas funcionarán incluso en celdas bloqueadas)
       if (rowNumber > startRow) {
-        row.getCell(16).value = { formula: `SUM(D${rowNumber}:O${rowNumber})` };
-        row.getCell(29).value = { formula: `SUM(Q${rowNumber}:AB${rowNumber})` };
+        row.getCell(15).value = { formula: `SUM(C${rowNumber}:N${rowNumber})` };
+        row.getCell(28).value = { formula: `SUM(P${rowNumber}:AA${rowNumber})` };
       }
     });
 
     // Proteger toda la hoja. No se permite editar nada en el consolidado.
-    worksheet.protect('gpc123', {
+    worksheet.protect('SisPoi2025#', {
       selectLockedCells: true,
       selectUnlockedCells: false,
       insertRows: false,
@@ -644,7 +673,19 @@ export class ExcelExportService {
       formatCells: false,
     });
 
-    // Configurar los anchos de columna
-    this.setColumnWidths(worksheet);
+    // Configurar los anchos de columna para consolidado
+    const columnWidths = [
+      { width: 25 }, // Subsidio
+      { width: 15 }, // Unidad de Medida  
+      ...Array(12).fill({ width: 12 }), // Metas mensuales
+      { width: 15 }, // Total Metas
+      ...Array(12).fill({ width: 12 }), // Presupuestos mensuales
+      { width: 18 }  // Total Presupuesto
+    ];
+    worksheet.columns.forEach((column, index) => {
+      if (columnWidths[index]) {
+        column.width = columnWidths[index].width;
+      }
+    });
   }
 }

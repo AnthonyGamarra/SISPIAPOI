@@ -159,10 +159,10 @@ export class ExcelImportService {
   private validateWorksheetStructure(worksheet: ExcelJS.Worksheet): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
     
-    // Verificar que existe la fila de encabezados
-    const headerRow = worksheet.getRow(1);
+    // Verificar que existe la fila de encabezados en la fila 3
+    const headerRow = worksheet.getRow(3);
     if (!headerRow) {
-      errors.push('No se encontró la fila de encabezados.');
+      errors.push('No se encontró la fila de encabezados en la fila 3.');
       return { isValid: false, errors };
     }
 
@@ -193,16 +193,16 @@ export class ExcelImportService {
   private validateConsolidatedWorksheetStructure(worksheet: ExcelJS.Worksheet): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
     
-    // Verificar que existe la fila de encabezados
-    const headerRow = worksheet.getRow(1);
+    // Verificar que existe la fila de encabezados en la fila 3
+    const headerRow = worksheet.getRow(3);
     if (!headerRow) {
-      errors.push('No se encontró la fila de encabezados.');
+      errors.push('No se encontró la fila de encabezados en la fila 3.');
       return { isValid: false, errors };
     }
 
     // Encabezados esperados para la vista consolidada
     const expectedHeaders = [
-      'Subsidio', 'Unidad de Medida', 'Actividades Agrupadas',
+      'Subsidio', 'Unidad de Medida',
       'Enero Meta', 'Febrero Meta', 'Marzo Meta', 'Abril Meta', 'Mayo Meta', 'Junio Meta',
       'Julio Meta', 'Agosto Meta', 'Septiembre Meta', 'Octubre Meta', 'Noviembre Meta', 'Diciembre Meta',
       'Total Metas',
@@ -227,8 +227,8 @@ export class ExcelImportService {
   private extractActivitiesFromWorksheet(worksheet: ExcelJS.Worksheet): ImportedActivity[] {
     const activities: ImportedActivity[] = [];
     
-    // Empezar desde la fila 2 (después de los encabezados)
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+    // Empezar desde la fila 4 (después del título, fila vacía y encabezados)
+    for (let rowNumber = 4; rowNumber <= worksheet.rowCount; rowNumber++) {
       const row = worksheet.getRow(rowNumber);
       
       // Verificar si la fila tiene datos
@@ -269,8 +269,8 @@ export class ExcelImportService {
   private extractConsolidatedActivitiesFromWorksheet(worksheet: ExcelJS.Worksheet): ImportedActivity[] {
     const activities: ImportedActivity[] = [];
     
-    // Empezar desde la fila 2 (después de los encabezados)
-    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+    // Empezar desde la fila 4 (después del título, fila vacía y encabezados)
+    for (let rowNumber = 4; rowNumber <= worksheet.rowCount; rowNumber++) {
       const row = worksheet.getRow(rowNumber);
       
       // Verificar si la fila tiene datos
@@ -286,14 +286,14 @@ export class ExcelImportService {
         monthlyBudgets: []
       };
 
-      // Extraer metas mensuales (columnas 4-15)
-      for (let col = 4; col <= 15; col++) {
+      // Extraer metas mensuales (columnas 3-14)
+      for (let col = 3; col <= 14; col++) {
         const value = this.getCellNumericValue(row, col);
         activity.monthlyGoals.push(value);
       }
 
-      // Extraer presupuestos mensuales (columnas 17-28)
-      for (let col = 17; col <= 28; col++) {
+      // Extraer presupuestos mensuales (columnas 16-27)
+      for (let col = 16; col <= 27; col++) {
         const value = this.getCellNumericValue(row, col);
         activity.monthlyBudgets.push(value);
       }
@@ -323,7 +323,7 @@ export class ExcelImportService {
     }
 
     activities.forEach((activity, index) => {
-      const rowNumber = index + 2; // +2 porque empezamos desde la fila 2
+      const rowNumber = index + 4; // +4 porque empezamos desde la fila 4
       const activityErrors: string[] = [];
 
       // Validaciones obligatorias
