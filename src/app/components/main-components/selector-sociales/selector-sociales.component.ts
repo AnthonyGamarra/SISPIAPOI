@@ -1,4 +1,4 @@
-// selector.component.ts
+// selector-sociales.component.ts
 
 import { Component, EventEmitter, OnInit, Output, inject, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,6 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
+import { LottieComponent } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -25,10 +26,9 @@ import { FormulationState } from '../../../models/logic/formulationState.model';
 import { FormulationSupportFile } from '../../../models/logic/formulationSupportFile.model';
 
 import { SafeUrlPipe } from '../../../safe-url.pipe';
-import { OcReportService } from '../../../core/services/logic/oc-report.service';
 
 @Component({
-  selector: 'app-selector',
+  selector: 'app-selector-sociales',
   standalone: true,
   imports: [
     CommonModule,
@@ -38,15 +38,15 @@ import { OcReportService } from '../../../core/services/logic/oc-report.service'
     InputTextModule,
     DialogModule,
     FileUploadModule,
+    LottieComponent,
     SafeUrlPipe
   ],
-  templateUrl: './selector.component.html',
-  styleUrls: ['./selector.component.scss'],
+  templateUrl: './selector-sociales.component.html',
+  styleUrls: ['./selector-sociales.component.scss'],
 })
-export class SelectorComponent implements OnInit {
+export class SelectorSocialesComponent implements OnInit {
   
   @Input() hasActivities: boolean = false;
-  @Input() formulationType: number = 1; // Tipo de formulación a filtrar (1 por defecto para compatibilidad)
 
   @Output() buscar = new EventEmitter<{
     ano: string | null;
@@ -57,7 +57,9 @@ export class SelectorComponent implements OnInit {
   @Output() cambioDependencia = new EventEmitter<string | null>();
 
   @Output() formulationSelected = new EventEmitter<Formulation>();
-  @Output() formulationUpdated = new EventEmitter<Formulation>(); private toastr = inject(ToastrService);
+  @Output() formulationUpdated = new EventEmitter<Formulation>(); 
+  
+  private toastr = inject(ToastrService);
 
   @Output() activitiesCountChanged = new EventEmitter<number>();
 
@@ -80,67 +82,6 @@ export class SelectorComponent implements OnInit {
   idFormulation: number | null = null;
   public activeFormulation: Formulation | null = null;
   public isLoadingFileMetadata: boolean = false;
-
-  // Opciones de formato para descarga de reportes
-  downloadFormatOptions = [
-    { label: 'Excel', value: 'excel' },
-    { label: 'PDF', value: 'pdf' },
-    { label: 'Word', value: 'word' }
-  ];
-  selectedDownloadFormat: string = 'excel';
-  isDownloadingR1 = false;
-  isDownloadingR2 = false;
-
-  // Inyección del servicio de reportes OC
-  private ocReportService = inject(OcReportService);
-
-  // Descargar OC R1
-  downloadOcR1(): void {
-    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
-      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
-      return;
-    }
-    this.isDownloadingR1 = true;
-    const depId = Number(this.selectedDependency);
-    const year = Number(this.selectedAno);
-    const modification = this.selectedModificationOption.value;
-    this.ocReportService.downloadOcR1Report(depId, year, modification, this.selectedDownloadFormat)
-      .subscribe({
-        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
-          this.ocReportService.downloadFile(response.body!, filename);
-          this.isDownloadingR1 = false;
-        },
-        error: (err: any) => {
-          this.toastr.error('Error al descargar el reporte.', 'Error');
-          this.isDownloadingR1 = false;
-        }
-      });
-  }
-
-  // Descargar OC R2
-  downloadOcR2(): void {
-    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
-      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
-      return;
-    }
-    this.isDownloadingR2 = true;
-    const depId = Number(this.selectedDependency);
-    const year = Number(this.selectedAno);
-    const modification = this.selectedModificationOption.value;
-    this.ocReportService.downloadOcR2Report(depId, year, modification, this.selectedDownloadFormat)
-      .subscribe({
-        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
-          this.ocReportService.downloadFile(response.body!, filename);
-          this.isDownloadingR2 = false;
-        },
-        error: (err: any) => {
-          this.toastr.error('Error al descargar el reporte.', 'Error');
-          this.isDownloadingR2 = false;
-        }
-      });
-  }
 
   isSingleDependency = false;
   formulationExists = false;
@@ -184,17 +125,18 @@ export class SelectorComponent implements OnInit {
     this.loadFormulationStates();
   }
 
-  // Ahora primero carga dependencias, y luego años según la dependencia seleccionada
-
+  // Cargar dependencias filtradas por tipo 2 y social = true
   loadDependencies(): void {
     this.dependencyService.getAll().subscribe((dependencies) => {
       let filteredDependencies: Dependency[];
 
-      // Filtrar por tipo de dependencia
-      const type1Dependencies = dependencies.filter(dep => dep.dependencyType?.idDependencyType === 1);
+      // Filtrar por tipo de dependencia 2 y social = true
+      const socialDependencies = dependencies.filter(dep => 
+        dep.dependencyType?.idDependencyType === 2 && dep.social === true
+      );
 
       if (this.isAdmin) {
-        filteredDependencies = type1Dependencies;
+        filteredDependencies = socialDependencies;
       } else {
         const dependencyIds: number[] = JSON.parse(
           localStorage.getItem('dependencies') || '[]'
@@ -206,7 +148,7 @@ export class SelectorComponent implements OnInit {
           );
           return;
         }
-        filteredDependencies = type1Dependencies.filter((dep) =>
+        filteredDependencies = socialDependencies.filter((dep) =>
           dependencyIds.includes(dep.idDependency!)
         );
       }
@@ -230,53 +172,64 @@ export class SelectorComponent implements OnInit {
   }
 
   // Nuevo método: cuando cambia la dependencia, carga los años válidos
-onDependencyChange(): void {
-  // Limpiar todo inmediatamente al cambiar órgano
-  this.optionsAno = [];
-  this.selectedAno = null;
-  this.formulationExists = false;
-  this.idFormulation = null;
-  this.foundFormulations = [];
-  this.modificationOptions = [];
-  this.selectedModificationOption = null;
-  this.quarterLabel = null;
-  this.currentFormulationStateLabel = null;
-  this.activeFormulation = null;
-  this.hasSupportFile = false;
-  this.supportFileMetadata = null;
-  this.selectedFormulationState = null;
-  this.checkingFormulation = false;
-  
-  // Emitir null para limpiar la tabla inmediatamente
-  this.formulationSelected.emit(undefined);
-  this.cambioDependencia.emit(this.selectedDependency);
+  onDependencyChange(): void {
+    // Limpiar todo inmediatamente al cambiar órgano
+    this.optionsAno = [];
+    this.selectedAno = null;
+    this.formulationExists = false;
+    this.idFormulation = null;
+    this.foundFormulations = [];
+    this.modificationOptions = [];
+    this.selectedModificationOption = null;
+    this.quarterLabel = null;
+    this.currentFormulationStateLabel = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+    this.selectedFormulationState = null;
+    this.checkingFormulation = false;
+    
+    // Emitir cambio de dependencia sin emitir formulación
+    this.cambioDependencia.emit(this.selectedDependency);
 
-  if (!this.selectedDependency) return;
-  
-  const depId = Number(this.selectedDependency);
-  this.strategicObjectiveService.getMinMaxYears().subscribe({
-    next: (range) => {
-      if (range && range.minYear && range.maxYear) {
-        this.optionsAno = [];
-        for (let year = range.maxYear; year >= range.minYear; year--) {
-          this.optionsAno.push({ label: year.toString(), value: year.toString() });
+    if (!this.selectedDependency) return;
+    
+    const depId = Number(this.selectedDependency);
+    this.strategicObjectiveService.getMinMaxYears().subscribe({
+      next: (range) => {
+        if (range && range.minYear && range.maxYear) {
+          this.optionsAno = [];
+          for (let year = range.maxYear; year >= range.minYear; year--) {
+            this.optionsAno.push({ label: year.toString(), value: year.toString() });
+          }
         }
-      }
-    },
-    error: (err) => {
-      console.error('Error al cargar rango de años:', err);
-      this.toastr.error('Error al cargar los años disponibles.', 'Error');
-    },
-  });
-}
-  // Cuando cambia el año, busca formulaciones
+      },
+      error: (err) => {
+        console.error('Error al cargar rango de años:', err);
+        this.toastr.error('Error al cargar los años disponibles.', 'Error');
+      },
+    });
+  }
+
+  // Cuando cambia el año, solo emite los valores y deja que FormulacionTablaComponent maneje la búsqueda
   onAnoChange(): void {
     // Emitir el cambio de año inmediatamente
     this.cambioAno.emit(this.selectedAno);
 
-    if (this.selectedAno && this.selectedDependency) {
-      this.verificarFormulacion();
-    }
+    // NO ejecutar verificarFormulacion() ni onBuscar() - dejar que FormulacionTablaComponent maneje todo
+    // Solo limpiar el estado local del selector
+    this.formulationExists = false;
+    this.idFormulation = null;
+    this.foundFormulations = [];
+    this.modificationOptions = [];
+    this.selectedModificationOption = null;
+    this.quarterLabel = null;
+    this.currentFormulationStateLabel = null;
+    this.activeFormulation = null;
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+    this.selectedFormulationState = null;
+    this.checkingFormulation = false;
   }
 
   loadFormulationStates(): void {
@@ -309,16 +262,18 @@ onDependencyChange(): void {
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
-    } this.checkingFormulation = true;
+    } 
+    
+    this.checkingFormulation = true;
 
     const year = Number(this.selectedAno);
     const depId = Number(this.selectedDependency);
 
     this.formulationService.searchByDependencyAndYear(depId, year).subscribe({
       next: (formulations) => {
-        // Filtrar por tipo de formulación usando el input
-        const filteredFormulations = formulations.filter(f => f.formulationType?.idFormulationType === this.formulationType);
-        this.foundFormulations = filteredFormulations;
+        // Filtrar por tipo de formulación 5 (prestaciones sociales)
+        const socialFormulations = formulations.filter(f => f.formulationType?.idFormulationType === 5);
+        this.foundFormulations = socialFormulations;
         this.formulationExists = this.foundFormulations.length > 0;
 
         if (this.formulationExists) {
@@ -391,6 +346,13 @@ onDependencyChange(): void {
           this.hasSupportFile = false;
           this.supportFileMetadata = null;
         }
+        
+        // Emitir eventos cuando se selecciona una formulación válida
+        this.buscar.emit({
+          ano: this.selectedAno,
+          dependencia: this.selectedDependency,
+          idFormulation: this.idFormulation
+        });
         this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.idFormulation = null;
@@ -584,6 +546,12 @@ onDependencyChange(): void {
 
     if (this.formulationExists) {
       if (this.idFormulation && this.activeFormulation) {
+        // Emitir evento buscar para componentes que lo escuchan
+        this.buscar.emit({
+          ano: this.selectedAno,
+          dependencia: this.selectedDependency,
+          idFormulation: this.idFormulation
+        });
         this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.toastr.warning(
@@ -594,9 +562,11 @@ onDependencyChange(): void {
       return;
     }
 
+    // Crear nueva formulación de tipo 5 (prestaciones sociales)
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
+      formulationType: { idFormulationType: 5 } as any, // Tipo 5 para prestaciones sociales
       formulationState: { idFormulationState: 1 } as FormulationState,
       active: true,
       modification: 1,
@@ -613,19 +583,26 @@ onDependencyChange(): void {
         this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
-          this.toastr.success('Formulación iniciada correctamente.', 'Éxito');
-          if (this.activeFormulation)
+          this.toastr.success('Formulación de prestaciones sociales iniciada correctamente.', 'Éxito');
+          if (this.activeFormulation) {
+            // Emitir evento buscar para componentes que lo escuchan
+            this.buscar.emit({
+              ano: this.selectedAno,
+              dependencia: this.selectedDependency,
+              idFormulation: this.activeFormulation.idFormulation || null
+            });
             this.formulationSelected.emit(this.activeFormulation);
+          }
         }, 2500);
       },
       error: (err) => {
-        this.toastr.error('Error al crear la formulación.', 'Error');
-        console.error('Error creating formulation:', err);
+        this.toastr.error('Error al crear la formulación de prestaciones sociales.', 'Error');
+        console.error('Error creating social formulation:', err);
       },
     });
   }
 
-  // selector.component.ts
+  // selector-sociales.component.ts
 
   changeFormulationState(): void {
     if (!this.idFormulation || !this.selectedFormulationState || !this.activeFormulation) {

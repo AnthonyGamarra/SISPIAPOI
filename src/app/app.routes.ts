@@ -16,6 +16,7 @@ import { roleGuard } from './core/guards/role.guard';
 import { FormulacionDesconcentradoGestionModuloComponent } from './components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
 import { MenuFormulacionDesconcentradoComponent } from './pages/menu-formulacion-desconcentrado/menu-formulacion-desconcentrado.component';
 import { ReporteF9 } from './pages/reporte-f9/reporte-f9.component';
+import { FormulacionOoddSocialesComponent } from './pages/formulacion-oodd-sociales/formulacion-oodd-sociales.component';
 
 export const routes: Routes = [
   {
@@ -40,6 +41,11 @@ export const routes: Routes = [
   {
     path: 'formulacion/formulacion-desconcentrado', // ✅ nueva ruta para el componente Formu1
     component: MenuFormulacionDesconcentradoComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'formulacion/formulacion-desconcentrado/sociales',
+    component: FormulacionOoddSocialesComponent,
     canActivate: [authGuard],
   },
   {

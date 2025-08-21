@@ -1,0 +1,22 @@
+<app-menubar></app-menubar>
+
+<app-selector-sociales
+  (buscar)="manejarBusqueda($event)"
+  (cambioAno)="onSelectorChange({ano: $event})"
+  (cambioDependencia)="onSelectorChange({dependencia: $event})"
+  (formulationSelected)="manejarBusqueda($event)"
+  (formulationUpdated)="onFormulationUpdated($event)"
+  [hasActivities]="activitiesCount > 0"
+></app-selector-sociales>
+
+<app-formulacion-tabla
+  [currentFormulation]="currentFormulation"
+  [mostrar]="true"
+  [ano]="selectedYear"
+  [idDependency]="selectedDependency"
+  [idFormulation]="currentFormulation?.idFormulation || null"
+  (seleccionCambio)="onSeleccionAccion($event)"
+  (activitiesCountChanged)="onActivitiesCountChanged($event)">
+</app-formulacion-tabla>
+
+<app-footer></app-footer>

@@ -199,8 +199,16 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           newFormulation?.modification !== oldFormulation?.modification ||
           newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
 
-        // Cargar datos si la formulación cambió o si se está mostrando por primera vez
-        if (hasFormulationChanged || (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue)) {
+        // Cargar datos si la formulación cambió (sin importar mostrar)
+        if (hasFormulationChanged) {
+          console.log('Cargando datos para nueva formulación:', newFormulation.idFormulation);
+          this.cargarDatos();
+          this.loadCombos();
+          this.loadOperationalActivities();
+        }
+        // O si se está mostrando por primera vez y no había formulación antes
+        else if (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue && !oldFormulation) {
+          console.log('Cargando datos para primera visualización');
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
@@ -216,7 +224,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       }
     }
 
-    // 2. Manejar cambios en año
+    // 2. Manejar cambios en año - Solo para estado de UI
     if (changes['ano']) {
       const newAno = changes['ano'].currentValue;
       this.lastSelectedAno = newAno;
@@ -226,7 +234,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.ano = newAno;
       }
 
-      // Si tenemos año y dependencia pero no formulación, iniciar búsqueda
+      // Si tenemos año y dependencia pero no formulación, mostrar estado de búsqueda
       if (newAno && this.idDependency && !this.currentFormulation) {
         this.isSearchingFormulation = true;
         this.isLoadingFormulation = false;
@@ -239,7 +247,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       }
     }
 
-    // 3. Manejar cambios en dependencia
+    // 3. Manejar cambios en dependencia - Solo para estado de UI
     if (changes['idDependency']) {
       const newDependency = changes['idDependency'].currentValue;
       this.lastSelectedDependency = newDependency;
@@ -249,7 +257,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
         this.idDependency = newDependency;
       }
 
-      // Si tenemos año y dependencia pero no formulación, iniciar búsqueda
+      // Si tenemos año y dependencia pero no formulación, mostrar estado de búsqueda
       if (newDependency && this.ano && !this.currentFormulation) {
         this.isSearchingFormulation = true;
         this.isLoadingFormulation = false;

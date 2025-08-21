@@ -1,0 +1,153 @@
+.selector-bar {
+  background-color: var(--primary); /* azul */
+  padding: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  color: white;
+  border-radius: 4px;
+  margin: 5px 0px;
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.selector-label {
+  white-space: nowrap;
+  margin-bottom: 0.25rem;
+}
+
+.selector {
+  background-color: white !important;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+.selector:hover {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.selector:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.success-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8); // semitransparente
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  ng-lottie {
+    width: 250px;
+    height: 250px;
+  }
+
+  .message {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2e7d32;
+    margin-top: 1rem;
+  }
+}
+
+
+::ng-deep .p-dialog-header-state {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 10px;
+}
+
+
+// Add or modify styles for the dialog
+::ng-deep .dialog-header-state {
+  .p-dialog { // Target the PrimeNG dialog component itself
+    min-width: 30vw;
+    max-width: 40vw;
+    min-height: 30vh;
+
+    @media (max-width: 768px) {
+      max-width: 95vw !important; /* Make dialog wider on small screens */
+      max-height: 90vh !important; /* Allow more height on small screens */
+      top: 5vh !important; /* Adjust vertical position for better viewing */
+    }
+  }
+
+  .p-dialog-footer {
+    justify-content: flex-end; /* Align buttons to the right by default */
+    @media (max-width: 768px) {
+      justify-content: center !important; /* Center buttons on small screens */
+      padding: 1rem; /* Add some padding */
+    }
+  }
+}
+
+
+::ng-deep .p-select-list-container {
+  max-width: 85vw;
+}
+
+.add-button {
+  background-color: var(--primary) !important;
+  color: white !important;  
+  border: none !important;
+  border: 1px solid transparent !important;
+}
+
+.add-button:hover {
+  background-color: var(--primary-darker) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.add-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.cancel-button {
+  background-color: white;
+  color: var(--primary) !important;
+  border: none !important;
+  border: 1px solid transparent !important;
+  min-width: 25%;
+  max-width: 30%;
+}
+
+.cancel-button:hover {
+  background-color: var(--secondary-light) !important;
+  color: var(--primary-darker) !important;
+  border: 1px solid white !important;
+}
+
+::ng-deep .p-fileupload-choose-button {
+  background-color: white !important;
+  color: var(--primary) !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+}
+
+::ng-deep .p-fileupload-choose-button:hover {
+  background-color: var(--primary) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+::ng-deep .p-fileupload-choose-button:disabled {
+  background-color: var(--secondary-light) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
