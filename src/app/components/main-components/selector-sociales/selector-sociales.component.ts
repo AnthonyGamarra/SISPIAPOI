@@ -19,6 +19,7 @@ import { FormulationService } from '../../../core/services/logic/formulation.ser
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
 import { FormulationStateService } from '../../../core/services/logic/formulation-state.service';
 import { FormulationSupportFileService } from '../../../core/services/logic/formulation-support-file.service';
+import { OcReportService } from '../../../core/services/logic/oc-report.service';
 
 import { Formulation } from '../../../models/logic/formulation.model';
 import { Dependency } from '../../../models/logic/dependency.model';
@@ -73,6 +74,7 @@ export class SelectorSocialesComponent implements OnInit {
   private authService = inject(AuthService);
   private formulationStateService = inject(FormulationStateService);
   private fileService = inject(FormulationSupportFileService);
+  private ocReportService = inject(OcReportService);
 
   @ViewChild('fileUpload') fileUploadRef!: FileUpload;
 
@@ -114,6 +116,16 @@ export class SelectorSocialesComponent implements OnInit {
   // NUEVO: Variables para la visualización del documento
   showDocumentViewer = false;
   documentUrl: any = '';
+
+  // Opciones de formato para descarga de reportes
+  downloadFormatOptions = [
+    { label: 'Excel', value: 'excel' },
+    { label: 'PDF', value: 'pdf' },
+    { label: 'Word', value: 'word' }
+  ];
+  selectedDownloadFormat: string = 'excel';
+  isDownloadingR1 = false;
+  isDownloadingR2 = false;
 
   canSeeEvaluacionComponent(): boolean {
     return this.authService.hasRole(this.allowedRolesForEvaluacion);
@@ -211,25 +223,15 @@ export class SelectorSocialesComponent implements OnInit {
     });
   }
 
-  // Cuando cambia el año, solo emite los valores y deja que FormulacionTablaComponent maneje la búsqueda
+  // Cuando cambia el año, verifica la formulación automáticamente
   onAnoChange(): void {
     // Emitir el cambio de año inmediatamente
     this.cambioAno.emit(this.selectedAno);
 
-    // NO ejecutar verificarFormulacion() ni onBuscar() - dejar que FormulacionTablaComponent maneje todo
-    // Solo limpiar el estado local del selector
-    this.formulationExists = false;
-    this.idFormulation = null;
-    this.foundFormulations = [];
-    this.modificationOptions = [];
-    this.selectedModificationOption = null;
-    this.quarterLabel = null;
-    this.currentFormulationStateLabel = null;
-    this.activeFormulation = null;
-    this.hasSupportFile = false;
-    this.supportFileMetadata = null;
-    this.selectedFormulationState = null;
-    this.checkingFormulation = false;
+    // Verificar formulación automáticamente si ambos valores están seleccionados
+    if (this.selectedAno && this.selectedDependency) {
+      this.verificarFormulacion();
+    }
   }
 
   loadFormulationStates(): void {
@@ -644,5 +646,56 @@ export class SelectorSocialesComponent implements OnInit {
         console.error('Error updating formulation state:', err);
       },
     });
+  }
+
+  // Métodos para descarga de reportes (igual que selector normal)
+  downloadOcR1(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    
+    this.isDownloadingR1 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    
+    this.ocReportService.downloadOdSociales1Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR1 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR1 = false;
+        }
+      });
+  }
+
+  downloadOcR2(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    
+    this.isDownloadingR2 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    
+    this.ocReportService.downloadOdSociales2Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR2 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR2 = false;
+        }
+      });
   }
 }

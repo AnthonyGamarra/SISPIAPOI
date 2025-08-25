@@ -6,6 +6,7 @@ import { SelectorSocialesComponent } from '../../components/main-components/sele
 import { FormulacionTablaComponent } from '../../components/main-components/formulacion-tabla/formulacion-tabla.component';
 import { Formulation } from '../../models/logic/formulation.model';
 import { FormulationService } from '../../core/services/logic/formulation.service';
+import { FormulacionSocialesOdTablaComponent } from '../../components/main-components/formulacion-sociales-od-tabla/formulacion-sociales-od-tabla.component';
 
 @Component({
   selector: 'app-formulacion-oodd-sociales',
@@ -15,14 +16,14 @@ import { FormulationService } from '../../core/services/logic/formulation.servic
     FooterComponent,
     MenubarComponent,
     SelectorSocialesComponent,
-    FormulacionTablaComponent,
+    FormulacionSocialesOdTablaComponent,
   ],
   templateUrl: './formulacion-oodd-sociales.component.html',
   styleUrl: './formulacion-oodd-sociales.component.scss',
 })
 export class FormulacionOoddSocialesComponent {
   // We still keep ViewChild, but its direct manipulation will be minimized
-  @ViewChild(FormulacionTablaComponent) formulacionTablaComponent!: FormulacionTablaComponent;
+  @ViewChild(FormulacionSocialesOdTablaComponent) formulacionSocialesOdTablaComponent!: FormulacionSocialesOdTablaComponent;
 
   private cdr = inject(ChangeDetectorRef);
   private formulationService = inject(FormulationService);

@@ -80,6 +80,50 @@ export class OcReportService {
   }
 
   /**
+   * Descarga el reporte OD Sociales 1 en el formato especificado
+   * @param dependencyId ID de la dependencia
+   * @param year Año del reporte
+   * @param modification Número de modificación
+   * @param format Formato del reporte ('excel', 'pdf', 'word'/'docx')
+   * @returns Observable con la respuesta HTTP que contiene el archivo
+   */
+  downloadOdSociales1Report(dependencyId: number, year: number, modification: number, format: string = 'excel'): Observable<HttpResponse<Blob>> {
+    const params = new HttpParams()
+      .set('dependencyId', dependencyId.toString())
+      .set('year', year.toString())
+      .set('modification', modification.toString())
+      .set('format', format);
+
+    return this.http.get(`${this.BASE_URL}/od-sociales1/download`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    });
+  }
+
+  /**
+   * Descarga el reporte OD Sociales 2 en el formato especificado
+   * @param dependencyId ID de la dependencia
+   * @param year Año del reporte
+   * @param modification Número de modificación
+   * @param format Formato del reporte ('excel', 'pdf', 'word'/'docx')
+   * @returns Observable con la respuesta HTTP que contiene el archivo
+   */
+  downloadOdSociales2Report(dependencyId: number, year: number, modification: number, format: string = 'excel'): Observable<HttpResponse<Blob>> {
+    const params = new HttpParams()
+      .set('dependencyId', dependencyId.toString())
+      .set('year', year.toString())
+      .set('modification', modification.toString())
+      .set('format', format);
+
+    return this.http.get(`${this.BASE_URL}/od-sociales2/download`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    });
+  }
+
+  /**
    * Método auxiliar para descargar un archivo blob
    * @param blob El blob del archivo
    * @param filename Nombre del archivo a descargar

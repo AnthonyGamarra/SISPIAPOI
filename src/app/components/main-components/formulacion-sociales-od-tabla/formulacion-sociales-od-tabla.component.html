@@ -1,0 +1,477 @@
+<div>
+  <!-- 1. Mostrar mensaje inicial cuando no se ha seleccionado nada -->
+  <div *ngIf="!ano || !idDependency" class="text-center p-6">
+    <h3 class="text-lg font-semibold text-gray-600">No se ha seleccionado una formulación</h3>
+  </div>
+
+  <!-- 2. Mostrar spinner mientras se está buscando la formulación -->
+  <div *ngIf="(ano && idDependency) && (isLoadingFormulation || isSearchingFormulation)" class="text-center p-6">
+    <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+    <p class="mt-3 text-gray-600">{{ isSearchingFormulation ? 'Buscando formulación...' : 'Verificando formulación...'
+      }}</p>
+  </div>
+
+  <!-- 3.2 Mostrar mensaje cuando NO hay formulación (después de buscar) -->
+  <div
+    *ngIf="(ano && idDependency) && !currentFormulation && !isLoadingFormulation && !isSearchingFormulation && hasSearchedFormulation"
+    class="text-center p-6">
+    <h3 class="text-lg font-semibold text-gray-600">No se ha iniciado una formulación para el año: {{ ano }}</h3>
+  </div>
+
+  <!-- 3.1 Contenido principal cuando SÍ hay formulación -->
+  <div *ngIf="currentFormulation">
+    <div class="grid mx-auto my-3">
+      <div class="col-12 md:col-8 flex justify-center mr-auto">
+        <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
+          optionLabel="name" optionValue="value" />
+      </div>
+      <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="agregarActividad()"
+        [disabled]="state === 2 || state === 4 || !year || !active" class="col-6 md:col-2 add-button ml-auto">
+      </button>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div *ngIf="isLoadingActivities" class="text-center p-6">
+      <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+      <p class="mt-3 text-gray-600">Cargando actividades...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay actividades -->
+    <div *ngIf="!isLoadingActivities && products.length === 0" class="text-center p-6">
+      <h3 class="text-lg font-semibold text-gray-600">No hay actividades registradas</h3>
+    </div>
+
+    <!-- Tabla de actividades -->
+    <div *ngIf="!isLoadingActivities && products.length > 0" class="table-container">
+      <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
+        [scrollable]="true" scrollHeight="590px" columnResizeMode="expand" dataKey="idOperationalActivity"
+        editMode="row" [paginator]="true" [rows]="6" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+
+        <ng-template pTemplate="header" class="table-header" #header>
+          <tr class="cabecera">
+            <th style="min-width: 180px; max-width: 180px;" rowspan="2">Acciones</th>
+            <th style="min-width: 200px; max-width: 200px;" rowspan="2">Unidad Operativa</th>
+            <th style="min-width: 200px; max-width: 200px;" rowspan="2">Prestación social</th>
+            <th style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
+            <th colspan="12">Metas Mensuales</th>
+            <th style="min-width: 150px; max-width: 150px;" rowspan="2">Total Metas</th>
+            <th colspan="12">Presupuesto Mensual S/.</th>
+            <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
+            <th style="min-width: 370px; max-width: 370px;" rowspan="2">Detalle de actividad</th>
+          </tr>
+          <tr class="cabecera">
+            <!-- Metas Mensuales -->
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Enero</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Febrero</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Marzo</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Abril</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Mayo</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Junio</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Julio</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Agosto</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Septiembre</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Octubre</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Noviembre</th>
+            <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">Diciembre</th>
+            <!-- Presupuesto Mensual -->
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Enero</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Febrero</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Marzo</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Abril</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Mayo</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Junio</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Julio</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Agosto</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Septiembre</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Octubre</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Noviembre</th>
+            <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">Diciembre</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
+          <tr [pEditableRow]="product">
+
+            <td>
+              <div class="flex justify-content-center gap-2">
+                <button *ngIf="!editing && (state === 1 || state === 3) && active" pButton pRipple type="button"
+                  pInitEditableRow icon="pi pi-pencil" (click)="onRowEditInit(product)" text rounded
+                  severity="secondary">
+                </button>
+
+                <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
+                  (click)="onRowEditSave(product)" text rounded severity="success">
+                </button>
+
+                <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
+                  (click)="onRowEditCancel(product, ri)" text rounded severity="danger">
+                </button>
+
+                <button *ngIf="!editing && (state === 1 || state === 3) && active" pButton pRipple type="button"
+                  icon="pi pi-trash" (click)="eliminarActividad(ri, product)" text rounded severity="danger">
+                </button>
+              </div>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [disabled]="true"
+                    style="resize: none">{{ getActivityFamilyName(product) }}</textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [disabled]="true" 
+                    style="resize: none">{{ getActivityFamilyName(product) }}</textarea>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name"
+                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
+                    style="resize: none"></textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [disabled]="true" 
+                    style="resize: none">{{ product.name }}</textarea>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="1" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit"
+                    [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
+                    style="resize: none"></textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <textarea rows="1" cols="21" [autoResize]="true" pTextarea [disabled]="true"
+                    style="resize: none">{{ product.measurementUnit }}</textarea>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <!-- Metas Mensuales (enero - diciembre) -->
+            <td class="montos" [ngClass]="getMonthEditableClass(0)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[0].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[0]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(1)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[1].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[1]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(2)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[2].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[2]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(3)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[3].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[3]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(4)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[4].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[4]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(5)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[5].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[5]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(6)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[6].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[6]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(7)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[7].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[7]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(8)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[8].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[8]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(9)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[9].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[9]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(10)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[10].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[10]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(11)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyGoals[11].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyGoals?.[11]?.value || 0 }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <!-- Total Metas -->
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">{{ getTotalMonthlyGoals(product) }}</ng-template>
+                <ng-template pTemplate="output">{{ getTotalMonthlyGoals(product) }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <!-- Presupuesto Mensual (enero - diciembre) -->
+            <td class="montos" [ngClass]="getMonthEditableClass(0)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[0].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[0]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(1)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[1].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[1]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(2)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[2].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[2]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(3)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[3].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[3]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(4)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[4].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[4]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(5)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[5].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[5]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(6)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[6].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[6]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(7)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[7].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[7]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(8)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[8].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[8]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(9)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[9].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[9]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(10)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[10].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[10]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos" [ngClass]="getMonthEditableClass(11)">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.monthlyBudgets[11].value" type="number" min="0" step="0.01"
+                    [disabled]="state === 2 || state === 4 || !active || !isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.monthlyBudgets?.[11]?.value || 0 | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <!-- Total Presupuesto -->
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">{{ getTotalMonthlyBudgets(product) | number:'1.2-2' }}</ng-template>
+                <ng-template pTemplate="output">{{ getTotalMonthlyBudgets(product) | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <!-- Detalle de actividad -->
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.description"
+                    [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
+                    pTextarea [disabled]="true" style="resize: none">{{ product.description }}</textarea></ng-template>
+              </p-cellEditor>
+            </td>
+
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+
+  <p-dialog header="Confirmar Eliminación" [(visible)]="showDeleteConfirmation" [modal]="true"
+    [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+    [resizable]="false" [baseZIndex]="10000" draggable="false">
+    <div class="confirmation-content text-center">
+      <div class="success-animation mb-0">
+        <ng-lottie [options]="options"></ng-lottie>
+      </div>
+      <h3>¿Estás seguro de que quieres eliminar esta actividad?</h3>
+      <p>Esta acción no se puede deshacer.</p>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer-buttons-wrapper">
+        <button pButton label="No" icon="pi pi-times" (click)="cancelDelete()" class="custom-cancel-button mx-2">
+        </button>
+        <button pButton label="Sí" icon="pi pi-check" (click)="confirmDelete()" class="custom-confirm-button mx-2">
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
+

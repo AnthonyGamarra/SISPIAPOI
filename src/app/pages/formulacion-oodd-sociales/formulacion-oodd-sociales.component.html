@@ -9,7 +9,7 @@
   [hasActivities]="activitiesCount > 0"
 ></app-selector-sociales>
 
-<app-formulacion-tabla
+<app-formulacion-sociales-od-tabla
   [currentFormulation]="currentFormulation"
   [mostrar]="true"
   [ano]="selectedYear"
@@ -17,6 +17,6 @@
   [idFormulation]="currentFormulation?.idFormulation || null"
   (seleccionCambio)="onSeleccionAccion($event)"
   (activitiesCountChanged)="onActivitiesCountChanged($event)">
-</app-formulacion-tabla>
+</app-formulacion-sociales-od-tabla>
 
 <app-footer></app-footer>

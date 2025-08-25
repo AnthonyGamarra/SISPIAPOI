@@ -18,14 +18,14 @@
       optionValue="value"></p-select>
   </div>
 
-  <div class="selector-group col-8 lg:col-3" *ngIf="false && formulationExists && foundFormulations.length > 0">
+  <div class="selector-group col-8 lg:col-3" *ngIf="formulationExists && foundFormulations.length > 0">
     <label class="selector-label">Etapa:</label>
     <p-select [options]="modificationOptions" [(ngModel)]="selectedModificationOption"
       (onChange)="onModificationChange()" placeholder="Seleccione una modificación" class="selector-select"
       optionLabel="label" [disabled]="foundFormulations.length <= 1"></p-select>
   </div>
 
-  <div class="selector-group col-6 lg:col-2" *ngIf="false &&
+  <div class="selector-group col-6 lg:col-2" *ngIf="
       formulationExists &&
       quarterLabel &&
       selectedModificationOption?.value !== 1
@@ -34,21 +34,9 @@
     <input pInputText [(ngModel)]="quarterLabel" [disabled]="true" class="selector-select" />
   </div>
 
-  <div class="selector-group col-6 lg:col-2" *ngIf="false && formulationExists && currentFormulationStateLabel">
+  <div class="selector-group col-6 lg:col-2" *ngIf="formulationExists && currentFormulationStateLabel">
     <label class="selector-label">Estado:</label>
     <input pInputText [(ngModel)]="currentFormulationStateLabel" [disabled]="true" class="selector-select" />
-  </div>
-
-  <!-- Botón para iniciar/buscar formulación - OCULTO -->
-  <div class="selector-group col-4 lg:col-1" *ngIf="false && selectedAno && selectedDependency && !checkingFormulation">
-    <label class="selector-label">&nbsp;</label>
-    <button pButton type="button" 
-            [label]="formulationExists ? 'Buscar' : 'Iniciar'" 
-            [icon]="formulationExists ? 'pi pi-search' : 'pi pi-plus'"
-            class="selector w-full" 
-            (click)="onBuscar()"
-            [disabled]="!selectedAno || !selectedDependency">
-    </button>
   </div>
 
   <!-- Spinner mientras verifica formulación -->
@@ -91,6 +79,19 @@
       *ngIf="formulationExists && isAdmin && activeFormulation?.active">
       <button type="button" pButton class="selector w-full sm:w-auto" label="Cambiar estado" icon="pi pi-pencil"
         (click)="showChangeStateModal = true" [disabled]="!idFormulation"></button>
+    </div>
+
+    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
+      *ngIf="formulationExists && selectedModificationOption && hasActivities">
+      <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
+      <p-select [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
+        class="selector-select mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-select>
+      <button pButton type="button" icon="pi pi-download" label="Reporte"
+        class="selector p-button-info mr-2 w-full sm:w-auto" (click)="downloadOcR1()"
+        [disabled]="isDownloadingR1"></button>
+      <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download" label="Reporte simplificado"
+        class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
+        [disabled]="isDownloadingR2"></button>
     </div>
   </div>
 
