@@ -10,6 +10,7 @@ import { AdminOeAeComponent } from './pages/admin-oe-ae/admin-oe-ae.component';
 import { AdminMaestroGestionOcComponent } from './pages/admin-maestro-gestion-oc/admin-maestro-gestion-oc.component';
 import { AdminMaestroGcspeComponent } from './pages/admin-maestro-gcspe/admin-maestro-gcspe.component';
 import { AdminMaestroGcpamypcdComponent } from './pages/admin-maestro-gcpamypcd/admin-maestro-gcpamypcd.component';
+
 import { MenuAdmComponent } from './pages/menu-adm/menu-adm.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -17,6 +18,7 @@ import { FormulacionDesconcentradoGestionModuloComponent } from './components/mo
 import { MenuFormulacionDesconcentradoComponent } from './pages/menu-formulacion-desconcentrado/menu-formulacion-desconcentrado.component';
 import { ReporteF9 } from './pages/reporte-f9/reporte-f9.component';
 import { FormulacionOoddSocialesComponent } from './pages/formulacion-oodd-sociales/formulacion-oodd-sociales.component';
+import { AdminMaestroGcpsComponent } from './pages/admin-maestro-gcps/admin-maestro-gcps.component';
 
 export const routes: Routes = [
   {
@@ -88,6 +90,14 @@ export const routes: Routes = [
   {
     path: 'gestion/adm-maestro-gcpamypcd',
     component: AdminMaestroGcpamypcdComponent,
+    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "GPLANEAMIENTO"],
+    },
+  },
+  {
+    path: 'gestion/adm-maestro-gcps',
+    component: AdminMaestroGcpsComponent,
     canActivate: [authGuard],
     data: {
       roles: ["ADMIN", "GPLANEAMIENTO"],

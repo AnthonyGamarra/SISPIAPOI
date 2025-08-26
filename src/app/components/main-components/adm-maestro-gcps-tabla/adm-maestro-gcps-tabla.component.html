@@ -1,0 +1,317 @@
+<div>
+  <div class="mx-5">
+    <div class="grid ml-auto mt-3">
+      <h2 class="col-auto">
+        Administrar Maestros - {{ currentFormulationType?.name }} del año:
+      </h2>
+      <span class="col-auto my-auto">
+        <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()" placeholder="Seleccionar Año"
+          [showClear]="false" class="mx-5"></p-select>
+      </span>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div *ngIf="loading" class="text-center p-6">
+      <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+      <p class="mt-3 text-gray-600">Cargando datos...</p>
+    </div>
+
+    <!-- Grid de 1 columna para ancho completo -->
+    <div *ngIf="!loading" class="grid">
+      <!-- Columna 1: Gestión de Familias -->
+      <div class="col-12">
+        <!-- Tabla de Familias -->
+        <div class="mb-3">
+          <div class="title-section flex justify-content-between align-items-center my-4">
+            <h3 class="text-xl font-semibold m-0">Gestión de Familias</h3>
+            <button pButton label="Agregar Familia" icon="pi pi-plus" class="add-uo-button"
+              (click)="addNewFamily()"></button>
+          </div>
+
+          <div class="table-container">
+            <p-table #familiesTable [value]="activityFamilies" [size]="selectedSize" stripedRows showGridlines
+              [resizableColumns]="true" [scrollable]="true" scrollHeight="400px" columnResizeMode="expand"
+              dataKey="idActivityFamily" editMode="row" [paginator]="true" [rows]="5" [rowHover]="true"
+              [editingRowKeys]="editingFamilyRowKeys">
+
+              <ng-template pTemplate="header">
+                <tr class="cabecera">
+                  <th style="min-width: 70px; max-width: 70px;">Acciones</th>
+                  <th style="min-width: 600px;">Nombre de Familia</th>
+                  <th style="min-width: 40px;">Estado</th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-family let-editing="editing" let-ri="rowIndex">
+                <tr [pEditableRow]="family">
+                  <td>
+                    <div class="flex justify-content-center gap-2">
+                      <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil"
+                        (click)="onFamilyRowEditInit(family)" text rounded severity="secondary">
+                      </button>
+
+                      <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
+                        (click)="onFamilyRowEditSave(family)" text rounded severity="success">
+                      </button>
+
+                      <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
+                        (click)="onFamilyRowEditCancel(family, ri)" text rounded severity="danger">
+                      </button>
+
+                      <button *ngIf="!editing" pButton pRipple type="button" icon="pi pi-trash"
+                        (click)="eliminarFamilia(ri, family)" text rounded severity="danger">
+                      </button>
+                    </div>
+                  </td>
+
+                  <td>
+                    <p-cellEditor>
+                      <ng-template pTemplate="input">
+                        <input pInputText [(ngModel)]="family.name" type="text" style="width: 100%;" />
+                      </ng-template>
+                      <ng-template pTemplate="output">
+                        {{ family.name }}
+                      </ng-template>
+                    </p-cellEditor>
+                  </td>
+
+                  <td>
+                    <p-tag [value]="getStatusText(family.active || false)"
+                      [severity]="getSeverity(family.active || false)"></p-tag>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tablas de actividades agrupadas por familia (ancho completo) -->
+    <div *ngIf="!loading" class="activities-section mt-3">
+
+      <!-- Mensaje cuando no hay familias creadas -->
+      <div *ngIf="activityFamilies.length === 0" class="text-center p-6">
+        <h3 class="text-lg font-semibold text-gray-600">No hay familias creadas</h3>
+        <p class="text-gray-500">Primero debe crear al menos una Familia para poder gestionar actividades.</p>
+      </div>
+
+      <div *ngIf="activityFamilies.length > 0">
+        <h3 class="text-xl font-semibold mb-4">Actividades por Familia</h3>
+
+        <div *ngFor="let family of activityFamilies" class="family-group mb-6">
+          <div class="flex justify-content-between align-items-center mb-3 p-3 bg-blue-50 border-l-4 border-blue-500">
+            <h4 class="text-lg font-medium m-0">
+              {{ family.name }}
+            </h4>
+            <button pButton label="Agregar actividad" icon="pi pi-plus" class="add-button p-button-sm"
+              (click)="addNewActivityForFamily(family.idActivityFamily)"
+              [title]="'Agregar nueva actividad a ' + family.name">
+            </button>
+          </div>
+
+          <div class="table-container" *ngIf="getActivitiesForFamily(family.name).length > 0">
+            <p-table #activitiesTable [value]="getActivitiesForFamily(family.name)" [size]="selectedSize" stripedRows showGridlines
+              [resizableColumns]="true" [scrollable]="true" scrollHeight="420px" columnResizeMode="expand"
+              dataKey="idActivityDetail" editMode="row" [paginator]="true" [rows]="7" [rowHover]="true"
+              [editingRowKeys]="editingRowKeys">
+
+              <ng-template pTemplate="header">
+                <tr class="cabecera">
+                  <th style="min-width: 120px; max-width: 120px;">Acciones</th>
+                  <th style="min-width: 260px; max-width: 260px;">Objetivo estratégico</th>
+                  <th style="min-width: 240px; max-width: 240px;">Acción estratégica</th>
+                  <th style="min-width: 370px; max-width: 370px;">Actividades de Gestión</th>
+                  <th style="min-width: 220px; max-width: 220px;">Unidad de medida</th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-activity let-editing="editing" let-ri="rowIndex">
+                <tr [pEditableRow]="activity">
+
+                  <td>
+                    <div class="flex justify-content-center gap-2">
+                      <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil"
+                        (click)="onRowEditInit(activity)" text rounded severity="secondary">
+                      </button>
+
+                      <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
+                        (click)="onRowEditSave(activity)" text rounded severity="success">
+                      </button>
+
+                      <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
+                        (click)="onRowEditCancel(activity, ri)" text rounded severity="danger">
+                      </button>
+
+                      <button *ngIf="!editing" pButton pRipple type="button" icon="pi pi-trash"
+                        (click)="eliminarActividad(ri, activity)" text rounded severity="danger">
+                      </button>
+                    </div>
+                  </td>
+
+                  <td>
+                    <p-cellEditor>
+                      <ng-template pTemplate="input">
+                        <div class="flex items-center">
+                          <input pInputText
+                            [ngModel]="getStrategicObjectiveCodeDisplay(activity.strategicAction?.strategicObjective?.idStrategicObjective)"
+                            type="text" [disabled]="true" style="max-width: 90%" />
+                          <button *ngIf="editing" pButton type="button" icon="pi pi-search"
+                            (click)="openOeAeSelectionModal(activity)" label="" class="p-button-sm ml-2">
+                          </button>
+                        </div>
+                      </ng-template>
+                      <ng-template pTemplate="output" class="text-output">
+                        <span
+                          [pTooltip]="getStrategicObjectiveName(activity.strategicAction?.strategicObjective?.idStrategicObjective)">
+                          {{
+                          getStrategicObjectiveCodeDisplay(activity.strategicAction?.strategicObjective?.idStrategicObjective)
+                          }}
+                        </span>
+                      </ng-template>
+                    </p-cellEditor>
+                  </td>
+
+                  <td>
+                    <p-cellEditor>
+                      <ng-template pTemplate="input">
+                        <input pInputText
+                          [ngModel]="getStrategicActionCodeDisplay(activity.strategicAction?.idStrategicAction)"
+                          type="text" [disabled]="true" />
+                      </ng-template>
+                      <ng-template pTemplate="output" class="text-output">
+                        <span [pTooltip]="getStrategicActionName(activity.strategicAction?.idStrategicAction)">
+                          {{ getStrategicActionCodeDisplay(activity.strategicAction?.idStrategicAction) }}
+                        </span>
+                      </ng-template>
+                    </p-cellEditor>
+                  </td>
+
+                  <td>
+                    <p-cellEditor>
+                      <ng-template pTemplate="input">
+                        <textarea rows="1" cols="80" [autoResize]="true" pTextarea [(ngModel)]="activity.name"
+                          style="resize: none">
+                      </textarea>
+                      </ng-template>
+                      <ng-template pTemplate="output" class="text-output">
+                        <textarea rows="1" cols="80" [autoResize]="true" pTextarea [disabled]="true"
+                          style="resize: none">{{ activity.name }}</textarea>
+                      </ng-template>
+                    </p-cellEditor>
+                  </td>
+
+                  <td>
+                    <p-cellEditor>
+                      <ng-template pTemplate="input">
+                        <textarea rows="1" cols="60" [autoResize]="true" pTextarea
+                          [(ngModel)]="activity.measurementUnit" style="resize: none">
+                      </textarea>
+                      </ng-template>
+                      <ng-template pTemplate="output" class="text-output">
+                        <textarea rows="1" cols="60" [autoResize]="true" pTextarea [disabled]="true"
+                          style="resize: none">{{ activity.measurementUnit }}</textarea>
+                      </ng-template>
+                    </p-cellEditor>
+                  </td>
+
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+
+          <!-- Mensaje cuando no hay actividades para esta familia -->
+          <div *ngIf="getActivitiesForFamily(family.name).length === 0"
+            class="text-center p-4 text-gray-500 border border-gray-200 rounded">
+            <p class="m-0">No hay actividades registradas para esta familia</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para seleccionar Objetivo y Acción Estratégica -->
+  <p-dialog header="Seleccionar Objetivo y Acción Estratégica" [(visible)]="displayOeAeModal" [modal]="true"
+    [resizable]="true" class="dialog-header" draggable="false">
+    <div class="p-fluid p-grid">
+      <div class="mt-5">
+        <label for="strategicObjective" class="font-semibold">Objetivo Estratégico:</label>
+        <p-select id="strategicObjective" [options]="strategicObjectives" optionLabel="name"
+          optionValue="idStrategicObjective" [(ngModel)]="tempSelectedStrategicObjectiveId"
+          (onChange)="onModalStrategicObjectiveChange($event)" placeholder="Selecciona un objetivo" [filter]="true"
+          filterBy="name" appendTo="body" class="w-full mt-5">
+        </p-select>
+      </div>
+      <div class="mt-5">
+        <label for="strategicAction" class="font-semibold">Acción Estratégica:</label>
+        <p-select id="strategicAction" [options]="filteredStrategicActions" optionLabel="name"
+          optionValue="idStrategicAction" [(ngModel)]="tempSelectedStrategicActionId"
+          [disabled]="!tempSelectedStrategicObjectiveId" placeholder="Selecciona una acción" [filter]="true"
+          filterBy="name" appendTo="body" class="w-full mt-5">
+        </p-select>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelOeAeSelection()" styleClass="p-button-text"
+        class="cancel-button">
+      </button>
+      <button pButton label="Seleccionar" icon="pi pi-check" (click)="confirmOeAeSelection()" class="mx-3 add-button">
+      </button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal de confirmación de eliminación -->
+  <p-dialog header="Confirmar Eliminación" [(visible)]="showDeleteConfirmation" [modal]="true"
+    [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+    [resizable]="false" [baseZIndex]="10000" draggable="false">
+    <div class="confirmation-content text-center">
+      <h3>¿Estás seguro de que quieres eliminar esta actividad?</h3>
+      <p>Esta acción no se puede deshacer.</p>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer-buttons-wrapper">
+        <button pButton label="No" icon="pi pi-times" (click)="cancelDelete()" class="custom-cancel-button mx-2">
+        </button>
+        <button pButton label="Sí" icon="pi pi-check" (click)="confirmDelete()" class="custom-confirm-button mx-2">
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal de confirmación de eliminación de familia -->
+  <p-dialog header="Confirmar Eliminación de Familia" [(visible)]="showDeleteFamilyConfirmation" [modal]="true"
+    [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+    [resizable]="false" [baseZIndex]="10000" draggable="false">
+    <div class="confirmation-content text-center">
+      <h3>¿Estás seguro de que quieres eliminar esta familia?</h3>
+      <p>Esta acción eliminará la familia y todas sus actividades asociadas.</p>
+      <p><strong>Esta acción no se puede deshacer.</strong></p>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer-buttons-wrapper">
+        <button pButton label="No" icon="pi pi-times" (click)="cancelDeleteFamily()" class="custom-cancel-button mx-2">
+        </button>
+        <button pButton label="Sí" icon="pi pi-check" (click)="confirmDeleteFamily()"
+          class="custom-confirm-button mx-2">
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal para replicar actividades -->
+  <!-- <p-dialog header="Replicar Actividades de Gestión" [(visible)]="showReplicateDialog" [modal]="true"
+    [style]="{width: '35vw'}" [breakpoints]="{ '960px': '80vw', '640px': '95vw' }" draggable="false">
+    <div class="p-field my-3">
+      <label>Selecciona el año destino: </label>
+      <p-select [options]="yearOptions" [(ngModel)]="replicateYear" optionLabel="label" optionValue="value"
+        placeholder="Selecciona un año" [showClear]="false" class="w-full mt-2" appendTo="body">
+      </p-select>
+    </div>
+    <div class="p-mt-3 flex justify-content-end gap-2 my-3">
+      <button pButton label="Replicar" icon="pi pi-copy" (click)="replicateActivities()"
+        [disabled]="!replicateYear || replicateYear === selectedYear" class="p-button-warning"></button>
+      <button pButton label="Cancelar" icon="pi pi-times" class="p-button-text"
+        (click)="showReplicateDialog=false"></button>
+    </div>
+  </p-dialog> -->
+</div>
