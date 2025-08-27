@@ -33,6 +33,7 @@ import { StrategicActionService } from '../../../core/services/logic/strategic-a
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
 import { FormulationTypeService } from '../../../core/services/logic/formulation-type.service';
 import { ActivityFamilyService } from '../../../core/services/logic/activity-family.service';
+import { ImportTemplateService, ImportResult } from './middleware/import-template';
 
 @Component({
   selector: 'app-adm-maestro-gcps-tabla',
@@ -131,6 +132,7 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     private strategicObjectiveService: StrategicObjectiveService,
     private formulationTypeService: FormulationTypeService,
     private activityFamilyService: ActivityFamilyService,
+    private importTemplateService: ImportTemplateService,
     private toastr: ToastrService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
@@ -953,5 +955,100 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
   getFamilyIdByName(familyName: string): number | undefined {
     const family = this.activityFamilies.find(f => f.name === familyName);
     return family ? family.idActivityFamily : undefined;
+  }
+
+  // Export template method
+  exportHealthActivityTemplate() {
+    try {
+      const fileName = this.generateFileName('Plantilla_Actividades_Salud');
+      const templatePath = 'resources/Plantilla_Prestaciones_Salud.xlsx';
+      
+      // Crear un enlace temporal para descargar el archivo
+      const link = document.createElement('a');
+      link.href = templatePath;
+      link.download = fileName;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.toastr.success('Plantilla Excel descargada exitosamente.', 'Éxito');
+    } catch (error) {
+      console.error('Error al descargar la plantilla:', error);
+      this.toastr.error('Error al descargar la plantilla Excel.', 'Error');
+    }
+  }
+
+  private generateFileName(prefix: string): string {
+    const now = new Date();
+    return `${prefix}_${now.getFullYear()}_${(now.getMonth() + 1).toString().padStart(2, '0')}_${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+  }
+
+  // Import template methods
+  onImportTemplateClick(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.style.display = 'none';
+    
+    input.onchange = (event: any) => {
+      const file = event.target.files[0];
+      if (file) {
+        this.importHealthActivitiesFromTemplate(file);
+      }
+    };
+    
+    document.body.appendChild(input);
+    input.click();
+    document.body.removeChild(input);
+  }
+
+  importHealthActivitiesFromTemplate(file: File): void {
+    if (!this.currentFormulationType) {
+      this.toastr.error('Debe cargar un tipo de formulación antes de importar', 'Error');
+      return;
+    }
+
+    this.toastr.info('Procesando archivo Excel...', 'Importación');
+    this.importTemplateService.processExcelFile(file, this.selectedYear).subscribe({
+      next: (result: ImportResult) => {
+        this.handleImportResult(result);
+      },
+      error: (error) => {
+        console.error('Error durante la importación:', error);
+        this.toastr.error('Error inesperado durante la importación', 'Error');
+      }
+    });
+  }
+
+  private handleImportResult(result: ImportResult): void {
+    if (result.success) {
+      this.toastr.success(
+        `Importación exitosa: ${result.processedRows} de ${result.totalRows} filas procesadas`,
+        'Éxito'
+      );
+      
+      // Aquí puedes agregar la lógica para guardar las actividades en el backend
+      // Por ejemplo: this.saveImportedActivities(result.activities);
+      
+      console.log('Actividades importadas:', result.activities);
+      
+      // Refrescar la tabla si es necesario
+      // this.loadActivities();
+      
+    } else {
+      let errorMessage = `Errores encontrados durante la importación:\n`;
+      result.errors.forEach((error, index) => {
+        errorMessage += `${index + 1}. ${error}\n`;
+      });
+      
+      this.toastr.error(
+        `Importación completada con errores: ${result.processedRows} de ${result.totalRows} filas procesadas`,
+        'Advertencia'
+      );
+      
+      console.error('Errores de importación:', result.errors);
+    }
   }
 }

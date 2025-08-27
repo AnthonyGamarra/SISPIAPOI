@@ -8,6 +8,18 @@
         <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()" placeholder="Seleccionar Año"
           [showClear]="false" class="mx-5"></p-select>
       </span>
+      <span class="col-auto my-auto">
+        <button pButton label="Exportar Plantilla" icon="pi pi-download" 
+          class="p-button-outlined p-button-success mx-2" 
+          (click)="exportHealthActivityTemplate()"
+          title="Descargar plantilla Excel para actividades de salud">
+        </button>
+        <button pButton label="Importar Plantilla" icon="pi pi-upload" 
+          class="p-button-outlined p-button-primary mx-2" 
+          (click)="onImportTemplateClick()"
+          title="Importar actividades desde plantilla Excel">
+        </button>
+      </span>
     </div>
 
     <!-- Spinner de carga -->

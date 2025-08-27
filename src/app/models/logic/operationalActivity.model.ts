@@ -38,4 +38,22 @@ export interface OperationalActivity {
   services: number;
   description: string;
   activityFamily?: ActivityFamily;
+  
+  // Health-specific properties (for HealthOperationalActivity)
+  agrupFonafe?: string;
+  poi?: boolean;
+  codRed?: string;
+  descRed?: string;
+  codCenSes?: string;
+  desCenSes?: string;
+  nivelCompl?: string;
+  nivelAtencion?: string;
+  codPre?: string;
+  codTarif?: string;
+  fonafe?: boolean;
+  metaProg?: number;
+  proyCierre?: number;
+  prodTotalProy?: number;
+  tarifa?: number;
+  proyTarif?: number;
 }

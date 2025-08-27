@@ -514,6 +514,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
     const nuevaActividad: OperationalActivity = {
       idOperationalActivity: this.newActivityCounter--,
+      active: true,
       sapCode: '',
       correlativeCode: '',
       name: '',
