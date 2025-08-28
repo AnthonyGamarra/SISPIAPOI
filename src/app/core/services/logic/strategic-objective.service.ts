@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { StrategicObjective } from '../../../models/logic/strategicObjective.model';
 import { MinMaxYears } from '../../../models/logic/min-max-years.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StrategicObjectiveService {
-  private readonly BASE_URL = 'http://10.0.2.144:8081/strategic-objective';
+  private readonly BASE_URL = environment.apiLogicUrl + '/strategic-objective';
 
   constructor(private http: HttpClient) { }
 

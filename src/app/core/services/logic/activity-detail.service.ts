@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ActivityDetail } from '../../../models/logic/activityDetail.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ActivityDetailService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/activity-detail';
+  private readonly BASE_URL = environment.apiLogicUrl + '/activity-detail';
   
     constructor(private http: HttpClient) { }
   

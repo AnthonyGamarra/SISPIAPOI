@@ -2,13 +2,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class HealthOperationalActivityService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/health-operational-activity';
+  private readonly BASE_URL = environment.apiLogicUrl + '/health-operational-activity';
   
   constructor(private http: HttpClient) { }
 

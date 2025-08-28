@@ -1,5 +1,6 @@
 // src/app/core/services/authentication/auth.service.ts
 import { inject, Injectable, signal } from '@angular/core';
+import { environment } from '../../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { LoginRequest, AuthTokens } from '../../../models/auth/auth.model';
 import { Router } from '@angular/router';
@@ -14,7 +15,7 @@ export class AuthService {
   private router = inject(Router);
   private toastr = inject(ToastrService);
 
-  private readonly BASE_URL = 'http://10.0.2.144:8080';
+  private readonly BASE_URL = environment.apiAuthUrl;
 
   // Signals para estado de login
   tokens = signal<AuthTokens | null>(null);

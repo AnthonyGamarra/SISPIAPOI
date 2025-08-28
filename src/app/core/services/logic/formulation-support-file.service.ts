@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FormulationSupportFile } from '../../../models/logic/formulationSupportFile.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FormulationSupportFileService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/formulation-support-file';
+  private readonly BASE_URL = environment.apiLogicUrl + '/formulation-support-file';
 
   constructor(private http: HttpClient) { }
 

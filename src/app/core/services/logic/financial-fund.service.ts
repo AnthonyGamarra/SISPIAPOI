@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FinancialFund } from '../../../models/logic/financialFund.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FinancialFundService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/financial-fund';
+  private readonly BASE_URL = environment.apiLogicUrl + '/financial-fund';
 
   constructor(private http: HttpClient) { }
 

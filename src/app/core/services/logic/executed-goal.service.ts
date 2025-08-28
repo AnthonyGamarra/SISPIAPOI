@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ExecutedGoal } from '../../../models/logic/executedGoal.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExecutedGoalService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/executed-goal';
+  private readonly BASE_URL = environment.apiLogicUrl + '/executed-goal';
 
   constructor(private http: HttpClient) { }
 

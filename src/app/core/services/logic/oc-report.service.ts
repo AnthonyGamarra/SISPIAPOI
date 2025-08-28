@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../../../environments/environment';
 
 export interface OcR1ReportDTO {
   // Define la estructura según tu DTO del backend
@@ -15,7 +16,7 @@ export interface OcR1ReportDTO {
 })
 export class OcReportService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/reports';
+  private readonly BASE_URL = environment.apiLogicUrl + '/reports';
 
   constructor(private http: HttpClient) { }
 

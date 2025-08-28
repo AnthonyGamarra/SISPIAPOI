@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CostCenter } from '../../../models/logic/costCenter.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CostCenterService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/cost-center';
+  private readonly BASE_URL = environment.apiLogicUrl + '/cost-center';
   
     constructor(private http: HttpClient) { }
   

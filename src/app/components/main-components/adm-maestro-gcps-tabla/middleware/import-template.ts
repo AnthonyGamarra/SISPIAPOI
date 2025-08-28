@@ -517,7 +517,7 @@ export class ImportTemplateService {
     if (!value) return false;
     
     const strValue = value.toString().toLowerCase().trim();
-    const yesValues = ['sí', 'si', 'yes', 'y', 'true', '1', 'verdadero'];
+    const yesValues = ['sí', 'si', 'yes', 'y', 'true', '1', 'verdadero', 'fonafe'];
     return yesValues.includes(strValue);
   }
 
@@ -533,4 +533,5 @@ export class ImportTemplateService {
     const numValue = parseFloat(value.toString().replace(/,/g, ''));
     return isNaN(numValue) ? 0 : numValue;
   }
+  
 }

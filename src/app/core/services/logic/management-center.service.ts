@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ManagementCenter } from '../../../models/logic/managementCenter.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ManagementCenterService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/management-center';
+  private readonly BASE_URL = environment.apiLogicUrl + '/management-center';
     
       constructor(private http: HttpClient) { }
     

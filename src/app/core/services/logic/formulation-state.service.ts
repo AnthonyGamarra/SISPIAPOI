@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FormulationState } from '../../../models/logic/formulationState.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FormulationStateService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/formulation-state';
+  private readonly BASE_URL = environment.apiLogicUrl + '/formulation-state';
   
     constructor(private http: HttpClient) { }
   

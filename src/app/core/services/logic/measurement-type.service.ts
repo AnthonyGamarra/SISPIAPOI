@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { MeasurementType } from '../../../models/logic/measurementType.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MeasurementTypeService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/measurement-type';
+  private readonly BASE_URL = environment.apiLogicUrl + '/measurement-type';
   
     constructor(private http: HttpClient) { }
   

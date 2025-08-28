@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DependencyType } from '../../../models/logic/dependencyType.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DependencyTypeService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/dependency-type';
+  private readonly BASE_URL = environment.apiLogicUrl + '/dependency-type';
 
   constructor(private http: HttpClient) { }
 

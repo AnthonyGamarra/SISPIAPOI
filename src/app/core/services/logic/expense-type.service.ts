@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ExpenseType } from '../../../models/logic/expenseType.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExpenseTypeService {
 
-  private readonly BASE_URL = 'http://10.0.2.144:8081/expense-type';
+  private readonly BASE_URL = environment.apiLogicUrl + '/expense-type';
 
   constructor(private http: HttpClient) { }
 
