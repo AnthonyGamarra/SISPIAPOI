@@ -1,5 +1,6 @@
 <app-menubar></app-menubar>
 <div class="modulos">
+    <app-adm-usuarios-modulo *ngIf="canSeeAdmComponent()"></app-adm-usuarios-modulo>
     <app-adm-oe-ae-modulo *ngIf="canSeeAdmComponent()"></app-adm-oe-ae-modulo>
     <app-adm-planificacion-modulo *ngIf="canSeeAdmComponent()"></app-adm-planificacion-modulo>
     <app-adm-maestros-ag-modulo *ngIf="canSeeAdmComponent()"></app-adm-maestros-ag-modulo>

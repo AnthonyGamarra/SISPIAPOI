@@ -1,10 +1,16 @@
+import { PasswordModule } from 'primeng/password';
 import { Component, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router'; // Import Router and NavigationEnd
 import { TieredMenuModule } from 'primeng/tieredmenu';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { FormsModule } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/authentication/auth.service'; // ajusta la ruta si es necesario
+import { UserService } from '../../../core/services/authentication/user.service';
+import { ChangePasswordDTO } from '../../../models/auth/change-password.dto';
+import { ToastrService } from 'ngx-toastr';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -13,12 +19,74 @@ import { filter } from 'rxjs/operators';
   imports: [
     CommonModule,
     TieredMenuModule,
-    ButtonModule
+    ButtonModule,
+    DialogModule,
+    FormsModule,
+    PasswordModule
   ],
   templateUrl: './menubar.component.html',
   styleUrls: ['./menubar.component.scss']
 })
 export class MenubarComponent {
+  private toastr = inject(ToastrService);
+  showChangePasswordModal = false;
+  newPassword = '';
+  confirmPassword = '';
+  changeLoading = false;
+  private userService = inject(UserService);
+
+  openChangePasswordModal() {
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.showChangePasswordModal = true;
+  }
+
+  closeChangePasswordModal() {
+    this.showChangePasswordModal = false;
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.changeLoading = false;
+  }
+
+  changePassword() {
+    if (!this.newPassword || !this.confirmPassword) {
+      this.toastr.warning('Ingrese y confirme la nueva contraseña.', 'Campo requerido');
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.toastr.error('Las contraseñas no coinciden.', 'Error');
+      return;
+    }
+    const accessToken = this.authService.accessToken;
+    if (!accessToken) {
+      this.toastr.error('No se pudo identificar el usuario.', 'Error');
+      return;
+    }
+    let idUser: number | undefined;
+    try {
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      idUser = payload.idUser || payload.userId || payload.id || undefined;
+    } catch {
+      this.toastr.error('No se pudo identificar el usuario.', 'Error');
+      return;
+    }
+    if (!idUser) {
+      this.toastr.error('No se pudo identificar el usuario.', 'Error');
+      return;
+    }
+    this.changeLoading = true;
+    const dto: ChangePasswordDTO = { password: this.newPassword };
+    this.userService.changePassword(idUser, dto).subscribe({
+      next: () => {
+        this.toastr.success('Contraseña cambiada correctamente.', 'Éxito');
+        this.closeChangePasswordModal();
+      },
+      error: (err: any) => {
+        this.toastr.error(err?.error || 'No se pudo cambiar la contraseña.', 'Error');
+        this.changeLoading = false;
+      }
+    });
+  }
   private authService = inject(AuthService);
   private router = inject(Router);
   userMenuItems: MenuItem[] = [];
@@ -30,7 +98,7 @@ export class MenubarComponent {
     this.loadUserName();
     
     this.userMenuItems = [
-      // { label: 'Perfil', icon: 'pi pi-user', command: () => this.onProfile() },
+      { label: 'Cambiar contraseña', icon: 'pi pi-lock', command: () => this.openChangePasswordModal() },
       { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.onLogout() }
     ];
 

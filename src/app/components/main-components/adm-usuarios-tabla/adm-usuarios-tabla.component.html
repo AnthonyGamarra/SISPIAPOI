@@ -1,0 +1,164 @@
+<div>
+  <div class="mx-5">
+    <div class="grid ml-auto mt-2">
+      <h2 class="col-auto">
+        Administración de Usuarios
+      </h2>
+    </div>
+    <div class="grid mx-auto my-1">
+      <div class="col-12 flex justify-content-end gap-2">
+        <button pButton label="Agregar Usuario" icon="pi pi-plus" class="add-button" (click)="addNewUser()"></button>
+      </div>
+    </div>
+
+    <!-- Spinner de carga -->
+    <div *ngIf="loading" class="text-center p-6">
+      <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+      <p class="mt-3 text-gray-600">Cargando usuarios...</p>
+    </div>
+
+    <!-- Mensaje cuando no hay usuarios -->
+    <div *ngIf="!loading && users.length === 0" class="text-center p-6">
+      <h3 class="text-lg font-semibold text-gray-600">No hay usuarios registrados</h3>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <div *ngIf="!loading && users.length > 0" class="table-container">
+      <p-table #userTable [value]="users" stripedRows showGridlines [resizableColumns]="true"
+        [scrollable]="true" scrollHeight="800px" columnResizeMode="expand" dataKey="idUser" editMode="row"
+        [paginator]="true" [rows]="9" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+
+        <ng-template pTemplate="header" class="table-header" #header>
+          <tr class="cabecera">
+            <th style="min-width: 120px; max-width: 120px;">Acciones</th>
+            <!-- <th style="min-width: 180px; max-width: 180px;">Usuario</th> -->
+            <th style="min-width: 220px; max-width: 220px;">Email</th>
+            <th style="min-width: 120px; max-width: 120px;">Estado</th>
+            <th style="min-width: 220px; max-width: 220px;">Rol</th>
+            <th style="min-width: 220px; max-width: 220px;">Dependencias</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-user let-editing="editing" let-ri="rowIndex" #body>
+          <tr [pEditableRow]="user">
+            <td>
+              <div class="flex justify-content-center gap-2">
+                <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil"
+                  (click)="onRowEditInit(user)" text rounded severity="secondary">
+                </button>
+                <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
+                  (click)="onRowEditSave(user)" text rounded severity="success">
+                </button>
+                <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
+                  (click)="onRowEditCancel(user, ri)" text rounded severity="danger">
+                </button>
+                <button *ngIf="!editing" pButton pRipple type="button" icon="pi pi-trash"
+                  (click)="eliminarUsuario(ri, user)" text rounded severity="danger">
+                </button>
+                <button *ngIf="!editing && user.enabled" pButton pRipple type="button" icon="pi pi-ban"
+                  (click)="disableUser(user)" text rounded severity="warn" pTooltip="Dar de baja">
+                </button>
+                <button *ngIf="!editing && !user.enabled" pButton pRipple type="button" icon="pi pi-check"
+                  (click)="enableUser(user)" text rounded severity="success" pTooltip="Dar de alta">
+                </button>
+                <button *ngIf="!editing && user.idUser && user.enabled" pButton pRipple type="button" icon="pi pi-refresh"
+                  [label]="'Restablecer contraseña'" (click)="resetPassword(user)" [disabled]="resettingUserId === user.idUser" severity="info">
+                  <ng-container *ngIf="resettingUserId === user.idUser">
+                    <span class="ml-2"><i class="pi pi-spin pi-spinner"></i> Enviando...</span>
+                  </ng-container>
+                </button>
+              </div>
+            </td>
+            <!--
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="user.username" type="text" />
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <span>{{ user.username }}</span>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            -->
+            <td>
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="user.email" type="text" style="width: 100%" />
+                </ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <span>{{ user.email }}</span>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+            <td>
+              <span [ngClass]="{'text-success': user.enabled, 'text-danger': !user.enabled}">
+                {{ user.enabled ? 'Activo' : 'Baja' }}
+              </span>
+            </td>
+            <td>
+              <div class="flex flex-wrap gap-2">
+                <ng-container *ngIf="user.roles.length === 1">
+                  <p-chip [label]="user.roles[0].name" class="mr-2" styleClass="p-chip-info" [removable]="true" (onRemove)="removeRole(user, user.roles[0])">
+                  </p-chip>
+                </ng-container>
+                <button *ngIf="user.roles.length === 0" pButton icon="pi pi-plus" class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddRoleDialog(user)" pTooltip="Añadir rol"></button>
+              </div>
+            </td>
+            <td>
+              <div class="flex flex-wrap gap-2">
+                <ng-container *ngFor="let dep of user.dependencies">
+                  <p-chip [label]="dep.name" class="mr-2" styleClass="p-chip-warning" [removable]="true" (onRemove)="removeDependency(user, dep)">
+                  </p-chip>
+                </ng-container>
+                <button *ngIf="mostrarBotonAgregarDependencia(user)" pButton icon="pi pi-plus" class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddDependencyDialog(user)" pTooltip="Añadir dependencia" [disabled]="user.roles.length === 0"></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación de eliminación -->
+  <p-dialog header="Confirmar Eliminación" [(visible)]="showDeleteConfirmation" [modal]="true"
+    [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
+    [resizable]="false" [baseZIndex]="10000" draggable="false">
+    <div class="confirmation-content text-center">
+      <h3>¿Estás seguro de que quieres eliminar este usuario?</h3>
+      <p>Esta acción no se puede deshacer.</p>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="dialog-footer-buttons-wrapper">
+        <button pButton label="No" icon="pi pi-times" (click)="cancelDelete()" class="custom-cancel-button mx-2">
+        </button>
+        <button pButton label="Sí" icon="pi pi-check" (click)="confirmDelete()" class="custom-confirm-button mx-2">
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal para añadir rol -->
+  <p-dialog header="Añadir Rol" [(visible)]="showAddRoleDialog" [modal]="true" [style]="{ width: '30vw' }" [draggable]="false">
+    <div class="p-fluid">
+      <label for="selectRole">Selecciona un rol:</label>
+      <p-select id="selectRole" [options]="availableRoles" optionLabel="name" optionValue="idRole" [(ngModel)]="selectedRoleId" placeholder="Selecciona un rol" [filter]="true" filterBy="name" appendTo="body" class="w-full mt-2"></p-select>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelAddRole()" class="p-button-text"></button>
+      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddRole()" [disabled]="!selectedRoleId" class="mx-3 add-button"></button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal para añadir dependencia -->
+  <p-dialog header="Añadir Dependencia" [(visible)]="showAddDependencyDialog" [modal]="true" [style]="{ width: '30vw' }" [draggable]="false">
+    <div class="p-fluid">
+      <label for="selectDependency">Selecciona una dependencia:</label>
+      <p-select id="selectDependency" [options]="availableDependencies" optionLabel="name" optionValue="idDependency" [(ngModel)]="selectedDependencyId" placeholder="Selecciona una dependencia" [filter]="true" filterBy="name" appendTo="body" class="w-full mt-2"></p-select>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelAddDependency()" class="p-button-text"></button>
+      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddDependency()" [disabled]="!selectedDependencyId" class="mx-3 add-button"></button>
+    </ng-template>
+  </p-dialog>
+</div>

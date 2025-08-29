@@ -19,6 +19,7 @@ import { MenuFormulacionDesconcentradoComponent } from './pages/menu-formulacion
 import { ReporteF9 } from './pages/reporte-f9/reporte-f9.component';
 import { FormulacionOoddSocialesComponent } from './pages/formulacion-oodd-sociales/formulacion-oodd-sociales.component';
 import { AdminMaestroGcpsComponent } from './pages/admin-maestro-gcps/admin-maestro-gcps.component';
+import { AdminUsuariosComponent } from './pages/admin-usuarios/admin-usuarios.component';
 
 export const routes: Routes = [
   {
@@ -54,7 +55,15 @@ export const routes: Routes = [
     path: 'gestion', // ✅ nueva ruta para el componente Formu1
     component: MenuAdmComponent,
     canActivate: [authGuard],
-  },  
+  },
+  {
+    path: 'gestion/admin-usuarios',
+    component: AdminUsuariosComponent,
+    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "GPLANEAMIENTO"],
+    },
+  },
   {
     path: 'gestion/admin-planificacion', // ✅ nueva ruta para el componente Formu1
     component: AdminPlanificacionComponent,

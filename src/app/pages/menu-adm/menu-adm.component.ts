@@ -12,6 +12,7 @@ import { AdmOEAEModuloComponent } from '../../components/modules/adm-oe-ae-modul
 import { AdmMaestrosPEModuloComponent } from '../../components/modules/adm-maestros-pe-modulo/adm-maestros-pe-modulo.component';
 import { AdmMaestrosPSOModuloComponent } from '../../components/modules/adm-maestros-pso-modulo/adm-maestros-pso-modulo.component';
 import { AdmMaestrosPSAModuloComponent } from '../../components/modules/adm-maestros-psa-modulo/adm-maestros-psa-modulo.component';
+import { AdmUsuariosModuloComponent } from '../../components/modules/adm-usuarios-modulo/adm-usuarios-modulo.component';
 
 @Component({
   selector: 'app-menu-adm',
@@ -20,6 +21,7 @@ import { AdmMaestrosPSAModuloComponent } from '../../components/modules/adm-maes
     CommonModule,
     FooterComponent,
     MenubarComponent,
+    AdmUsuariosModuloComponent,
     AdmMaestrosAGModuloComponent,
     AdmPlanificacionModuloComponent,
     AdmOEAEModuloComponent,

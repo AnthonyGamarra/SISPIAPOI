@@ -10,6 +10,8 @@ import { ToastrService } from 'ngx-toastr';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { FormsModule } from '@angular/forms';
+
+import { DialogModule } from 'primeng/dialog';
 import { RecaptchaV3Module, ReCaptchaV3Service } from 'ng-recaptcha';
 
 
@@ -27,7 +29,8 @@ import { RecaptchaV3Module, ReCaptchaV3Service } from 'ng-recaptcha';
     InputGroupModule,
     InputGroupAddonModule,
     FormsModule,
-    RecaptchaV3Module
+    RecaptchaV3Module,
+    DialogModule
   ]
 })
 export class LoginComponent {

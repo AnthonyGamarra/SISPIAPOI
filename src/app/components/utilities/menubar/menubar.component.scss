@@ -86,3 +86,46 @@
   }
   
 }
+
+.password-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 210px;
+  max-height: 210px;
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+}
+.password-field {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+.password-label {
+  width: 100%;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+  text-align: left;
+}
+.password-input {
+  width: 100%;
+}
+.password-error {
+  width: 100%;
+  text-align: center;
+  color: red;
+}
+
+// Centrar los botones del footer del modal
+.p-dialog-footer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 1rem;
+  width: 100%;
+}
