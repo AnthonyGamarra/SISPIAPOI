@@ -6,7 +6,7 @@
 
   <div class="login-container">
     <div class="login-card">
-      <form [formGroup]="form" (ngSubmit)="login()" novalidate>
+      <div [formGroup]="form" (ngSubmit)="login()" novalidate>
         <h2 class="login-title">Iniciar sesión</h2>
         <p-input-group class="field mb-5">
           <p-inputgroup-addon>
@@ -32,6 +32,7 @@
           </ng-container>
           <span *ngIf="!loading">Ingresar</span>
         </button>
-      </form>
+      </div>
+    </div>
   </div>
 </div>

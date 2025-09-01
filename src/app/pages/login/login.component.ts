@@ -14,7 +14,6 @@ import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { RecaptchaV3Module, ReCaptchaV3Service } from 'ng-recaptcha';
 
-
 @Component({
   standalone: true,
   selector: 'app-login',
@@ -30,8 +29,8 @@ import { RecaptchaV3Module, ReCaptchaV3Service } from 'ng-recaptcha';
     InputGroupAddonModule,
     FormsModule,
     RecaptchaV3Module,
-    DialogModule
-  ]
+    DialogModule,
+]
 })
 export class LoginComponent {
   ngOnInit() {
