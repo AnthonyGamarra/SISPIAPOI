@@ -33,8 +33,9 @@
     transform 0.5s ease;
 
   @media screen and (max-width: 768px) {
-    width: 220px;
-    height: 140px;
+    width: 215px;
+    height: 125px;
+    gap: 1px;
   }
 }
 

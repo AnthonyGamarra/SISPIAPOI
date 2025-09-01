@@ -3,7 +3,8 @@
   flex-wrap: wrap;
   justify-content: center; // centra los elementos en el eje horizontal
   align-items: center; // centra verticalmente
-  padding: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 3rem;
   min-height: 90vh;
   box-sizing: border-box;
 }
@@ -18,7 +19,7 @@
 @media (max-width: 768px) {
   .modulos {
     min-height: 90vh; // menos alto en móvil
-    gap: 0rem;
+    gap: 0.5rem;
   }
   .modulos > * {
     flex: 0 0 100%;

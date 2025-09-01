@@ -11,7 +11,7 @@ export class FormulacionModuloComponent {
   @Output() clicked = new EventEmitter<void>();
 
   onClick() {
-console.log('Botón modulop clickeado');
+
   this.router.navigate(['/formulacion']).then(success => {
     if (success) {
       console.log('Navegación a /formulation exitosa');
