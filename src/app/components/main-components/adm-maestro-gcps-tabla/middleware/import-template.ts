@@ -6,10 +6,12 @@ import { ActivityFamily } from '../../../../models/logic/activityFamily.model';
 import { MonthlyGoal } from '../../../../models/logic/monthlyGoal.model';
 import { MonthlyBudget } from '../../../../models/logic/monthlyBudget.model';
 import { Formulation } from '../../../../models/logic/formulation.model';
+import { Dependency } from '../../../../models/logic/dependency.model';
 import { ActivityFamilyService } from '../../../../core/services/logic/activity-family.service';
 import { HealthOperationalActivityService } from '../../../../core/services/logic/health-operational-activity.service';
-import { forkJoin, Observable, of } from 'rxjs';
-import { map, switchMap, catchError } from 'rxjs/operators';
+import { DependencyService } from '../../../../core/services/logic/dependency.service';
+import { forkJoin, Observable, of, from } from 'rxjs';
+import { map, switchMap, catchError, concatMap, delay } from 'rxjs/operators';
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
 
 export interface ImportResult {
@@ -49,18 +51,19 @@ export interface ExcelRowData {
 export class ImportTemplateService {
 
   private activityFamiliesCache: ActivityFamily[] = [];
+  private dependenciesCache: Dependency[] = [];
   private currentFormulation: Formulation | null = null;
 
   constructor(
     private toastr: ToastrService,
     private activityFamilyService: ActivityFamilyService,
     private healthOperationalActivityService: HealthOperationalActivityService,
-    private formulationService: FormulationService
+    private formulationService: FormulationService,
+    private dependencyService: DependencyService
   ) {}
 
   /**
    * Establece la formulación actual para las actividades importadas
-   * @param formulation Formulación actual
    */
   setCurrentFormulation(formulation: Formulation): void {
     this.currentFormulation = formulation;
@@ -68,10 +71,13 @@ export class ImportTemplateService {
 
   /**
    * Procesa un archivo Excel y convierte las filas en actividades operacionales de salud
-   * @param file Archivo Excel a procesar
-   * @returns Observable con el resultado de la importación
+   * VERSIÓN OPTIMIZADA para mayor velocidad
    */
-  processExcelFile(file: File, year: number): Observable<ImportResult> {
+  processExcelFile(
+    file: File, 
+    year: number,
+    onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
+  ): Observable<ImportResult> {
     return new Observable<ImportResult>(observer => {
       const reader = new FileReader();
 
@@ -81,7 +87,7 @@ export class ImportTemplateService {
           const workbook = new ExcelJS.Workbook();
           await workbook.xlsx.load(buffer);
 
-          const worksheet = workbook.getWorksheet(1); // Primera hoja
+          const worksheet = workbook.getWorksheet(1);
           if (!worksheet) {
             observer.next({
               success: false,
@@ -94,73 +100,41 @@ export class ImportTemplateService {
             return;
           }
 
-          // 1. Buscar o crear la formulación
-          this.formulationService.searchByDependencyAndYear(115, year).subscribe({
-            next: (formulations) => {
-              let formulation = formulations.find(f => 
-                f.formulationState?.idFormulationState === 1 &&
-                f.modification === 1 &&
-                f.quarter === 1 &&
-                f.formulationType?.idFormulationType === 3
-              );
-              const createAndContinue = (formulationToUse: Formulation) => {
-                this.setCurrentFormulation(formulationToUse);
-                // 2. Cargar familias de actividades SOLO tipo 'salud'
-                this.activityFamilyService.getAll().subscribe({
-                  next: (families) => {
-                    this.activityFamiliesCache = families.filter(f => (f.type || '').toLowerCase() === 'salud');
-                    this.processWorksheet(worksheet).subscribe({
-                      next: (result) => observer.next(result),
-                      error: (error) => observer.error(error),
-                      complete: () => observer.complete()
-                    });
-                  },
-                  error: (error) => {
-                    observer.next({
-                      success: false,
-                      totalRows: 0,
-                      processedRows: 0,
-                      errors: ['Error al cargar familias de actividades: ' + error.message],
-                      activities: []
-                    });
-                    observer.complete();
-                  }
-                });
-              };
-              if (formulation) {
-                createAndContinue(formulation);
-              } else {
-                // Crear la formulación si no existe
-                const newFormulation: Formulation = {
-                  dependency: { idDependency: 115 } as any,
-                  formulationState: { idFormulationState: 1 } as any,
-                  year: year,
-                  modification: 1,
-                  quarter: 1,
-                  formulationType: { idFormulationType: 3 } as any,
-                  active: true
-                };
-                this.formulationService.create(newFormulation).subscribe({
-                  next: (created) => createAndContinue(created),
-                  error: (error) => {
-                    observer.next({
-                      success: false,
-                      totalRows: 0,
-                      processedRows: 0,
-                      errors: ['Error al crear formulación: ' + error.message],
-                      activities: []
-                    });
-                    observer.complete();
-                  }
-                });
-              }
+          // Cargar dependencies y procesar Excel por grupos de codRed
+          this.dependencyService.getAll().subscribe({
+            next: (dependencies) => {
+              this.dependenciesCache = dependencies;
+              
+              // Cargar familias de actividades SOLO tipo 'salud'
+              this.activityFamilyService.getAll().subscribe({
+                next: (families) => {
+                  this.activityFamiliesCache = families.filter(f => (f.type || '').toLowerCase() === 'salud');
+                  
+                  // Procesar Excel agrupando por codRed con optimizaciones
+                  this.processWorksheetByDependencyOptimized(worksheet, year, onProgress).subscribe({
+                    next: (result) => observer.next(result),
+                    error: (error) => observer.error(error),
+                    complete: () => observer.complete()
+                  });
+                },
+                error: (error) => {
+                  observer.next({
+                    success: false,
+                    totalRows: 0,
+                    processedRows: 0,
+                    errors: ['Error al cargar familias de actividades: ' + error.message],
+                    activities: []
+                  });
+                  observer.complete();
+                }
+              });
             },
             error: (error) => {
               observer.next({
                 success: false,
                 totalRows: 0,
                 processedRows: 0,
-                errors: ['Error al buscar formulación: ' + error.message],
+                errors: ['Error al cargar dependencies: ' + error.message],
                 activities: []
               });
               observer.complete();
@@ -195,11 +169,14 @@ export class ImportTemplateService {
   }
 
   /**
-   * Procesa la hoja de Excel y extrae los datos
-   * @param worksheet Hoja de Excel
-   * @returns Observable con el resultado del procesamiento
+   * VERSIÓN OPTIMIZADA del procesamiento por dependency
+   * Mejoras: lotes más grandes, delays reducidos, mejor manejo de errores
    */
-  private processWorksheet(worksheet: ExcelJS.Worksheet): Observable<ImportResult> {
+  private processWorksheetByDependencyOptimized(
+    worksheet: ExcelJS.Worksheet, 
+    year: number,
+    onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
+  ): Observable<ImportResult> {
     const result: ImportResult = {
       success: true,
       totalRows: 0,
@@ -209,53 +186,146 @@ export class ImportTemplateService {
     };
 
     try {
-      // Obtener todas las filas (empezar desde la fila 3, después de título y headers)
-      const dataRows: ExcelRowData[] = [];
+      // Extraer todas las filas y agrupar por codRed
       const totalRows = worksheet.rowCount;
-      result.totalRows = Math.max(0, totalRows - 2); // Solo 1 título y 1 cabecera
-
-      // Procesar cada fila de datos (empezar desde la fila 3)
+      result.totalRows = Math.max(0, totalRows - 2);
+      
+      const rowsByDependency = new Map<string, ExcelRowData[]>();
+      
       for (let rowIndex = 3; rowIndex <= totalRows; rowIndex++) {
         const row = worksheet.getRow(rowIndex);
-        // Verificar si la fila tiene datos
         if (this.isEmptyRow(row)) continue;
+        
         try {
           const rowData = this.extractRowData(row, rowIndex);
           if (rowData) {
-            dataRows.push(rowData);
+            const codRed = rowData.codRed?.trim();
+            let codRedKey = '';
+            
+            if (!codRed || codRed === 'N/A' || codRed === 'undefined' || codRed === '[object Object]' || codRed === '') {
+              codRedKey = 'DEPENDENCY_ID_115';
+            } else {
+              codRedKey = codRed;
+            }
+            
+            if (!rowsByDependency.has(codRedKey)) {
+              rowsByDependency.set(codRedKey, []);
+            }
+            rowsByDependency.get(codRedKey)!.push(rowData);
           }
         } catch (error) {
           result.errors.push(`Fila ${rowIndex}: ${(error as Error).message}`);
         }
       }
 
-      // Convertir datos a actividades operacionales y GUARDARLAS
-      return this.createOperationalActivities(dataRows).pipe(
-        switchMap(activities => {
-          // Guardar en backend usando HealthOperationalActivityService
-          const saveObservables = activities.map(activity =>
-            this.healthOperationalActivityService.create(activity as any).pipe(
-              catchError(error => {
-                console.error('Error al guardar actividad:', activity.name, error);
-                throw new Error(`Error al guardar actividad "${activity.name}": ${error.message}`);
-              })
-            )
-          );
-          return forkJoin(saveObservables).pipe(
-            map(saved => {
-              result.processedRows = activities.length;
-              result.activities = saved;
-              result.success = result.errors.length === 0;
-              return result;
-            })
-          );
-        }),
-        catchError(error => {
-          result.success = false;
-          result.errors.push('Error al crear o guardar actividades: ' + error.message);
-          return of(result);
-        })
-      );
+      // Procesar cada grupo de dependency
+      return new Observable<ImportResult>(observer => {
+        const dependencyGroups = Array.from(rowsByDependency.entries());
+        let processedGroups = 0;
+        let allActivities: OperationalActivity[] = [];
+        let hasError = false;
+        
+        const totalActivities = Array.from(rowsByDependency.values()).reduce((sum, rows) => sum + rows.length, 0);
+        let processedActivities = 0;
+        
+        console.log(`🚀 Importación optimizada iniciada: ${totalActivities} actividades en ${dependencyGroups.length} grupos`);
+        console.log(`⏱️ Tiempo estimado: ${Math.ceil(dependencyGroups.length * 0.4)} segundos`);
+        
+        if (onProgress && totalActivities > 0) {
+          onProgress({ processed: 0, total: totalActivities, loading: true });
+        }
+
+        const processNextGroup = (groupIndex: number) => {
+          if (hasError || groupIndex >= dependencyGroups.length) {
+            result.activities = allActivities;
+            result.processedRows = allActivities.length;
+            result.success = result.errors.length === 0;
+            
+            if (onProgress) {
+              onProgress({ processed: Math.min(processedActivities, totalActivities), total: totalActivities, loading: false });
+            }
+            
+            console.log(`✅ Importación completada: ${allActivities.length} actividades guardadas`);
+            observer.next(result);
+            observer.complete();
+            return;
+          }
+
+          const [codRed, groupRows] = dependencyGroups[groupIndex];
+          
+          let dependency: Dependency | undefined;
+          let dependencyId: number;
+          
+          if (codRed === 'DEPENDENCY_ID_115') {
+            dependencyId = 115;
+            dependency = { idDependency: 115, name: 'Sin Código Red Asignado' } as Dependency;
+          } else {
+            dependency = this.findDependencyByDescription(codRed);
+            if (!dependency) {
+              result.errors.push(`No se encontró dependency con description: "${codRed}"`);
+              processNextGroup(groupIndex + 1);
+              return;
+            }
+            dependencyId = dependency.idDependency!;
+          }
+
+          this.findOrCreateFormulation(dependencyId, year).subscribe({
+            next: (formulation) => {
+              this.setCurrentFormulation(formulation);
+              
+              try {
+                const groupActivities: OperationalActivity[] = [];
+                groupRows.forEach((rowData, idx) => {
+                  const activity = this.createOperationalActivity(rowData, idx + 1);
+                  groupActivities.push(activity);
+                });
+
+                // OPTIMIZACIÓN: Guardado en lotes más grandes con delays reducidos
+                this.saveActivitiesOptimized(groupActivities, result).subscribe({
+                  next: (savedActivities) => {
+                    allActivities = allActivities.concat(savedActivities);
+                    processedGroups++;
+                    
+                    processedActivities += savedActivities.length; // Usar actividades realmente guardadas
+                    if (onProgress) {
+                      onProgress({ 
+                        processed: Math.min(processedActivities, totalActivities), // Nunca exceder el total
+                        total: totalActivities, 
+                        loading: groupIndex + 1 < dependencyGroups.length 
+                      });
+                    }
+                    
+                    console.log(`✅ Grupo ${codRed}: ${savedActivities.length}/${groupRows.length} actividades guardadas`);
+                    
+                    // Delay mínimo entre grupos para mayor velocidad
+                    setTimeout(() => processNextGroup(groupIndex + 1), 30);
+                  },
+                  error: (error) => {
+                    result.errors.push(`Error al guardar grupo ${codRed}: ${error.message}`);
+                    hasError = true;
+                    
+                    if (onProgress) {
+                      onProgress({ processed: processedActivities, total: totalActivities, loading: false });
+                    }
+                    
+                    observer.next({ ...result, success: false });
+                    observer.complete();
+                  }
+                });
+              } catch (error) {
+                result.errors.push(`Error al procesar grupo ${codRed}: ${(error as Error).message}`);
+                processNextGroup(groupIndex + 1);
+              }
+            },
+            error: (error) => {
+              result.errors.push(`Error al obtener formulación para ${codRed}: ${error.message}`);
+              processNextGroup(groupIndex + 1);
+            }
+          });
+        };
+
+        processNextGroup(0);
+      });
 
     } catch (error) {
       result.success = false;
@@ -265,23 +335,58 @@ export class ImportTemplateService {
   }
 
   /**
-   * Extrae los datos de una fila de Excel
-   * @param row Fila de Excel
-   * @param rowIndex Índice de la fila
-   * @returns Datos extraídos de la fila
+   * MÉTODO OPTIMIZADO para guardar actividades en lotes
+   * Mejoras: lotes de 50 actividades, delay de solo 10ms entre lotes
    */
+  private saveActivitiesOptimized(
+    activities: OperationalActivity[], 
+    result: ImportResult
+  ): Observable<OperationalActivity[]> {
+    const batchSize = 40; // Lotes más grandes para mayor velocidad
+    const batches: OperationalActivity[][] = [];
+    
+    for (let i = 0; i < activities.length; i += batchSize) {
+      batches.push(activities.slice(i, i + batchSize));
+    }
+    
+    let allSavedActivities: OperationalActivity[] = [];
+    
+    return from(batches).pipe(
+      concatMap((batch, batchIndex) => {
+        const saveObservables = batch.map(activity =>
+          this.healthOperationalActivityService.create(activity as any).pipe(
+            catchError(error => {
+              result.errors.push(`Error al guardar actividad "${activity.name}": ${error.message}`);
+              return of(null);
+            })
+          )
+        );
+        
+        return forkJoin(saveObservables).pipe(
+          delay(batchIndex === 0 ? 0 : 20), // Delay mínimo para mayor velocidad
+          map(savedBatch => {
+            const validSaved = savedBatch.filter(a => !!a) as OperationalActivity[];
+            allSavedActivities = allSavedActivities.concat(validSaved);
+            return validSaved;
+          })
+        );
+      }),
+      switchMap(() => of(allSavedActivities))
+    );
+  }
+
+  // Métodos auxiliares (iguales que en la versión original)
   private extractRowData(row: ExcelJS.Row, rowIndex: number): ExcelRowData | null {
     try {
-      // Verificar que el nombre de actividad existe (campo obligatorio)
       const name = this.getCellValue(row, 12)?.toString().trim();
       if (!name) {
         throw new Error('Nombre de actividad es obligatorio');
       }
 
-      const rowData: ExcelRowData = {
+      return {
         agrupFonafe: this.getCellValue(row, 1)?.toString() || '',
         poi: this.parseBoolean(this.getCellValue(row, 2)),
-        codRed: this.getCellValue(row, 3)?.toString() || '',
+        codRed: this.getCellValue(row, 3)?.toString().trim() || '',
         descRed: this.getCellValue(row, 4)?.toString() || '',
         codCenSes: this.getCellValue(row, 5)?.toString() || '',
         desCenSes: this.getCellValue(row, 6)?.toString() || '',
@@ -297,84 +402,25 @@ export class ImportTemplateService {
         prodTotalProy: this.parseNumber(this.getCellValue(row, 16)),
         tarifa: this.parseNumber(this.getCellValue(row, 17)),
         proyTarif: this.parseNumber(this.getCellValue(row, 18)),
-        monthlyGoals: this.extractMonthlyValues(row, 19, 30), // Columnas 19-30 (Enero-Diciembre Metas)
-        monthlyBudgets: this.extractMonthlyValues(row, 31, 42) // Columnas 31-42 (Enero-Diciembre Presupuestos)
+        monthlyGoals: this.extractMonthlyValues(row, 19, 30),
+        monthlyBudgets: this.extractMonthlyValues(row, 31, 42)
       };
-
-      return rowData;
     } catch (error) {
       throw new Error(`Error en fila ${rowIndex}: ${(error as Error).message}`);
     }
   }
 
-  /**
-   * Crea las actividades operacionales a partir de los datos extraídos
-   * @param dataRows Datos extraídos del Excel
-   * @returns Observable con las actividades creadas
-   */
-  private createOperationalActivities(dataRows: ExcelRowData[]): Observable<OperationalActivity[]> {
-    const activities: OperationalActivity[] = [];
-    const familyCreationObservables: Observable<ActivityFamily>[] = [];
-    const uniqueFamilyNames = new Set<string>();
-
-    // Identificar familias únicas que necesitan ser creadas
-    dataRows.forEach(rowData => {
-      if (rowData.activityFamilyName && !this.findExistingFamily(rowData.activityFamilyName)) {
-        uniqueFamilyNames.add(rowData.activityFamilyName);
-      }
-    });
-
-    // Crear observables para crear nuevas familias
-    uniqueFamilyNames.forEach(familyName => {
-      familyCreationObservables.push(this.createOrFindActivityFamily(familyName));
-    });
-
-    // Ejecutar creación de familias en paralelo
-    const familyCreation$ = familyCreationObservables.length > 0 
-      ? forkJoin(familyCreationObservables) 
-      : of([]);
-
-    return familyCreation$.pipe(
-      switchMap((newFamilies) => {
-        // Actualizar cache con nuevas familias
-        this.activityFamiliesCache.push(...newFamilies);
-
-        // Crear actividades operacionales
-        dataRows.forEach((rowData, index) => {
-          try {
-            const activity = this.createOperationalActivity(rowData, index + 1);
-            activities.push(activity);
-          } catch (error) {
-            throw new Error(`Error al crear actividad ${index + 1}: ${(error as Error).message}`);
-          }
-        });
-
-        return of(activities);
-      })
-    );
-  }
-
-  /**
-   * Crea una actividad operacional a partir de los datos de una fila
-   * @param rowData Datos de la fila
-   * @param correlativeIndex Índice correlativo
-   * @returns Actividad operacional creada
-   */
   private createOperationalActivity(rowData: ExcelRowData, correlativeIndex: number): OperationalActivity {
-    const activity: OperationalActivity = {
+    return {
       correlativeCode: `H`,
       name: rowData.name,
       description: `Actividad de salud: ${rowData.name}`,
-      measurementUnit: 'Unidad', // Valor por defecto
+      measurementUnit: 'Unidad',
       goods: 0,
       remuneration: 0,
       services: 0,
       active: true,
-      
-      // Formulation es requerida - usar la formulación actual
       formulation: this.currentFormulation || {} as Formulation,
-      
-      // Propiedades específicas de salud
       agrupFonafe: rowData.agrupFonafe,
       poi: rowData.poi,
       codRed: rowData.codRed,
@@ -391,73 +437,28 @@ export class ImportTemplateService {
       prodTotalProy: rowData.prodTotalProy,
       tarifa: rowData.tarifa,
       proyTarif: rowData.proyTarif,
-
-      // Familia de actividad
       activityFamily: this.findExistingFamily(rowData.activityFamilyName),
-
-      // Metas mensuales
       monthlyGoals: this.createMonthlyGoals(rowData.monthlyGoals),
-
-      // Presupuestos mensuales
       monthlyBudgets: this.createMonthlyBudgets(rowData.monthlyBudgets)
     };
-
-    return activity;
   }
 
-  /**
-   * Crea los objetos MonthlyGoal a partir de un array de valores
-   * @param values Array de valores mensuales
-   * @returns Array de MonthlyGoal
-   */
   private createMonthlyGoals(values: number[]): MonthlyGoal[] {
     return values.map((value, index) => ({
-      goalOrder: index + 1, // Enero = 1, Febrero = 2, etc.
+      goalOrder: index + 1,
       value: value,
       active: true
     } as MonthlyGoal));
   }
 
-  /**
-   * Crea los objetos MonthlyBudget a partir de un array de valores
-   * @param values Array de valores mensuales
-   * @returns Array de MonthlyBudget
-   */
   private createMonthlyBudgets(values: number[]): MonthlyBudget[] {
     return values.map((value, index) => ({
-      budgetOrder: index + 1, // Enero = 1, Febrero = 2, etc.
+      budgetOrder: index + 1,
       value: value,
       active: true
     } as MonthlyBudget));
   }
 
-  /**
-   * Busca una familia existente por nombre o crea una nueva
-   * @param familyName Nombre de la familia
-   * @returns Observable con la familia encontrada o creada
-   */
-  private createOrFindActivityFamily(familyName: string): Observable<ActivityFamily> {
-    const existingFamily = this.findExistingFamily(familyName);
-    if (existingFamily) {
-      return of(existingFamily);
-    }
-
-    // Crear nueva familia SOLO tipo 'salud'
-    const newFamily: ActivityFamily = {
-      name: familyName,
-      description: `Familia creada automáticamente: ${familyName}`,
-      active: true,
-      type: 'salud'
-    };
-
-    return this.activityFamilyService.create(newFamily);
-  }
-
-  /**
-   * Busca una familia existente en el cache
-   * @param familyName Nombre de la familia
-   * @returns Familia encontrada o undefined
-   */
   private findExistingFamily(familyName: string): ActivityFamily | undefined {
     if (!familyName) return undefined;
     return this.activityFamiliesCache.find(family => 
@@ -465,13 +466,6 @@ export class ImportTemplateService {
     );
   }
 
-  /**
-   * Extrae valores mensuales de un rango de columnas
-   * @param row Fila de Excel
-   * @param startCol Columna inicial
-   * @param endCol Columna final
-   * @returns Array de valores numéricos
-   */
   private extractMonthlyValues(row: ExcelJS.Row, startCol: number, endCol: number): number[] {
     const values: number[] = [];
     for (let col = startCol; col <= endCol; col++) {
@@ -480,38 +474,34 @@ export class ImportTemplateService {
     return values;
   }
 
-  /**
-   * Obtiene el valor de una celda
-   * @param row Fila de Excel
-   * @param col Número de columna
-   * @returns Valor de la celda
-   */
   private getCellValue(row: ExcelJS.Row, col: number): any {
-    const cell = row.getCell(col);
-    if (cell.value && typeof cell.value === 'object' && 'formula' in cell.value) {
-      // Si es una celda con fórmula, devolver el resultado calculado
-      return (cell.value as any).result;
+    try {
+      const cell = row.getCell(col);
+      
+      if (!cell || cell.value === null || cell.value === undefined) {
+        return '';
+      }
+      
+      if (cell.value && typeof cell.value === 'object') {
+        if ('formula' in cell.value) {
+          return (cell.value as any).result || '';
+        }
+        return cell.value.toString();
+      }
+      
+      return cell.value;
+    } catch (error) {
+      console.warn(`Error obteniendo valor de celda [${col}]:`, error);
+      return '';
     }
-    return cell.value;
   }
 
-  /**
-   * Verifica si una fila está vacía
-   * @param row Fila de Excel
-   * @returns true si la fila está vacía
-   */
   private isEmptyRow(row: ExcelJS.Row): boolean {
-    // Verificar las primeras columnas importantes
     const name = this.getCellValue(row, 12)?.toString().trim();
     const agrupFonafe = this.getCellValue(row, 1)?.toString().trim();
     return !name && !agrupFonafe;
   }
 
-  /**
-   * Convierte un valor a booleano considerando variaciones de sí/no
-   * @param value Valor a convertir
-   * @returns Valor booleano
-   */
   private parseBoolean(value: any): boolean {
     if (typeof value === 'boolean') return value;
     if (!value) return false;
@@ -521,11 +511,6 @@ export class ImportTemplateService {
     return yesValues.includes(strValue);
   }
 
-  /**
-   * Convierte un valor a número
-   * @param value Valor a convertir
-   * @returns Valor numérico
-   */
   private parseNumber(value: any): number {
     if (typeof value === 'number') return value;
     if (!value) return 0;
@@ -533,5 +518,40 @@ export class ImportTemplateService {
     const numValue = parseFloat(value.toString().replace(/,/g, ''));
     return isNaN(numValue) ? 0 : numValue;
   }
-  
+
+  private findDependencyByDescription(description: string): Dependency | undefined {
+    if (!description) return undefined;
+    return this.dependenciesCache.find(dep => 
+      dep.description && dep.description.trim().toLowerCase() === description.trim().toLowerCase()
+    );
+  }
+
+  private findOrCreateFormulation(dependencyId: number, year: number): Observable<Formulation> {
+    return this.formulationService.searchByDependencyAndYear(dependencyId, year).pipe(
+      switchMap((formulations) => {
+        const existingFormulation = formulations.find(f => 
+          f.formulationState?.idFormulationState === 1 &&
+          f.modification === 1 &&
+          f.quarter === 1 &&
+          f.formulationType?.idFormulationType === 3
+        );
+
+        if (existingFormulation) {
+          return of(existingFormulation);
+        }
+
+        const newFormulation: Formulation = {
+          dependency: { idDependency: dependencyId } as any,
+          formulationState: { idFormulationState: 1 } as any,
+          year: year,
+          modification: 1,
+          quarter: 1,
+          formulationType: { idFormulationType: 3 } as any,
+          active: true
+        };
+
+        return this.formulationService.create(newFormulation);
+      })
+    );
+  }
 }
