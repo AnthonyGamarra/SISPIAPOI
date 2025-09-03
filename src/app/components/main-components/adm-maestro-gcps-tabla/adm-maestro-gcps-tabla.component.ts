@@ -93,7 +93,7 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
   currentFormulationType: FormulationType | null = null;
 
   // Tabla de actividades por dependency
-  activitiesByDependency: Array<{ dependencyName: string; activityCount: number; hasFormulation: boolean }> = [];
+  activitiesByDependency: Array<{ dependencyName: string; hasFormulation: boolean }> = [];
   dependencies: Dependency[] = [];
 
   // Table editing
@@ -124,6 +124,9 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
   activityToDelete: ActivityDetail | null = null;
   activityToDeleteIndex: number | null = null;
 
+  // Delete all formulations confirmation
+  showDeleteAllFormulationsConfirmation = false;
+
   // Replicate dialog
   showReplicateDialog = false;
   replicateYear: number | null = null;
@@ -140,6 +143,17 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
   importPreviewData: Array<{ dependencyName: string; activityCount: number }> = [];
   isProcessingPreview = false;
   previewLoading = false;
+
+  // New modification modal
+  showNewModificationModal = false;
+  newModificationFile: File | null = null;
+  newModificationPreviewData: Array<{ dependencyName: string; activityCount: number }> = [];
+  newModificationLoading = false;
+  newModificationProgress = 0;
+  newModificationTotal = 0;
+  newModificationProcessed = 0;
+  isProcessingNewModificationPreview = false;
+  newModificationPreviewLoading = false;
 
   constructor(
     private activityDetailService: ActivityDetailService,
@@ -170,7 +184,8 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
           this.years.push(year!);
           this.yearOptions.push({ label: year!.toString(), value: year! });
         }
-        this.selectedYear = this.years.includes(this.selectedYear) ? this.selectedYear : this.years[this.years.length - 1];
+        // Siempre seleccionar el mayor año disponible
+        this.selectedYear = this.years[this.years.length - 1];
         this.loadData();
       },
       error: (err) => {
@@ -476,14 +491,17 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
           value: mod
         }));
 
-        // If only one modification, select it by default
+        // Seleccionar la modificación apropiada
         if (this.modificationOptions.length === 1) {
+          // Si solo hay una modificación, seleccionarla
           this.selectedModification = this.modificationOptions[0].value;
         } else if (this.modificationOptions.length === 0) {
-          this.selectedModification = 1; // Default to initial formulation
+          // Si no hay modificaciones, usar la formulación inicial por defecto
+          this.selectedModification = 1;
           this.modificationOptions = [{ label: 'Formulación inicial', value: 1 }];
-        } else if (!this.modificationOptions.some(opt => opt.value === this.selectedModification)) {
-          this.selectedModification = this.modificationOptions[0].value;
+        } else {
+          // Si hay múltiples modificaciones, seleccionar la mayor (la última en el array ordenado)
+          this.selectedModification = this.modificationOptions[this.modificationOptions.length - 1].value;
         }
       },
       error: (error) => {
@@ -529,34 +547,16 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
             f.formulationType?.idFormulationType === 3
           );
 
-          if (formulation) {
-            // Count activities for this formulation
-            // Since ActivityDetail doesn't have direct formulation reference,
-            // we count activities of the correct type and year
-            const activityCount = this.allActivityDetails.filter(ad => 
-              ad.year === this.selectedYear &&
-              ad.formulationType?.idFormulationType === 3
-            ).length;
-
-            return {
-              dependencyName: dependency.name,
-              activityCount: activityCount,
-              hasFormulation: true
-            };
-          } else {
-            return {
-              dependencyName: dependency.name,
-              activityCount: 0,
-              hasFormulation: false
-            };
-          }
+          return {
+            dependencyName: dependency.name,
+            hasFormulation: !!formulation
+          };
         });
       },
       error: (error) => {
         console.error('Error loading formulations:', error);
         this.activitiesByDependency = this.dependencies.map(dependency => ({
           dependencyName: dependency.name,
-          activityCount: 0,
           hasFormulation: false
         }));
       }
@@ -801,6 +801,127 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     this.activityToDeleteIndex = null;
   }
 
+  // Delete all formulations methods
+  deleteAllFormulations() {
+    this.showDeleteAllFormulationsConfirmation = true;
+  }
+
+  confirmDeleteAllFormulations() {
+    this.loading = true;
+    
+    // Get all formulations for the current year, modification and formulationType = 3
+    this.formulationService.getAll().subscribe({
+      next: (allFormulations) => {
+        const formulationsToDelete = allFormulations.filter(formulation =>
+          formulation.year === this.selectedYear &&
+          formulation.modification === this.selectedModification &&
+          formulation.formulationType?.idFormulationType === 3 &&
+          formulation.dependency?.dependencyType?.idDependencyType === 2 &&
+          formulation.dependency?.ospe === false
+        );
+
+        if (formulationsToDelete.length === 0) {
+          this.toastr.warning('No se encontraron formulaciones para eliminar con los criterios seleccionados.', 'Advertencia');
+          this.loading = false;
+          this.cancelDeleteAllFormulations();
+          return;
+        }
+
+        // Delete all found formulations
+        const deleteRequests = formulationsToDelete.map(formulation =>
+          this.formulationService.deleteById(formulation.idFormulation!)
+        );
+
+        forkJoin(deleteRequests).subscribe({
+          next: () => {
+            this.toastr.success(`${formulationsToDelete.length} formulaciones eliminadas correctamente.`, 'Éxito');
+            this.loadActivitiesByDependency(); // Refresh the table
+            this.loading = false;
+            this.cancelDeleteAllFormulations();
+          },
+          error: (error) => {
+            console.error('Error deleting formulations:', error);
+            this.toastr.error('Error al eliminar las formulaciones.', 'Error');
+            this.loading = false;
+            this.cancelDeleteAllFormulations();
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading formulations for deletion:', error);
+        this.toastr.error('Error al cargar las formulaciones para eliminar.', 'Error');
+        this.loading = false;
+        this.cancelDeleteAllFormulations();
+      }
+    });
+  }
+
+  cancelDeleteAllFormulations() {
+    this.showDeleteAllFormulationsConfirmation = false;
+  }
+
+  /**
+   * Elimina todas las formulaciones existentes antes de proceder con la importación
+   * Este método es usado cuando el botón está en modo "Actualizar datos"
+   */
+  deleteAllFormulationsBeforeImport() {
+    this.loading = true;
+    
+    // Get all formulations for the current year, modification and formulationType = 3
+    this.formulationService.getAll().subscribe({
+      next: (allFormulations) => {
+        const formulationsToDelete = allFormulations.filter(formulation =>
+          formulation.year === this.selectedYear &&
+          formulation.modification === this.selectedModification &&
+          formulation.formulationType?.idFormulationType === 3 &&
+          formulation.dependency?.dependencyType?.idDependencyType === 2 &&
+          formulation.dependency?.ospe === false
+        );
+
+        if (formulationsToDelete.length === 0) {
+          this.toastr.warning('No se encontraron formulaciones para eliminar. Procediendo con la importación...', 'Advertencia');
+          this.loading = false;
+          // Proceder con la importación aunque no haya formulaciones que eliminar
+          this.importHealthActivitiesFromTemplate(this.importFile!);
+          return;
+        }
+
+        // Delete all found formulations
+        const deleteRequests = formulationsToDelete.map(formulation =>
+          this.formulationService.deleteById(formulation.idFormulation!)
+        );
+
+        forkJoin(deleteRequests).subscribe({
+          next: () => {
+            this.toastr.success(`${formulationsToDelete.length} formulaciones eliminadas. Procediendo con la importación...`, 'Éxito');
+            this.loadActivitiesByDependency(); // Refresh the table
+            this.loading = false;
+            // Ahora proceder con la importación
+            this.importHealthActivitiesFromTemplate(this.importFile!);
+          },
+          error: (error) => {
+            console.error('Error deleting formulations before import:', error);
+            this.toastr.error('Error al eliminar las formulaciones existentes. Cancelando importación.', 'Error');
+            this.loading = false;
+            this.cancelImport(); // Cancelar la importación si no se pudieron eliminar las formulaciones
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading formulations for deletion before import:', error);
+        this.toastr.error('Error al cargar las formulaciones para eliminar. Cancelando importación.', 'Error');
+        this.loading = false;
+        this.cancelImport(); // Cancelar la importación si no se pudieron cargar las formulaciones
+      }
+    });
+  }
+
+  hasActiveFormulations(): boolean {
+    return this.activitiesByDependency && 
+           this.activitiesByDependency.length > 0 && 
+           this.activitiesByDependency.some(item => item.hasFormulation);
+  }
+
   hasNewActivities(): boolean {
     return this.activityDetails.some(activity =>
       activity.idActivityDetail && activity.idActivityDetail < 0
@@ -846,6 +967,11 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     this.showImportPreviewModal = true;
   }
 
+  // New modification methods
+  onCreateNewModificationClick(): void {
+    this.showNewModificationModal = true;
+  }
+
   onFileSelect(event: any): void {
     // El event puede venir de dos formas: event.files (p-fileUpload) o event.target.files (input)
     const files = event.files || event.target?.files;
@@ -861,6 +987,43 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
       this.importFile = file;
       this.generateImportPreview();
     }
+  }
+
+  // New modification file handling methods
+  onNewModificationFileChange(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      this.newModificationFile = file;
+      this.generateNewModificationPreview();
+    }
+  }
+
+  generateNewModificationPreview(): void {
+    if (!this.newModificationFile) {
+      return;
+    }
+
+    console.log('🚀 Iniciando vista previa para nueva modificatoria:', this.newModificationFile.name);
+    
+    this.newModificationPreviewLoading = true;
+    this.isProcessingNewModificationPreview = true;
+    this.newModificationPreviewData = [];
+
+    // Usar el mismo procesamiento que la importación regular
+    this.processFileForPreview(this.newModificationFile).then(previewData => {
+      this.newModificationPreviewData = previewData;
+      this.newModificationPreviewLoading = false;
+      this.isProcessingNewModificationPreview = false;
+      
+      const message = `✅ Archivo procesado: ${this.getTotalNewModificationActivities()} actividades en ${previewData.length} dependencias`;
+      console.log(message);
+      this.toastr.info(message, 'Vista Previa');
+    }).catch(error => {
+      console.error('❌ Error procesando archivo para nueva modificatoria:', error);
+      this.newModificationPreviewLoading = false;
+      this.isProcessingNewModificationPreview = false;
+      this.toastr.error('Error al procesar el archivo: ' + error.message, 'Error');
+    });
   }
 
   generateImportPreview(): void {
@@ -884,12 +1047,8 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
       this.isProcessingPreview = false;
       
       if (previewData.length > 0) {
-        const isSimulated = previewData[0].dependencyName.includes('SIMULADO');
-        const message = isSimulated 
-          ? `⚠️ Datos simulados: ${this.getTotalActivities()} actividades en ${previewData.length} dependencias`
-          : `✅ Archivo procesado: ${this.getTotalActivities()} actividades en ${previewData.length} dependencias`;
-        
-        this.toastr.success(message, isSimulated ? 'Vista Previa (Simulada)' : 'Vista Previa Lista');
+        const message = `✅ Archivo procesado: ${this.getTotalActivities()} actividades en ${previewData.length} dependencias`;
+        this.toastr.success(message, 'Vista Previa Lista');
       } else {
         this.toastr.warning('No se encontraron actividades válidas en el archivo', 'Advertencia');
       }
@@ -975,9 +1134,7 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
           
         } catch (error) {
           console.error('Error procesando Excel:', error);
-          // En caso de error, usar datos simulados como fallback
-          console.log('Fallback a datos simulados debido a error');
-          resolve(this.simulatePreviewData());
+          reject(new Error('Error al procesar el archivo Excel: ' + (error as Error).message));
         }
       };
 
@@ -1034,18 +1191,6 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     );
   }
 
-  private simulatePreviewData(): Array<{ dependencyName: string; activityCount: number }> {
-    // Simulación para cuando no se puede procesar el archivo Excel real
-    console.log('⚠️ Usando datos simulados para la vista previa (solo para pruebas)');
-    return [
-      { dependencyName: '🔧 SIMULADO: Oficina Central', activityCount: 25 },
-      { dependencyName: '🔧 SIMULADO: Red Lima Norte', activityCount: 18 },
-      { dependencyName: '🔧 SIMULADO: Red Lima Sur', activityCount: 22 },
-      { dependencyName: '🔧 SIMULADO: Red Lima Este', activityCount: 15 },
-      { dependencyName: '🔧 SIMULADO: Red Callao', activityCount: 12 }
-    ];
-  }
-
   confirmImport(): void {
     if (!this.importFile) {
       this.toastr.error('No hay archivo seleccionado', 'Error');
@@ -1058,17 +1203,28 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     }
 
     console.log('Confirmando importación de', this.getTotalActivities(), 'actividades');
-    this.showImportPreviewModal = false;
-    this.importHealthActivitiesFromTemplate(this.importFile);
+    
+    // Verificar si hay formulaciones activas para decidir si es importación o actualización
+    const isUpdate = this.hasActiveFormulations();
+    
+    if (isUpdate) {
+      console.log('Modo Actualización: eliminando formulaciones existentes antes de importar');
+      this.toastr.info('Eliminando formulaciones existentes antes de importar...', 'Actualización');
+      this.deleteAllFormulationsBeforeImport();
+    } else {
+      console.log('Modo Importación: importando directamente');
+      this.importHealthActivitiesFromTemplate(this.importFile);
+    }
   }
 
   cancelImport(): void {
     if (this.importLoading) {
       // Si está importando, mostrar mensaje de confirmación
       if (confirm('¿Estás seguro de que quieres cancelar la importación en progreso?')) {
-        this.importLoading = false;
+        this.resetImportProgress();
         this.resetImportModal();
       }
+      // Si no confirma, no hacer nada (mantener el modal abierto)
     } else {
       console.log('Cancelando importación');
       this.resetImportModal();
@@ -1088,6 +1244,14 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     this.importProcessed = 0;
   }
 
+  private resetImportProgress(): void {
+    // Método separado para limpiar solo el progreso sin cerrar el modal
+    this.importLoading = false;
+    this.importProgress = 0;
+    this.importTotal = 0;
+    this.importProcessed = 0;
+  }
+
   resetFileSelection(): void {
     console.log('Reseteando selección de archivo');
     this.importFile = null;
@@ -1096,8 +1260,105 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
     this.previewLoading = false;
   }
 
+  // New modification methods
+  confirmNewModification(): void {
+    if (!this.newModificationFile) {
+      this.toastr.error('No hay archivo seleccionado', 'Error');
+      return;
+    }
+
+    if (this.newModificationPreviewData.length === 0) {
+      this.toastr.error('No hay datos válidos para crear la nueva modificatoria', 'Error');
+      return;
+    }
+
+    console.log('Confirmando creación de nueva modificatoria con', this.getTotalNewModificationActivities(), 'actividades');
+    
+    // Crear nueva modificatoria con modification + 1
+    this.createNewModificationFromTemplate(this.newModificationFile);
+  }
+
+  cancelNewModification(): void {
+    if (this.newModificationLoading) {
+      // Si está procesando, mostrar mensaje de confirmación
+      if (confirm('¿Estás seguro de que quieres cancelar la creación de la nueva modificatoria?')) {
+        this.resetNewModificationModal();
+      }
+    } else {
+      console.log('Cancelando creación de nueva modificatoria');
+      this.resetNewModificationModal();
+    }
+  }
+
+  private resetNewModificationModal(): void {
+    this.showNewModificationModal = false;
+    this.newModificationFile = null;
+    this.newModificationPreviewData = [];
+    this.isProcessingNewModificationPreview = false;
+    this.newModificationPreviewLoading = false;
+    // Limpiar variables de progreso
+    this.newModificationLoading = false;
+    this.newModificationProgress = 0;
+    this.newModificationTotal = 0;
+    this.newModificationProcessed = 0;
+  }
+
   getTotalActivities(): number {
     return this.importPreviewData.reduce((total, item) => total + item.activityCount, 0);
+  }
+
+  getTotalNewModificationActivities(): number {
+    return this.newModificationPreviewData.reduce((total, item) => total + item.activityCount, 0);
+  }
+
+  createNewModificationFromTemplate(file: File): void {
+    if (!this.currentFormulationType) {
+      this.toastr.error('Debe cargar un tipo de formulación antes de crear la nueva modificatoria', 'Error');
+      return;
+    }
+
+    console.log('🚀 Iniciando creación de nueva modificatoria desde archivo:', file.name);
+    this.toastr.info('Procesando archivo Excel para nueva modificatoria...', 'Creando Modificatoria');
+    this.newModificationLoading = true;
+    this.newModificationProgress = 0;
+    this.newModificationTotal = 0;
+    this.newModificationProcessed = 0;
+    
+    // Calcular la nueva modificatoria (actual + 1)
+    const nextModification = this.selectedModification + 1;
+    
+    // Definir callback de progreso
+    const onProgress = (progress: { processed: number; total: number; loading: boolean }) => {
+      this.newModificationProcessed = progress.processed;
+      this.newModificationTotal = progress.total;
+      this.newModificationProgress = progress.total > 0 ? Math.min(100, Math.round((progress.processed / progress.total) * 100)) : 0;
+      this.newModificationLoading = progress.loading;
+      
+      console.log(`📊 Progreso nueva modificatoria: ${this.newModificationProgress}% (${progress.processed}/${progress.total})`);
+    };
+    
+    this.importTemplateService.processExcelFileWithModification(file, this.selectedYear, nextModification, onProgress).subscribe({
+      next: (result: ImportResult) => {
+        console.log('✅ Nueva modificatoria creada:', result);
+        this.newModificationLoading = false;
+        this.newModificationProgress = 100;
+        this.newModificationProcessed = result.processedRows;
+        this.newModificationTotal = result.totalRows;
+        this.handleNewModificationResult(result, nextModification);
+        
+        // Refrescar datos después de crear la nueva modificatoria
+        if (result.success) {
+          this.loadModifications();
+          this.loadActivitiesByDependency();
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error durante la creación de nueva modificatoria:', error);
+        this.newModificationLoading = false;
+        this.showNewModificationModal = false;
+        this.toastr.error('Error al crear nueva modificatoria: ' + error.message, 'Error');
+      }
+    });
   }
 
   importHealthActivitiesFromTemplate(file: File): void {
@@ -1140,25 +1401,23 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
       error: (error) => {
         console.error('❌ Error durante la importación:', error);
         this.importLoading = false;
+        this.showImportPreviewModal = false; // Cerrar modal en caso de error
         this.toastr.error('Error al importar actividades: ' + error.message, 'Error');
       }
     });
   }
 
   private handleImportResult(result: ImportResult): void {
+    // Cerrar el modal al finalizar la importación
+    this.showImportPreviewModal = false;
+    
     if (result.success) {
       this.toastr.success(
-        `Importación exitosa: ${result.processedRows} de ${result.totalRows} filas procesadas`,
+        `Importación exitosa: ${result.processedRows} de ${result.totalRows} actividades procesadas`,
         'Éxito'
       );
       
-      // Aquí puedes agregar la lógica para guardar las actividades en el backend
-      // Por ejemplo: this.saveImportedActivities(result.activities);
-      
       console.log('Actividades importadas:', result.activities);
-      
-      // Refrescar la tabla si es necesario
-      // this.loadActivities();
       
     } else {
       let errorMessage = `Errores encontrados durante la importación:\n`;
@@ -1167,11 +1426,41 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
       });
       
       this.toastr.error(
-        `Importación completada con errores: ${result.processedRows} de ${result.totalRows} filas procesadas`,
+        `Importación completada con errores: ${result.processedRows} de ${result.totalRows} actividades procesadas`,
         'Advertencia'
       );
       
       console.error('Errores de importación:', result.errors);
+    }
+  }
+
+  private handleNewModificationResult(result: ImportResult, modification: number): void {
+    // Cerrar el modal al finalizar la creación de la nueva modificatoria
+    this.showNewModificationModal = false;
+    
+    if (result.success) {
+      this.toastr.success(
+        `Nueva modificatoria ${modification} creada exitosamente: ${result.processedRows} de ${result.totalRows} actividades procesadas`,
+        'Éxito'
+      );
+      
+      console.log('Actividades de nueva modificatoria creadas:', result.activities);
+      
+      // Actualizar la modificación seleccionada a la nueva modificatoria
+      this.selectedModification = modification;
+      
+    } else {
+      let errorMessage = `Errores encontrados durante la creación de la nueva modificatoria:\n`;
+      result.errors.forEach((error, index) => {
+        errorMessage += `${index + 1}. ${error}\n`;
+      });
+      
+      this.toastr.error(
+        `Creación de modificatoria completada con errores: ${result.processedRows} de ${result.totalRows} actividades procesadas`,
+        'Advertencia'
+      );
+      
+      console.error('Errores de creación de nueva modificatoria:', result.errors);
     }
   }
 }

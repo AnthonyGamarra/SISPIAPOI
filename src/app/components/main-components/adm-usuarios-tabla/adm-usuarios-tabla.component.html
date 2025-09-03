@@ -1,16 +1,13 @@
 <div>
   <div class="mx-5">
     <div class="grid ml-auto mt-2">
-      <h2 class="col-auto">
+      <h2 class="col-6">
         Administración de Usuarios
       </h2>
-    </div>
-    <div class="grid mx-auto my-1">
-      <div class="col-12 flex justify-content-end gap-2">
+      <div class="col-6 flex justify-content-end my-auto">
         <button pButton label="Agregar Usuario" icon="pi pi-plus" class="add-button" (click)="addNewUser()"></button>
       </div>
     </div>
-
     <!-- Spinner de carga -->
     <div *ngIf="loading" class="text-center p-6">
       <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
@@ -24,9 +21,9 @@
 
     <!-- Tabla de usuarios -->
     <div *ngIf="!loading && users.length > 0" class="table-container">
-      <p-table #userTable [value]="users" stripedRows showGridlines [resizableColumns]="true"
-        [scrollable]="true" scrollHeight="800px" columnResizeMode="expand" dataKey="idUser" editMode="row"
-        [paginator]="true" [rows]="9" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+      <p-table #userTable [value]="users" stripedRows showGridlines [resizableColumns]="true" [scrollable]="true"
+        scrollHeight="800px" columnResizeMode="expand" dataKey="idUser" editMode="row" [paginator]="true" [rows]="9"
+        [rowHover]="true" [editingRowKeys]="editingRowKeys">
 
         <ng-template pTemplate="header" class="table-header" #header>
           <tr class="cabecera">
@@ -61,8 +58,9 @@
                 <button *ngIf="!editing && !user.enabled" pButton pRipple type="button" icon="pi pi-check"
                   (click)="enableUser(user)" text rounded severity="success" pTooltip="Dar de alta">
                 </button>
-                <button *ngIf="!editing && user.idUser && user.enabled" pButton pRipple type="button" icon="pi pi-refresh"
-                  [label]="'Restablecer contraseña'" (click)="resetPassword(user)" [disabled]="resettingUserId === user.idUser" severity="info">
+                <button *ngIf="!editing && user.idUser && user.enabled" pButton pRipple type="button"
+                  icon="pi pi-refresh" [label]="'Restablecer contraseña'" (click)="resetPassword(user)"
+                  [disabled]="resettingUserId === user.idUser" severity="primary">
                   <ng-container *ngIf="resettingUserId === user.idUser">
                     <span class="ml-2"><i class="pi pi-spin pi-spinner"></i> Enviando...</span>
                   </ng-container>
@@ -99,19 +97,25 @@
             <td>
               <div class="flex flex-wrap gap-2">
                 <ng-container *ngIf="user.roles.length === 1">
-                  <p-chip [label]="user.roles[0].name" class="mr-2" styleClass="p-chip-info" [removable]="true" (onRemove)="removeRole(user, user.roles[0])">
+                  <p-chip [label]="user.roles[0].name" class="mr-2" styleClass="p-chip-info" [removable]="true"
+                    (onRemove)="removeRole(user, user.roles[0])">
                   </p-chip>
                 </ng-container>
-                <button *ngIf="user.roles.length === 0" pButton icon="pi pi-plus" class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddRoleDialog(user)" pTooltip="Añadir rol"></button>
+                <button *ngIf="user.roles.length === 0" pButton icon="pi pi-plus"
+                  class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddRoleDialog(user)"
+                  pTooltip="Añadir rol"></button>
               </div>
             </td>
             <td>
               <div class="flex flex-wrap gap-2">
                 <ng-container *ngFor="let dep of user.dependencies">
-                  <p-chip [label]="dep.name" class="mr-2" styleClass="p-chip-warning" [removable]="true" (onRemove)="removeDependency(user, dep)">
+                  <p-chip [label]="dep.name" class="mr-2" styleClass="p-chip-warning" [removable]="true"
+                    (onRemove)="removeDependency(user, dep)">
                   </p-chip>
                 </ng-container>
-                <button *ngIf="mostrarBotonAgregarDependencia(user)" pButton icon="pi pi-plus" class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddDependencyDialog(user)" pTooltip="Añadir dependencia" [disabled]="user.roles.length === 0"></button>
+                <button *ngIf="mostrarBotonAgregarDependencia(user)" pButton icon="pi pi-plus"
+                  class="p-button-rounded p-button-text p-button-success p-0" (click)="openAddDependencyDialog(user)"
+                  pTooltip="Añadir dependencia" [disabled]="user.roles.length === 0"></button>
               </div>
             </td>
           </tr>
@@ -139,26 +143,35 @@
   </p-dialog>
 
   <!-- Modal para añadir rol -->
-  <p-dialog header="Añadir Rol" [(visible)]="showAddRoleDialog" [modal]="true" [style]="{ width: '30vw' }" [draggable]="false">
+  <p-dialog header="Añadir Rol" [(visible)]="showAddRoleDialog" [modal]="true" [style]="{ width: '30vw' }"
+    [draggable]="false">
     <div class="p-fluid">
       <label for="selectRole">Selecciona un rol:</label>
-      <p-select id="selectRole" [options]="availableRoles" optionLabel="name" optionValue="idRole" [(ngModel)]="selectedRoleId" placeholder="Selecciona un rol" [filter]="true" filterBy="name" appendTo="body" class="w-full mt-2"></p-select>
+      <p-select id="selectRole" [options]="availableRoles" optionLabel="name" optionValue="idRole"
+        [(ngModel)]="selectedRoleId" placeholder="Selecciona un rol" [filter]="true" filterBy="name" appendTo="body"
+        class="w-full mt-2"></p-select>
     </div>
     <ng-template pTemplate="footer">
       <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelAddRole()" class="p-button-text"></button>
-      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddRole()" [disabled]="!selectedRoleId" class="mx-3 add-button"></button>
+      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddRole()" [disabled]="!selectedRoleId"
+        class="mx-3 add-button"></button>
     </ng-template>
   </p-dialog>
 
   <!-- Modal para añadir dependencia -->
-  <p-dialog header="Añadir Dependencia" [(visible)]="showAddDependencyDialog" [modal]="true" [style]="{ width: '30vw' }" [draggable]="false">
+  <p-dialog header="Añadir Dependencia" [(visible)]="showAddDependencyDialog" [modal]="true" [style]="{ width: '30vw' }"
+    [draggable]="false">
     <div class="p-fluid">
       <label for="selectDependency">Selecciona una dependencia:</label>
-      <p-select id="selectDependency" [options]="availableDependencies" optionLabel="name" optionValue="idDependency" [(ngModel)]="selectedDependencyId" placeholder="Selecciona una dependencia" [filter]="true" filterBy="name" appendTo="body" class="w-full mt-2"></p-select>
+      <p-select id="selectDependency" [options]="availableDependencies" optionLabel="name" optionValue="idDependency"
+        [(ngModel)]="selectedDependencyId" placeholder="Selecciona una dependencia" [filter]="true" filterBy="name"
+        appendTo="body" class="w-full mt-2"></p-select>
     </div>
     <ng-template pTemplate="footer">
-      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelAddDependency()" class="p-button-text"></button>
-      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddDependency()" [disabled]="!selectedDependencyId" class="mx-3 add-button"></button>
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="cancelAddDependency()"
+        class="p-button-text"></button>
+      <button pButton label="Añadir" icon="pi pi-check" (click)="confirmAddDependency()"
+        [disabled]="!selectedDependencyId" class="mx-3 add-button"></button>
     </ng-template>
   </p-dialog>
 </div>

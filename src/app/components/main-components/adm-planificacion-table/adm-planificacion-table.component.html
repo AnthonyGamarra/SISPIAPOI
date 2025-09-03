@@ -1,4 +1,4 @@
-<div class="adm-container mx-auto">
+<div class="adm-container mx-auto mt-2 mb-5">
    <p-card>
       <div>
          <h2>Administración de Planificación</h2>
@@ -15,9 +15,9 @@
          <p>No hay formulaciones disponibles para el año {{selectedYear}}.</p>
       </div>
 
-      <div *ngFor="let depTypeName of getDependencyTypeNames()">
-         <p-fieldset [legend]="depTypeName" class="p-mt-4">
-            <div class="flex justify-content-end flex-wrap gap-2">
+      <div *ngFor="let depTypeName of getDependencyTypeNames()" class="table-container">
+         <p-fieldset [legend]="depTypeName">
+            <div class="flex justify-content-start flex-wrap mb-3 mx-3">
 
                <button *ngIf="canInitiateFormulation && depTypeName === 'OOCC'" pButton
                   label="Iniciar Formulación para OOCC" icon="pi pi-plus" class="add-button"
@@ -39,7 +39,7 @@
                <p-fieldset [legend]="formTypeName" class="p-mt-3" [collapsed]="false" [toggleable]="true"
                   *ngIf="formTypeName !== 'General'">
 
-                  <div class="flex justify-content-end flex-wrap gap-2">
+                  <div class="flex justify-content-start flex-wrap mb-3 mx-3">
 
                      <button
                         *ngIf="canInitiateFormulationOODDGestion && depTypeName === 'OODD' &&  formTypeName === 'OODD ACTIVIDADES DE GESTIÓN'"
@@ -77,39 +77,52 @@
                         class="add-button" (click)="openNewModificationDialogPrestacionesSociales()">
                      </button>
 
+                     <button
+                        *ngIf="canInitiateFormulationActividadesSalud && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES DE SALUD'"
+                        pButton label="Iniciar formulación para prestaciones de salud" icon="pi pi-plus"
+                        class="add-button" (click)="onInitiateFormulationActividadesSalud()">
+                     </button>
+
+                     <button
+                        *ngIf="!canInitiateFormulationActividadesSalud && depTypeName === 'OODD' && formTypeName === 'OODD PRESTACIONES DE SALUD'"
+                        pButton label="Nueva Modificatoria para prestaciones de salud" icon="pi pi-plus"
+                        class="add-button" (click)="onNewModificationActividadesSalud()">
+                     </button>
+
                   </div>
 
-                  <div *ngIf="!groupedFormulations[depTypeName][formTypeName] || 
-                       Object.keys(groupedFormulations[depTypeName][formTypeName]).length === 0 ||
-                       (getModificationNumbers(depTypeName, formTypeName).length === 1 && 
-                        getFormulationsForGroup(depTypeName, formTypeName, 1).length === 0)"
-                     class="p-text-center p-my-3">
+                  <div *ngIf="!hasFormulations(depTypeName, formTypeName)" class="p-text-center p-my-3">
                      <p>No hay formulaciones para este tipo de formulación para el año {{selectedYear}}.</p>
                   </div>
 
-                  <div *ngFor="let modificationNum of getModificationNumbers(depTypeName, formTypeName)"
-                     class="table-container">
-                     <ng-container
-                        *ngIf="getFormulationsForGroup(depTypeName, formTypeName, modificationNum).length > 0">
-                        <h5 class="p-mt-3 p-mb-2">{{ modificationLabels[modificationNum] || 'Modificatoria Desconocida'
-                           }}</h5>
-                        <p-table [value]="getFormulationsForGroup(depTypeName, formTypeName, modificationNum)"
-                           [paginator]="true" [rows]="10" [tableStyle]="{ 'max-width': '95vw' }" stripedRows
-                           showGridlines>
+                  <!-- Nueva tabla unificada para OODD -->
+                  <div *ngIf="hasFormulations(depTypeName, formTypeName)" class="table-container">
+                     
+                     <!-- Tabla especial para OODD PRESTACIONES DE SALUD -->
+                     <div *ngIf="isPrestacionesDeSalud(formTypeName)" class="table-responsive">
+                        <p-table [value]="getUnifiedFormulationsPrestacionesSalud(depTypeName, formTypeName)" [paginator]="true"
+                           [rows]="10" [tableStyle]="{ 'min-width': '20%' }" stripedRows showGridlines>
                            <ng-template pTemplate="header">
                               <tr>
                                  <th class="centered">Dependencia</th>
-                                 <th class="centered">Abierto desde</th>
-                                 <th class="centered">Activo</th>
+                                 <th class="centered">Formulación Inicial</th>
+                                 <th class="centered">Primera Modificatoria</th>
                               </tr>
                            </ng-template>
-                           <ng-template pTemplate="body" let-formulation>
+                           <ng-template pTemplate="body" let-prestacionRow>
                               <tr>
-                                 <td>{{ formulation.dependency?.name }}</td>
-                                 <td class="centered">{{ quarterLabels[formulation.quarter!] }}</td>
+                                 <td>{{ prestacionRow.dependencyName }}</td>
                                  <td class="centered">
-                                    <p-checkbox [(ngModel)]="formulation.active" [binary]="true"
-                                       (onChange)="onActiveChange(formulation, $event)"></p-checkbox>
+                                    <p-badge 
+                                       [value]="prestacionRow.formulacionInicial ? 'Iniciado' : 'No iniciado'"
+                                       [severity]="prestacionRow.formulacionInicial ? 'success' : 'secondary'">
+                                    </p-badge>
+                                 </td>
+                                 <td class="centered">
+                                    <p-badge 
+                                       [value]="prestacionRow.primeraModificatoria ? 'Iniciado' : 'No iniciado'"
+                                       [severity]="prestacionRow.primeraModificatoria ? 'success' : 'secondary'">
+                                    </p-badge>
                                  </td>
                               </tr>
                            </ng-template>
@@ -119,53 +132,113 @@
                               </tr>
                            </ng-template>
                         </p-table>
-                     </ng-container>
+                     </div>
+
+                     <!-- Tabla normal para otros tipos de formulación OODD -->
+                     <div *ngIf="!isPrestacionesDeSalud(formTypeName)" class="table-responsive">
+                        <p-table [value]="getUnifiedFormulations(depTypeName, formTypeName)" [paginator]="true"
+                           [rows]="10" [tableStyle]="{ 'min-width': '20%' }" stripedRows showGridlines>
+                           <ng-template pTemplate="header">
+                              <tr>
+                                 <th class="centered" [attr.rowspan]="2">Dependencia</th>
+                                 <th *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber"
+                                    class="centered" [attr.colspan]="2">
+                                    {{ modificationLabels[modNum] || 'Modificatoria Desconocida' }}
+                                 </th>
+                              </tr>
+                              <tr>
+                                 <ng-container
+                                    *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
+                                    <th class="centered">Abierto desde</th>
+                                    <th class="centered">Activo</th>
+                                 </ng-container>
+                              </tr>
+                           </ng-template>
+                           <ng-template pTemplate="body" let-unifiedRow>
+                              <tr>
+                                 <td>{{ unifiedRow.dependencyName }}</td>
+                                 <ng-container
+                                    *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
+                                    <td class="centered">
+                                       {{ unifiedRow.modifications[modNum]?.quarter ?
+                                       quarterLabels[unifiedRow.modifications[modNum].quarter] : '-' }}
+                                    </td>
+                                    <td class="centered">
+                                       <p-checkbox *ngIf="unifiedRow.modifications[modNum]; else noFormulation"
+                                          [(ngModel)]="unifiedRow.modifications[modNum].active" [binary]="true"
+                                          (onChange)="onActiveChange(unifiedRow.modifications[modNum], $event)">
+                                       </p-checkbox>
+                                       <ng-template #noFormulation>-</ng-template>
+                                    </td>
+                                 </ng-container>
+                              </tr>
+                           </ng-template>
+                           <ng-template pTemplate="emptymessage">
+                              <tr>
+                                 <td [attr.colspan]="1 + (getExistingModifications(depTypeName, formTypeName).length * 2)"
+                                    class="p-text-center">No hay formulaciones en este grupo.</td>
+                              </tr>
+                           </ng-template>
+                        </p-table>
+                     </div>
+                     
                   </div>
                </p-fieldset>
 
                <!-- For "General" (OC), display without inner fieldset -->
                <div *ngIf="formTypeName === 'General'">
-                  <div *ngIf="!groupedFormulations[depTypeName][formTypeName] || 
-                       Object.keys(groupedFormulations[depTypeName][formTypeName]).length === 0 ||
-                       (getModificationNumbers(depTypeName, formTypeName).length === 1 && 
-                        getFormulationsForGroup(depTypeName, formTypeName, 1).length === 0)"
-                     class="p-text-center p-my-3">
+                  <div *ngIf="!hasFormulations(depTypeName, formTypeName)" class="p-text-center p-my-3">
                      <p>No hay formulaciones para este tipo de dependencia para el año {{selectedYear}}.</p>
                   </div>
 
-                  <div *ngFor="let modificationNum of getModificationNumbers(depTypeName, formTypeName)"
-                     class="table-container">
-                     <ng-container
-                        *ngIf="getFormulationsForGroup(depTypeName, formTypeName, modificationNum).length > 0">
-                        <h4 class="p-mt-4 p-mb-2">{{ modificationLabels[modificationNum] || 'Modificatoria Desconocida'
-                           }}</h4>
-                        <p-table [value]="getFormulationsForGroup(depTypeName, formTypeName, modificationNum)"
-                           [paginator]="true" [rows]="10" [tableStyle]="{ 'max-width': '95vw' }" stripedRows
-                           showGridlines>
+                  <!-- Nueva tabla unificada para General (OOCC) - siempre tabla normal -->
+                  <div *ngIf="hasFormulations(depTypeName, formTypeName)" class="table-container">
+                     <div class="table-responsive">
+                        <p-table [value]="getUnifiedFormulations(depTypeName, formTypeName)" [paginator]="true"
+                           [rows]="10" [tableStyle]="{ 'min-width': '100%' }" stripedRows showGridlines>
                            <ng-template pTemplate="header">
                               <tr>
-                                 <th class="centered">Dependencia</th>
-                                 <th class="centered">Abierto desde</th>
-                                 <th class="centered">Activo</th>
+                                 <th class="centered" [attr.rowspan]="2">Dependencia</th>
+                                 <th *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber"
+                                    class="centered" [attr.colspan]="2">
+                                    {{ modificationLabels[modNum] || 'Modificatoria Desconocida' }}
+                                 </th>
+                              </tr>
+                              <tr>
+                                 <ng-container
+                                    *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
+                                    <th class="centered">Abierto desde</th>
+                                    <th class="centered">Activo</th>
+                                 </ng-container>
                               </tr>
                            </ng-template>
-                           <ng-template pTemplate="body" let-formulation>
+                           <ng-template pTemplate="body" let-unifiedRow>
                               <tr>
-                                 <td>{{ formulation.dependency?.name }}</td>
-                                 <td class="centered">{{ quarterLabels[formulation.quarter!] }}</td>
-                                 <td class="centered">
-                                    <p-checkbox [(ngModel)]="formulation.active" [binary]="true"
-                                       (onChange)="onActiveChange(formulation, $event)"></p-checkbox>
-                                 </td>
+                                 <td>{{ unifiedRow.dependencyName }}</td>
+                                 <ng-container
+                                    *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
+                                    <td class="centered">
+                                       {{ unifiedRow.modifications[modNum]?.quarter ?
+                                       quarterLabels[unifiedRow.modifications[modNum].quarter] : '-' }}
+                                    </td>
+                                    <td class="centered">
+                                       <p-checkbox *ngIf="unifiedRow.modifications[modNum]; else noFormulation"
+                                          [(ngModel)]="unifiedRow.modifications[modNum].active" [binary]="true"
+                                          (onChange)="onActiveChange(unifiedRow.modifications[modNum], $event)">
+                                       </p-checkbox>
+                                       <ng-template #noFormulation>-</ng-template>
+                                    </td>
+                                 </ng-container>
                               </tr>
                            </ng-template>
                            <ng-template pTemplate="emptymessage">
                               <tr>
-                                 <td colspan="3" class="p-text-center">No hay formulaciones en este grupo.</td>
+                                 <td [attr.colspan]="1 + (getExistingModifications(depTypeName, formTypeName).length * 2)"
+                                    class="p-text-center">No hay formulaciones en este grupo.</td>
                               </tr>
                            </ng-template>
                         </p-table>
-                     </ng-container>
+                     </div>
                   </div>
                </div>
             </div>

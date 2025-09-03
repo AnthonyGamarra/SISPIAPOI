@@ -13,6 +13,7 @@ import { ConfirmationService } from 'primeng/api';
 import { CardModule } from 'primeng/card';
 import { FieldsetModule } from 'primeng/fieldset';
 import { CheckboxModule } from 'primeng/checkbox';
+import { BadgeModule } from 'primeng/badge';
 import { MinMaxYears } from '../../../models/logic/min-max-years.model';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions, LottieComponent } from 'ngx-lottie';
@@ -51,6 +52,7 @@ import { Observable, forkJoin } from 'rxjs';
     CardModule,
     FieldsetModule,
     CheckboxModule,
+    BadgeModule,
     LottieComponent,
     ProgressSpinnerModule
   ],
@@ -116,6 +118,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   public canInitiateFormulationOODDGestion = false; // << NUEVA BANDERA PARA OODDGestion
   public canInitiateFormulationPrestacionesEconomicas = false; // << NUEVA BANDERA PARA Prestaciones Económicas
   public canInitiateFormulationPrestacionesSociales = false; // << NUEVA BANDERA PARA Prestaciones Sociales
+  public canInitiateFormulationActividadesSalud = false; // << NUEVA BANDERA PARA Prestaciones de Salud
 
   public Object = Object;
 
@@ -166,7 +169,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
           (dt: DependencyType) => dt.idDependencyType === 1 || dt.idDependencyType === 2
         );
         this.formulationTypes = (results.formulationTypes || []).filter(
-          (ft: FormulationType) => ft.idFormulationType !== undefined && (ft.idFormulationType >= 2 || ft.idFormulationType === 4)
+          (ft: FormulationType) => ft.idFormulationType !== undefined && (ft.idFormulationType === 2 || ft.idFormulationType === 3 || ft.idFormulationType === 4 || ft.idFormulationType === 5)
         );
         this.formulations = results.formulations;
         this.groupAndFilterFormulations();
@@ -183,19 +186,24 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   groupAndFilterFormulations(): void {
+    // Limpiar cache al reagrupar datos
+    this.dataCache.clear();
+    
     this.groupedFormulations = {};
 
     const filteredByYear = this.formulations.filter(
       f => f.year === this.selectedYear
     );
 
-    this.canInitiateFormulation = filteredByYear.length === 0; // << ESTABLECER LA BANDERA
-
-    // Verificar si existen formulaciones OODDGestion (tipo 2) con ospe = false
+    // Verificar si existen formulaciones OC (tipo 1) específicamente
     const ocFormulations = filteredByYear.filter(f =>
       f.dependency?.dependencyType?.idDependencyType === 1 &&
       f.formulationType?.idFormulationType === 1
     );
+    
+    this.canInitiateFormulation = ocFormulations.length === 0; // << ESTABLECER LA BANDERA basada solo en formulaciones OC
+
+    // Verificar si existen formulaciones OODDGestion (tipo 2) con ospe = false
     const OODDGestionFormulations = filteredByYear.filter(f =>
       f.dependency?.dependencyType?.idDependencyType === 2 &&
       f.formulationType?.idFormulationType === 2 &&
@@ -211,6 +219,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       f.formulationType?.idFormulationType === 5 &&
       f.dependency?.ospe === false
     );
+    const actividadesSaludFormulations = filteredByYear.filter(f =>
+      f.dependency?.dependencyType?.idDependencyType === 2 &&
+      f.formulationType?.idFormulationType === 3
+    );
 
     // Solo permitir iniciar formulación OODDGestion si existen formulaciones OC pero no OODDGestion
     this.canInitiateFormulationOODDGestion = OODDGestionFormulations.length === 0;
@@ -220,6 +232,9 @@ export class AdmPlanificacionTableComponent implements OnInit {
 
     // Solo permitir iniciar formulación Prestaciones Sociales si no existen formulaciones de Prestaciones Sociales
     this.canInitiateFormulationPrestacionesSociales = prestacionesSocialesFormulations.length === 0;
+
+    // Solo permitir iniciar formulación Prestaciones de Salud si no existen formulaciones de Prestaciones de Salud
+    this.canInitiateFormulationActividadesSalud = actividadesSaludFormulations.length === 0;
 
     // Initialize the structure
     this.dependencyTypes.forEach(depType => {
@@ -359,6 +374,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processNewModificationOC();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria cancelada.', 'Cancelado');
@@ -413,6 +432,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processNewModificationOODDGestion();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria OODDGestion cancelada.', 'Cancelado');
@@ -467,6 +490,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processNewModificationPrestacionesEconomicas();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria para Prestaciones Económicas cancelada.', 'Cancelado');
@@ -503,6 +530,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processNewModificationPrestacionesSociales();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
       },
       reject: () => {
         this.toastr.info('Creación de nueva modificatoria para Prestaciones Sociales cancelada.', 'Cancelado');
@@ -528,6 +559,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.processInitiateFormulationPrestacionesSociales();
+        this.showSuccessAnimation = true;
+        setTimeout(() => {
+          this.showSuccessAnimation = false;
+        }, 2500);
       },
       reject: () => {
         this.toastr.info('Habilitación de formulación para Prestaciones Sociales cancelada.', 'Cancelado');
@@ -737,5 +772,207 @@ export class AdmPlanificacionTableComponent implements OnInit {
 
   getFormulationsForGroup(depTypeName: string, formTypeName: string, modification: number): Formulation[] {
     return this.groupedFormulations[depTypeName]?.[formTypeName]?.[modification] || [];
+  }
+
+  // Cache para optimizar performance y evitar memory overflow
+  private dataCache = new Map<string, any>();
+
+  // << NUEVO: Método para verificar si hay formulaciones (optimizado con cache)
+  hasFormulations(depTypeName: string, formTypeName: string): boolean {
+    const cacheKey = `hasFormulations_${depTypeName}_${formTypeName}`;
+    if (this.dataCache.has(cacheKey)) {
+      return this.dataCache.get(cacheKey);
+    }
+
+    const group = this.groupedFormulations[depTypeName]?.[formTypeName];
+    if (!group) {
+      this.dataCache.set(cacheKey, false);
+      return false;
+    }
+    
+    for (const mod in group) {
+      if (group[mod] && group[mod].length > 0) {
+        this.dataCache.set(cacheKey, true);
+        return true;
+      }
+    }
+    
+    this.dataCache.set(cacheKey, false);
+    return false;
+  }
+
+  // << NUEVO: Método para obtener modificaciones que tienen formulaciones (optimizado con cache)
+  getExistingModifications(depTypeName: string, formTypeName: string): number[] {
+    const cacheKey = `existingMods_${depTypeName}_${formTypeName}`;
+    if (this.dataCache.has(cacheKey)) {
+      return this.dataCache.get(cacheKey);
+    }
+
+    const group = this.groupedFormulations[depTypeName]?.[formTypeName];
+    if (!group) {
+      this.dataCache.set(cacheKey, []);
+      return [];
+    }
+    
+    const existingMods: number[] = [];
+    for (const mod in group) {
+      const modNum = Number(mod);
+      if (group[modNum] && group[modNum].length > 0) {
+        existingMods.push(modNum);
+      }
+    }
+    
+    const sortedMods = existingMods.sort((a, b) => a - b);
+    this.dataCache.set(cacheKey, sortedMods);
+    return sortedMods;
+  }
+
+  // << NUEVO: Método para obtener formulaciones unificadas (optimizado con cache para evitar memory overflow)
+  getUnifiedFormulations(depTypeName: string, formTypeName: string): any[] {
+    const cacheKey = `unifiedFormulations_${depTypeName}_${formTypeName}`;
+    if (this.dataCache.has(cacheKey)) {
+      return this.dataCache.get(cacheKey);
+    }
+
+    const group = this.groupedFormulations[depTypeName]?.[formTypeName];
+    if (!group) {
+      this.dataCache.set(cacheKey, []);
+      return [];
+    }
+
+    const existingMods = this.getExistingModifications(depTypeName, formTypeName);
+    if (existingMods.length === 0) {
+      this.dataCache.set(cacheKey, []);
+      return [];
+    }
+
+    const dependenciesMap = new Map<string, any>();
+
+    // Solo procesar modificaciones que realmente existen
+    existingMods.forEach(mod => {
+      const formulations = group[mod] || [];
+      formulations.forEach(formulation => {
+        const depName = formulation.dependency?.name;
+        if (!depName) return;
+
+        if (!dependenciesMap.has(depName)) {
+          dependenciesMap.set(depName, {
+            dependencyName: depName,
+            modifications: {}
+          });
+        }
+        dependenciesMap.get(depName)!.modifications[mod] = formulation;
+      });
+    });
+
+    const result = Array.from(dependenciesMap.values()).sort((a, b) => 
+      a.dependencyName.localeCompare(b.dependencyName)
+    );
+    
+    this.dataCache.set(cacheKey, result);
+    return result;
+  }
+
+  // << NUEVO: Método específico para obtener formulaciones de Prestaciones de Salud con formato especial
+  getUnifiedFormulationsPrestacionesSalud(depTypeName: string, formTypeName: string): any[] {
+    const cacheKey = `unifiedFormulationsPrestacionesSalud_${depTypeName}_${formTypeName}`;
+    if (this.dataCache.has(cacheKey)) {
+      return this.dataCache.get(cacheKey);
+    }
+
+    const group = this.groupedFormulations[depTypeName]?.[formTypeName];
+    if (!group) {
+      this.dataCache.set(cacheKey, []);
+      return [];
+    }
+
+    const dependenciesMap = new Map<string, any>();
+
+    // Para Prestaciones de Salud, solo mostrar Formulación Inicial (1) y Primera Modificatoria (2)
+    [1, 2].forEach(mod => {
+      const formulations = group[mod] || [];
+      formulations.forEach(formulation => {
+        const depName = formulation.dependency?.name;
+        if (!depName) return;
+
+        if (!dependenciesMap.has(depName)) {
+          dependenciesMap.set(depName, {
+            dependencyName: depName,
+            formulacionInicial: null,
+            primeraModificatoria: null
+          });
+        }
+
+        if (mod === 1) {
+          dependenciesMap.get(depName)!.formulacionInicial = formulation;
+        } else if (mod === 2) {
+          dependenciesMap.get(depName)!.primeraModificatoria = formulation;
+        }
+      });
+    });
+
+    // También incluir dependencias que no tienen formulaciones para mostrar "No iniciado"
+    const allDependencies = this.getAllDependenciesForType(depTypeName, formTypeName);
+    allDependencies.forEach(depName => {
+      if (!dependenciesMap.has(depName)) {
+        dependenciesMap.set(depName, {
+          dependencyName: depName,
+          formulacionInicial: null,
+          primeraModificatoria: null
+        });
+      }
+    });
+
+    const result = Array.from(dependenciesMap.values()).sort((a, b) => 
+      a.dependencyName.localeCompare(b.dependencyName)
+    );
+    
+    this.dataCache.set(cacheKey, result);
+    return result;
+  }
+
+  // << NUEVO: Método auxiliar para obtener todas las dependencias de un tipo específico
+  private getAllDependenciesForType(depTypeName: string, formTypeName: string): string[] {
+    const allDependencies = new Set<string>();
+    
+    // Obtener todas las dependencias de todas las formulaciones de este tipo
+    Object.values(this.groupedFormulations[depTypeName]?.[formTypeName] || {}).forEach(formulations => {
+      formulations.forEach(formulation => {
+        if (formulation.dependency?.name) {
+          allDependencies.add(formulation.dependency.name);
+        }
+      });
+    });
+
+    return Array.from(allDependencies);
+  }
+
+  // << NUEVO: Método para verificar si es Prestaciones de Salud
+  isPrestacionesDeSalud(formTypeName: string): boolean {
+    return formTypeName === 'OODD PRESTACIONES DE SALUD';
+  }
+
+  // << NUEVO: Método para iniciar formulación de prestaciones de salud
+  onInitiateFormulationActividadesSalud(): void {
+    this.navigateToActividadesSalud();
+  }
+
+  // << NUEVO: Método para nueva modificatoria de prestaciones de salud
+  onNewModificationActividadesSalud(): void {
+    this.navigateToActividadesSalud();
+  }
+
+  // << NUEVO: Track by functions para optimizar performance
+  trackByModNumber(index: number, item: number): number {
+    return item;
+  }
+
+  trackByDependencyName(index: number, item: any): string {
+    return item.dependencyName;
+  }
+
+  // << NUEVO: Método para navegar a prestaciones de salud en nueva pestaña
+  private navigateToActividadesSalud(): void {
+    window.open('/gestion/adm-maestro-gcps', '_blank');
   }
 }

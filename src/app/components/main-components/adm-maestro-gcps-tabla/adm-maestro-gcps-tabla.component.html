@@ -1,28 +1,29 @@
 <div>
   <div class="mx-5">
-    <div class="grid ml-auto mt-3">
-      <h2 class="col-auto">
-        Administrar Maestros - {{ currentFormulationType?.name }} del año:
+    <div class="grid mt-3">
+      <h2 class="col-12 md:col-4 lg:col-4">
+        Carga de actividades - {{ currentFormulationType?.name }}:
       </h2>
-      <span class="col-auto my-auto">
+      <span class="col-5 md:col-1 lg:col-1 my-auto">
+        <label class="block text-sm font-medium mb-1">Año:</label>
         <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()" placeholder="Seleccionar Año"
           [showClear]="false" class="mx-2"></p-select>
       </span>
-      <span class="col-auto my-auto">
-        <p-select [options]="modificationOptions" optionLabel="label" optionValue="value" 
-          [(ngModel)]="selectedModification" (onChange)="onModificationChange()" 
-          placeholder="Seleccionar Etapa" [showClear]="false" class="mx-2"></p-select>
+      <span class="col-7 md:col-2 lg:col-2 my-auto">
+        <label class="block text-sm font-medium mb-1">Etapa:</label>
+        <p-select [options]="modificationOptions" optionLabel="label" optionValue="value"
+          [(ngModel)]="selectedModification" (onChange)="onModificationChange()" placeholder="Seleccionar Etapa"
+          [showClear]="false"></p-select>
       </span>
-      <span class="col-auto my-auto">
-        <button pButton label="Exportar Plantilla" icon="pi pi-download" 
-          class="p-button-outlined p-button-success mx-2" 
-          (click)="exportHealthActivityTemplate()"
-          title="Descargar plantilla Excel para actividades de salud">
+      <span class="col-12 md:col-5 lg:col-5 my-auto flex justify-content-end gap-2">
+        <button pButton label="Exportar Plantilla" icon="pi pi-download" class="add-button"
+          (click)="exportHealthActivityTemplate()" title="Descargar plantilla Excel para actividades de salud">
         </button>
-        <button pButton label="Importar Plantilla" icon="pi pi-upload" 
-          class="p-button-outlined p-button-primary mx-2" 
-          (click)="onImportTemplateClick()"
-          title="Importar actividades desde plantilla Excel">
+        <button pButton [label]="hasActiveFormulations() ? 'Actualizar datos' : 'Importar Plantilla'" icon="pi pi-upload" class="add-button"
+          (click)="onImportTemplateClick()" [title]="hasActiveFormulations() ? 'Actualizar actividades existentes desde plantilla Excel' : 'Importar actividades desde plantilla Excel'">
+        </button>
+        <button pButton *ngIf="hasActiveFormulations()" label="Crear nueva modificatoria" icon="pi pi-plus" class="add-button"
+          (click)="onCreateNewModificationClick()" title="Crear nueva modificatoria a partir de una plantilla Excel">
         </button>
       </span>
     </div>
@@ -36,21 +37,21 @@
     <!-- Progreso de importación de actividades - REMOVIDO DEL COMPONENTE PRINCIPAL -->
 
     <!-- Tabla de actividades por dependency -->
-    <div *ngIf="!loading" class="mt-4">
-      <h3 class="mb-3">Actividades por Dependencia - {{selectedYear}} - {{getModificationLabel(selectedModification)}}</h3>
-      <p-table [value]="activitiesByDependency" dataKey="dependencyName" 
-               [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm">
+    <div *ngIf="!loading">
+      <h3 class="mb-3">Actividades por Dependencia - {{selectedYear}} - {{getModificationLabel(selectedModification)}}
+      </h3>
+      <p-table [value]="activitiesByDependency" dataKey="dependencyName" scrollHeight="650px" columnResizeMode="expand"
+        [paginator]="true" [rows]="13" [rowHover]="true" [tableStyle]="{'min-width': '50rem'}"
+        styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
             <th>Dependencia</th>
-            <th>Cantidad de Actividades</th>
             <th>Estado</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
           <tr>
             <td>{{item.dependencyName}}</td>
-            <td class="text-center">{{item.activityCount}}</td>
             <td>
               <p-tag *ngIf="item.hasFormulation" value="Formulación iniciada" severity="success"></p-tag>
               <span *ngIf="!item.hasFormulation" class="text-muted">
@@ -61,7 +62,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="3" class="text-center">No hay dependencias configuradas</td>
+            <td colspan="2" class="text-center">No hay dependencias configuradas</td>
           </tr>
         </ng-template>
       </p-table>
@@ -135,142 +136,255 @@
     </div>
   </p-dialog> -->
 
-<!-- Import Preview Modal -->
-<p-dialog 
-  [(visible)]="showImportPreviewModal" 
-  header="Vista Previa de Importación" 
-  [modal]="true" 
-  [closable]="false"
-  [style]="{width: '600px'}"
-  [draggable]="false" 
-  [resizable]="false">
-  
-  <div class="import-preview-content">
-    <!-- File Selection -->
-    <div class="file-section mb-4" *ngIf="!importFile">
-      <h5>Seleccionar Archivo Excel</h5>
-      <input 
-        type="file" 
-        accept=".xlsx,.xls" 
-        (change)="onFileChange($event)"
-        class="form-control"
-        style="padding: 10px; border: 2px dashed #ccc; border-radius: 5px; width: 100%;">
-      <p class="text-muted mt-2" style="font-size: 0.9em;">
-        <i class="pi pi-info-circle"></i> Selecciona un archivo Excel (.xlsx o .xls)
-      </p>
-    </div>
+  <!-- Import Preview Modal -->
+  <p-dialog [(visible)]="showImportPreviewModal" header="Vista Previa de Importación" [modal]="true"
+    [closable]="!importLoading" [style]="{ width: '40vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }"
+    [draggable]="false" [resizable]="false">
 
-    <!-- File Selected Message -->
-    <div class="file-selected mb-4" *ngIf="importFile && !previewLoading && importPreviewData.length === 0">
-      <div class="alert alert-info" style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px;">
-        <div style="display: flex; align-items: center;">
-          <i class="pi pi-file" style="margin-right: 8px; color: #2196f3;"></i>
-          <div>
-            <strong>Archivo seleccionado:</strong> {{ importFile.name }}
-            <br>
-            <small class="text-muted">Tamaño: {{ (importFile.size / 1024 / 1024).toFixed(2) }} MB</small>
+    <div class="import-preview-content">
+      <!-- File Selection -->
+      <div class="file-section mb-1" *ngIf="!importFile">
+        <h4>Seleccionar Archivo Excel</h4>
+        <input type="file" accept=".xlsx,.xls" (change)="onFileChange($event)" class="form-control"
+          style="padding: 10px; border: 2px dashed #ccc; border-radius: 5px; width: 100%;">
+        <p class="text-muted mt-2" style="font-size: 0.9em;">
+          <i class="pi pi-info-circle"></i> Selecciona un archivo Excel (.xlsx o .xls)
+        </p>
+      </div>
+
+      <!-- File Selected Message -->
+      <div class="file-selected mb-1" *ngIf="importFile && !previewLoading && importPreviewData.length === 0">
+        <div class="alert alert-info" style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px;">
+          <div style="display: flex; align-items: center;">
+            <i class="pi pi-file" style="margin-right: 8px; color: #2196f3;"></i>
+            <div>
+              <strong>Archivo seleccionado:</strong> {{ importFile.name }}
+              <br>
+              <small class="text-muted">Tamaño: {{ (importFile.size / 1024 / 1024).toFixed(2) }} MB</small>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Preview Loading -->
+      <div class="preview-loading text-center" *ngIf="previewLoading" style="padding: 20px;">
+        <p-progressSpinner [style]="{'width': '40px', 'height': '40px'}"></p-progressSpinner>
+        <p class="mt-3" style="font-size: 1.1em; font-weight: 500;">
+          <strong>Cargando actividades...</strong>
+        </p>
+        <p class="text-muted" style="font-size: 0.9em;">
+          Procesando archivo Excel para mostrar vista previa
+        </p>
+      </div>
+
+      <!-- Preview Data -->
+      <div class="preview-data" *ngIf="!previewLoading && importPreviewData.length > 0 && !importLoading">
+        <div class="alert alert-success my-3">
+          <strong>✓ Archivo procesado correctamente</strong>
+        </div>
+        <h4>Vista Previa de Importación</h4>
+        <p class="text-muted mb-3">Se encontraron las siguientes dependencias y actividades:</p>
+
+        <p-table [value]="importPreviewData" [tableStyle]="{'min-width': '100%'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Dependencia</th>
+              <th class="text-center">Cantidad de Actividades</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{ item.dependencyName }}</td>
+              <td class="text-center">{{ item.activityCount }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="summary">
+            <div class="text-right">
+              <strong>Total de actividades: {{ getTotalActivities() }}</strong>
+            </div>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Import Progress - DENTRO DEL MODAL -->
+      <div class="import-progress text-center" *ngIf="importLoading" style="padding: 20px;">
+        <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+        <div class="mt-3">
+          <div class="progress-bar-container" style="width: 100%; max-width: 550px; margin: 0 auto;">
+            <div class="progress-bar" style="height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div style="height: 100%; background: #4caf50; transition: width 0.3s ease;"
+                [style.width.%]="importProgress"></div>
+            </div>
+            <div class="mt-3" style="font-size: 1.1em; font-weight: 500;">
+              <strong>Importación de actividades... {{importProgress}}%</strong>
+            </div>
+            <div class="text-muted" style="font-size: 0.9em;">
+              {{importProcessed}} de {{importTotal}} actividades procesadas
+            </div>
+            <div class="mt-2" style="font-size: 0.8em; color: #666; font-style: italic;">
+              <i class="pi pi-shield" style="margin-right: 4px;"></i>
+              Procesando una actividades para garantizar integridad de datos - No cerrar este diálogo o actualizar la
+              página
+            </div>
+            <div class="mt-2" style="font-size: 0.7em; color: #666; font-style: italic;">
+              <i class="pi pi-clock" style="margin-right: 4px;"></i>
+              Puede tardar varios minutos dependiendo del tamaño del archivo y la cantidad de actividades
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Data Message -->
+      <div class="no-data text-center" *ngIf="!previewLoading && importPreviewData.length === 0 && importFile">
+        <div class="alert alert-warning">
+          <strong>⚠ No se encontraron datos válidos</strong>
+          <p class="mb-0">El archivo seleccionado no contiene datos de actividades válidos.</p>
         </div>
       </div>
     </div>
 
-    <!-- Preview Loading -->
-    <div class="preview-loading text-center" *ngIf="previewLoading" style="padding: 20px;">
-      <p-progressSpinner [style]="{'width': '40px', 'height': '40px'}"></p-progressSpinner>
-      <p class="mt-3" style="font-size: 1.1em; font-weight: 500;">
-        <strong>Cargando actividades...</strong>
-      </p>
-      <p class="text-muted" style="font-size: 0.9em;">
-        Procesando archivo Excel para mostrar vista previa
-      </p>
-    </div>
+    <!-- Modal Footer -->
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-between gap-2">
+        <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [disabled]="importLoading"
+          (click)="cancelImport()">
+        </p-button>
 
-    <!-- Preview Data -->
-    <div class="preview-data" *ngIf="!previewLoading && importPreviewData.length > 0 && !importLoading">
-      <div class="alert alert-success mb-3">
-        <strong>✓ Archivo procesado correctamente</strong>
-      </div>
-      <h5>Vista Previa de Importación</h5>
-      <p class="text-muted mb-3">Se encontraron las siguientes dependencias y actividades:</p>
-      
-      <p-table [value]="importPreviewData" [tableStyle]="{'min-width': '100%'}">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Dependencia</th>
-            <th class="text-center">Cantidad de Actividades</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-item>
-          <tr>
-            <td>{{ item.dependencyName }}</td>
-            <td class="text-center">{{ item.activityCount }}</td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="summary">
-          <div class="text-right">
-            <strong>Total de actividades: {{ getTotalActivities() }}</strong>
-          </div>
-        </ng-template>
-      </p-table>
-    </div>
-
-    <!-- Import Progress - DENTRO DEL MODAL -->
-    <div class="import-progress text-center" *ngIf="importLoading" style="padding: 20px;">
-      <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
-      <div class="mt-3">
-        <div class="progress-bar-container" style="width: 100%; max-width: 400px; margin: 0 auto;">
-          <div class="progress-bar" style="height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
-            <div style="height: 100%; background: #4caf50; transition: width 0.3s ease;" [style.width.%]="importProgress"></div>
-          </div>
-          <div class="mt-3" style="font-size: 1.1em; font-weight: 500;">
-            <strong>Importando actividades... {{importProgress}}%</strong>
-          </div>
-          <div class="text-muted" style="font-size: 0.9em;">
-            {{importProcessed}} de {{importTotal}} actividades procesadas
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- No Data Message -->
-    <div class="no-data text-center" *ngIf="!previewLoading && importPreviewData.length === 0 && importFile">
-      <div class="alert alert-warning">
-        <strong>⚠ No se encontraron datos válidos</strong>
-        <p class="mb-0">El archivo seleccionado no contiene datos de actividades válidos.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Footer -->
-  <ng-template pTemplate="footer">
-    <div class="flex justify-content-between">
-      <p-button 
-        label="Cancelar" 
-        icon="pi pi-times" 
-        severity="secondary"
-        [disabled]="importLoading"
-        (click)="cancelImport()">
-      </p-button>
-      
-      <div class="flex gap-2">
-        <p-button 
+        <div class="flex gap-2">
+          <!-- <p-button 
           label="Seleccionar Otro Archivo" 
           icon="pi pi-file" 
           severity="info"
           *ngIf="importFile && !importLoading"
           (click)="resetFileSelection()">
-        </p-button>
-        
-        <p-button 
-          label="Confirmar Importación" 
-          icon="pi pi-check" 
-          severity="success"
-          [disabled]="!importFile || importPreviewData.length === 0 || previewLoading || importLoading"
-          (click)="confirmImport()">
-        </p-button>
+        </p-button> -->
+
+          <p-button label="Confirmar Importación" icon="pi pi-check" severity="success"
+            [disabled]="!importFile || importPreviewData.length === 0 || previewLoading || importLoading"
+            (click)="confirmImport()">
+          </p-button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- New Modification Modal -->
+  <p-dialog [(visible)]="showNewModificationModal" header="Crear Nueva Modificatoria" [modal]="true"
+    [closable]="!newModificationLoading" [style]="{ width: '40vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }"
+    [draggable]="false" [resizable]="false">
+
+    <div class="new-modification-content">
+      <!-- File Selection -->
+      <div class="file-section mb-1" *ngIf="!newModificationFile">
+        <h4>Seleccionar Archivo Excel</h4>
+        <input type="file" accept=".xlsx,.xls" (change)="onNewModificationFileChange($event)" class="form-control"
+          style="padding: 10px; border: 2px dashed #ccc; border-radius: 5px; width: 100%;">
+        <p class="text-muted mt-2" style="font-size: 0.9em;">
+          <i class="pi pi-info-circle"></i> Selecciona un archivo Excel (.xlsx o .xls) para crear la nueva modificatoria
+        </p>
+      </div>
+
+      <!-- File Selected Message -->
+      <div class="file-selected mb-1" *ngIf="newModificationFile && !newModificationPreviewLoading && newModificationPreviewData.length === 0">
+        <div class="alert alert-info" style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px;">
+          <div style="display: flex; align-items: center;">
+            <i class="pi pi-file" style="margin-right: 8px; color: #2196f3;"></i>
+            <div>
+              <strong>Archivo seleccionado:</strong> {{ newModificationFile.name }}
+              <br>
+              <small class="text-muted">Tamaño: {{ (newModificationFile.size / 1024 / 1024).toFixed(2) }} MB</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Loading -->
+      <div class="preview-loading text-center" *ngIf="newModificationPreviewLoading" style="padding: 20px;">
+        <p-progressSpinner [style]="{'width': '40px', 'height': '40px'}"></p-progressSpinner>
+        <p class="mt-3" style="font-size: 1.1em; font-weight: 500;">
+          <strong>Cargando actividades para nueva modificatoria...</strong>
+        </p>
+        <p class="text-muted" style="font-size: 0.9em;">
+          Procesando archivo Excel para mostrar vista previa
+        </p>
+      </div>
+
+      <!-- Preview Data -->
+      <div class="preview-data" *ngIf="!newModificationPreviewLoading && newModificationPreviewData.length > 0 && !newModificationLoading">
+        <div class="alert alert-success my-3">
+          <strong>✓ Archivo procesado correctamente</strong>
+        </div>
+        <h4>Vista Previa de Nueva Modificatoria</h4>
+        <p class="text-muted mb-3">Se encontraron las siguientes dependencias y actividades:</p>
+
+        <p-table [value]="newModificationPreviewData" [tableStyle]="{'min-width': '100%'}">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Dependencia</th>
+              <th class="text-center">Cantidad de Actividades</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{ item.dependencyName }}</td>
+              <td class="text-center">{{ item.activityCount }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="summary">
+            <div class="text-right">
+              <strong>Total de actividades: {{ getTotalNewModificationActivities() }}</strong>
+            </div>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Import Progress -->
+      <div class="import-progress text-center" *ngIf="newModificationLoading" style="padding: 20px;">
+        <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+        <div class="mt-3">
+          <div class="progress-bar-container" style="width: 100%; max-width: 550px; margin: 0 auto;">
+            <div class="progress-bar" style="height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div style="height: 100%; background: #4caf50; transition: width 0.3s ease;"
+                [style.width.%]="newModificationProgress"></div>
+            </div>
+            <div class="mt-3" style="font-size: 1.1em; font-weight: 500;">
+              <strong>Creando nueva modificatoria... {{newModificationProgress}}%</strong>
+            </div>
+            <div class="text-muted" style="font-size: 0.9em;">
+              {{newModificationProcessed}} de {{newModificationTotal}} actividades procesadas
+            </div>
+            <div class="mt-2" style="font-size: 0.8em; color: #666; font-style: italic;">
+              <i class="pi pi-shield" style="margin-right: 4px;"></i>
+              Procesando actividades para la nueva modificatoria - No cerrar este diálogo
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Data Message -->
+      <div class="no-data text-center" *ngIf="!newModificationPreviewLoading && newModificationPreviewData.length === 0 && newModificationFile">
+        <div class="alert alert-warning">
+          <strong>⚠ No se encontraron datos válidos</strong>
+          <p class="mb-0">El archivo seleccionado no contiene datos de actividades válidos.</p>
+        </div>
       </div>
     </div>
-  </ng-template>
-</p-dialog>
+
+    <!-- Modal Footer -->
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-between gap-2">
+        <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [disabled]="newModificationLoading"
+          (click)="cancelNewModification()">
+        </p-button>
+
+        <div class="flex gap-2">
+          <p-button label="Crear Nueva Modificatoria" icon="pi pi-check" severity="success"
+            [disabled]="!newModificationFile || newModificationPreviewData.length === 0 || newModificationPreviewLoading || newModificationLoading"
+            (click)="confirmNewModification()">
+          </p-button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
 
 </div>

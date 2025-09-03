@@ -11,7 +11,7 @@ import { ActivityFamilyService } from '../../../../core/services/logic/activity-
 import { HealthOperationalActivityService } from '../../../../core/services/logic/health-operational-activity.service';
 import { DependencyService } from '../../../../core/services/logic/dependency.service';
 import { forkJoin, Observable, of, from } from 'rxjs';
-import { map, switchMap, catchError, concatMap, delay, retry, retryWhen, take } from 'rxjs/operators';
+import { map, switchMap, catchError, concatMap, delay } from 'rxjs/operators';
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
 
 export interface ImportResult {
@@ -25,7 +25,7 @@ export interface ImportResult {
 export interface ExcelRowData {
   agrupFonafe: string;
   poi: boolean;
-  codRed: string | null;
+  codRed: string;
   descRed: string;
   codCenSes: string;
   desCenSes: string;
@@ -111,109 +111,9 @@ export class ImportTemplateService {
                   this.activityFamiliesCache = families.filter(f => (f.type || '').toLowerCase() === 'salud');
                   
                   // Procesar Excel agrupando por codRed con optimizaciones
-                  this.processWorksheetByDependencyOptimized(worksheet, year, 1, onProgress).subscribe({
+                  this.processWorksheetByDependencyOptimized(worksheet, year, onProgress).subscribe({
                     next: (result) => observer.next(result),
                     error: (error) => observer.error(error),
-                    complete: () => observer.complete()
-                  });
-                },
-                error: (error) => {
-                  observer.next({
-                    success: false,
-                    totalRows: 0,
-                    processedRows: 0,
-                    errors: ['Error al cargar familias de actividades: ' + error.message],
-                    activities: []
-                  });
-                  observer.complete();
-                }
-              });
-            },
-            error: (error) => {
-              observer.next({
-                success: false,
-                totalRows: 0,
-                processedRows: 0,
-                errors: ['Error al cargar dependencies: ' + error.message],
-                activities: []
-              });
-              observer.complete();
-            }
-          });
-
-        } catch (error) {
-          observer.next({
-            success: false,
-            totalRows: 0,
-            processedRows: 0,
-            errors: ['Error al procesar el archivo Excel: ' + (error as Error).message],
-            activities: []
-          });
-          observer.complete();
-        }
-      };
-
-      reader.onerror = () => {
-        observer.next({
-          success: false,
-          totalRows: 0,
-          processedRows: 0,
-          errors: ['Error al leer el archivo'],
-          activities: []
-        });
-        observer.complete();
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  /**
-   * Procesa un archivo Excel para crear una nueva modificatoria
-   * Usa el modification especificado en lugar del modification por defecto (1)
-   */
-  processExcelFileWithModification(
-    file: File, 
-    year: number,
-    modification: number,
-    onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
-  ): Observable<ImportResult> {
-    return new Observable<ImportResult>(observer => {
-      const reader = new FileReader();
-
-      reader.onload = async (e) => {
-        try {
-          const buffer = e.target?.result as ArrayBuffer;
-          const workbook = new ExcelJS.Workbook();
-          await workbook.xlsx.load(buffer);
-
-          const worksheet = workbook.getWorksheet(1);
-          if (!worksheet) {
-            observer.next({
-              success: false,
-              totalRows: 0,
-              processedRows: 0,
-              errors: ['No se pudo leer la hoja de Excel'],
-              activities: []
-            });
-            observer.complete();
-            return;
-          }
-
-          // Cargar dependencies y procesar Excel por grupos de codRed
-          this.dependencyService.getAll().subscribe({
-            next: (dependencies) => {
-              this.dependenciesCache = dependencies;
-              
-              // Cargar familias de actividades SOLO tipo 'salud'
-              this.activityFamilyService.getAll().subscribe({
-                next: (families) => {
-                  this.activityFamiliesCache = families.filter(f => (f.type || '').toLowerCase() === 'salud');
-                  
-                  // Procesar Excel agrupando por codRed con modification específico
-                  this.processWorksheetByDependencyOptimized(worksheet, year, modification, onProgress).subscribe({
-                    next: (result: ImportResult) => observer.next(result),
-                    error: (error: any) => observer.error(error),
                     complete: () => observer.complete()
                   });
                 },
@@ -275,7 +175,6 @@ export class ImportTemplateService {
   private processWorksheetByDependencyOptimized(
     worksheet: ExcelJS.Worksheet, 
     year: number,
-    modification: number = 1,
     onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
   ): Observable<ImportResult> {
     const result: ImportResult = {
@@ -300,13 +199,13 @@ export class ImportTemplateService {
         try {
           const rowData = this.extractRowData(row, rowIndex);
           if (rowData) {
-            const normalizedCodeRed = rowData.codRed;
+            const codRed = rowData.codRed?.trim();
             let codRedKey = '';
             
-            if (!normalizedCodeRed) {
+            if (!codRed || codRed === 'N/A' || codRed === 'undefined' || codRed === '[object Object]' || codRed === '') {
               codRedKey = 'DEPENDENCY_ID_115';
             } else {
-              codRedKey = normalizedCodeRed;
+              codRedKey = codRed;
             }
             
             if (!rowsByDependency.has(codRedKey)) {
@@ -329,6 +228,9 @@ export class ImportTemplateService {
         const totalActivities = Array.from(rowsByDependency.values()).reduce((sum, rows) => sum + rows.length, 0);
         let processedActivities = 0;
         
+        console.log(`🚀 Importación optimizada iniciada: ${totalActivities} actividades en ${dependencyGroups.length} grupos`);
+        console.log(`⏱️ Tiempo estimado: ${Math.ceil(dependencyGroups.length * 0.4)} segundos`);
+        
         if (onProgress && totalActivities > 0) {
           onProgress({ processed: 0, total: totalActivities, loading: true });
         }
@@ -340,9 +242,10 @@ export class ImportTemplateService {
             result.success = result.errors.length === 0;
             
             if (onProgress) {
-              onProgress({ processed: Math.min(processedActivities, totalActivities), total: totalActivities, loading: false });
+              onProgress({ processed: processedActivities, total: totalActivities, loading: false });
             }
             
+            console.log(`✅ Importación completada: ${allActivities.length} actividades guardadas`);
             observer.next(result);
             observer.complete();
             return;
@@ -366,7 +269,7 @@ export class ImportTemplateService {
             dependencyId = dependency.idDependency!;
           }
 
-          this.findOrCreateFormulation(dependencyId, year, modification).subscribe({
+          this.findOrCreateFormulation(dependencyId, year).subscribe({
             next: (formulation) => {
               this.setCurrentFormulation(formulation);
               
@@ -377,39 +280,25 @@ export class ImportTemplateService {
                   groupActivities.push(activity);
                 });
 
-                // OPTIMIZACIÓN: Guardado en lotes de 20 con delays de 30ms
-                this.saveActivitiesOptimized(groupActivities, result, (processed, total) => {
-                  // Calcular progreso global considerando todas las actividades de todos los grupos
-                  const globalProcessed = processedActivities + processed;
-                  if (onProgress) {
-                    onProgress({ 
-                      processed: Math.min(globalProcessed, totalActivities),
-                      total: totalActivities, 
-                      loading: groupIndex + 1 < dependencyGroups.length || processed < total
-                    });
-                  }
-                }).subscribe({
+                // OPTIMIZACIÓN: Guardado en lotes más grandes con delays reducidos
+                this.saveActivitiesOptimized(groupActivities, result).subscribe({
                   next: (savedActivities) => {
                     allActivities = allActivities.concat(savedActivities);
                     processedGroups++;
                     
-                    processedActivities += savedActivities.length; // Usar actividades realmente guardadas
+                    processedActivities += groupRows.length;
                     if (onProgress) {
                       onProgress({ 
-                        processed: Math.min(processedActivities, totalActivities), // Nunca exceder el total
+                        processed: processedActivities, 
                         total: totalActivities, 
                         loading: groupIndex + 1 < dependencyGroups.length 
                       });
                     }
                     
+                    console.log(`✅ Grupo ${codRed}: ${savedActivities.length}/${groupRows.length} actividades guardadas`);
                     
-                    // Forzar limpieza de memoria para evitar Out of Memory
-                    if ((window as any).gc) {
-                      (window as any).gc();
-                    }
-                    
-                    // Delay de 100ms entre grupos para garantizar integridad
-                    setTimeout(() => processNextGroup(groupIndex + 1), 100);
+                    // Delay mínimo entre grupos para mayor velocidad
+                    setTimeout(() => processNextGroup(groupIndex + 1), 20);
                   },
                   error: (error) => {
                     result.errors.push(`Error al guardar grupo ${codRed}: ${error.message}`);
@@ -446,105 +335,44 @@ export class ImportTemplateService {
   }
 
   /**
-   * MÉTODO OPTIMIZADO para guardar actividades en LOTES DE 5
-   * Balance entre velocidad e integridad de datos
+   * MÉTODO OPTIMIZADO para guardar actividades en lotes
+   * Mejoras: lotes de 50 actividades, delay de solo 10ms entre lotes
    */
   private saveActivitiesOptimized(
     activities: OperationalActivity[], 
-    result: ImportResult,
-    onProgress?: (processed: number, total: number) => void
+    result: ImportResult
   ): Observable<OperationalActivity[]> {
-    const BATCH_SIZE = 20; // 20 actividades simultáneas
-    let allSavedActivities: OperationalActivity[] = [];
-    let currentBatchIndex = 0;
+    const batchSize = 50; // Lotes más grandes para mayor velocidad
+    const batches: OperationalActivity[][] = [];
     
-    return new Observable<OperationalActivity[]>(observer => {
-      const saveNextBatch = () => {
-        const startIndex = currentBatchIndex * BATCH_SIZE;
-        const endIndex = Math.min(startIndex + BATCH_SIZE, activities.length);
-        
-        if (startIndex >= activities.length) {
-          observer.next(allSavedActivities);
-          observer.complete();
-          return;
-        }
-        
-        const currentBatch = activities.slice(startIndex, endIndex);
-        
-        // Procesar 5 actividades en paralelo
-        const saveObservables = currentBatch.map((activity, index) => 
+    for (let i = 0; i < activities.length; i += batchSize) {
+      batches.push(activities.slice(i, i + batchSize));
+    }
+    
+    let allSavedActivities: OperationalActivity[] = [];
+    
+    return from(batches).pipe(
+      concatMap((batch, batchIndex) => {
+        const saveObservables = batch.map(activity =>
           this.healthOperationalActivityService.create(activity as any).pipe(
-            retry(3),
             catchError(error => {
               result.errors.push(`Error al guardar actividad "${activity.name}": ${error.message}`);
               return of(null);
-            }),
-            map(savedActivity => {
-              if (savedActivity) {
-                return savedActivity;
-              }
-              return null;
             })
           )
         );
         
-        // Ejecutar las 5 actividades en paralelo
-        forkJoin(saveObservables).subscribe({
-          next: (batchResults) => {
-            // Filtrar nulls y agregar actividades guardadas exitosamente
-            const savedInBatch = batchResults.filter(activity => activity !== null) as OperationalActivity[];
-            allSavedActivities = allSavedActivities.concat(savedInBatch);
-            
-            // Reportar progreso actualizado
-            if (onProgress) {
-              onProgress(allSavedActivities.length, activities.length);
-            }
-            
-            
-            currentBatchIndex++;
-            
-            // Delay de 30ms entre lotes
-            setTimeout(() => saveNextBatch(), 30);
-          },
-          error: (error) => {
-            result.errors.push(`Error crítico en lote ${currentBatchIndex + 1}: ${error.message}`);
-            currentBatchIndex++;
-            setTimeout(() => saveNextBatch(), 100); // Delay mayor en caso de error
-          }
-        });
-      };
-      
-      saveNextBatch();
-    });
-  }
-
-  /**
-   * Normaliza el código de red para evitar valores problemáticos
-   */
-  private normalizeCodeRed(codRed: string | null | undefined): string | null {
-    if (!codRed) return null;
-    
-    const trimmed = codRed.trim();
-    
-    // Lista de valores problemáticos que deben convertirse a null
-    const invalidValues = [
-      'N/A', 'n/a', 'N/D', 'n/d', '#N/D', '#N/A', '#n/d', '#n/a',
-      'undefined', 'null', 'NULL', 'Null', 'UNDEFINED',
-      '[object Object]', '{object Object}', 'object Object',
-      '', ' ', '  ', 'NaN', 'nan', 'NAN'
-    ];
-    
-    // Verificar si es un valor inválido
-    if (invalidValues.includes(trimmed) || trimmed === '') {
-      return null;
-    }
-    
-    // Verificar si parece ser un objeto serializado mal
-    if (trimmed.startsWith('[object') || trimmed.startsWith('{object')) {
-      return null;
-    }
-    
-    return trimmed;
+        return forkJoin(saveObservables).pipe(
+          delay(batchIndex === 0 ? 0 : 10), // Delay mínimo para mayor velocidad
+          map(savedBatch => {
+            const validSaved = savedBatch.filter(a => !!a) as OperationalActivity[];
+            allSavedActivities = allSavedActivities.concat(validSaved);
+            return validSaved;
+          })
+        );
+      }),
+      switchMap(() => of(allSavedActivities))
+    );
   }
 
   // Métodos auxiliares (iguales que en la versión original)
@@ -558,7 +386,7 @@ export class ImportTemplateService {
       return {
         agrupFonafe: this.getCellValue(row, 1)?.toString() || '',
         poi: this.parseBoolean(this.getCellValue(row, 2)),
-        codRed: this.normalizeCodeRed(this.getCellValue(row, 3)?.toString()),
+        codRed: this.getCellValue(row, 3)?.toString().trim() || '',
         descRed: this.getCellValue(row, 4)?.toString() || '',
         codCenSes: this.getCellValue(row, 5)?.toString() || '',
         desCenSes: this.getCellValue(row, 6)?.toString() || '',
@@ -595,7 +423,7 @@ export class ImportTemplateService {
       formulation: this.currentFormulation || {} as Formulation,
       agrupFonafe: rowData.agrupFonafe,
       poi: rowData.poi,
-      codRed: rowData.codRed || undefined,
+      codRed: rowData.codRed,
       descRed: rowData.descRed,
       codCenSes: rowData.codCenSes,
       desCenSes: rowData.desCenSes,
@@ -698,12 +526,12 @@ export class ImportTemplateService {
     );
   }
 
-  private findOrCreateFormulation(dependencyId: number, year: number, modification: number = 1): Observable<Formulation> {
+  private findOrCreateFormulation(dependencyId: number, year: number): Observable<Formulation> {
     return this.formulationService.searchByDependencyAndYear(dependencyId, year).pipe(
       switchMap((formulations) => {
         const existingFormulation = formulations.find(f => 
           f.formulationState?.idFormulationState === 1 &&
-          f.modification === modification &&
+          f.modification === 1 &&
           f.quarter === 1 &&
           f.formulationType?.idFormulationType === 3
         );
@@ -716,7 +544,7 @@ export class ImportTemplateService {
           dependency: { idDependency: dependencyId } as any,
           formulationState: { idFormulationState: 1 } as any,
           year: year,
-          modification: modification,
+          modification: 1,
           quarter: 1,
           formulationType: { idFormulationType: 3 } as any,
           active: true

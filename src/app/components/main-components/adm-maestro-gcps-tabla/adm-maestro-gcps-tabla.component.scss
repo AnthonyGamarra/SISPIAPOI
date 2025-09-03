@@ -165,8 +165,8 @@ label {
   color: white !important;
   border: none !important;
   border: 1px solid transparent !important;
-  min-width: 10%;
-  max-width: 12%;
+  min-width: 30%;
+  max-width: 40%;
 }
 
 .add-button:hover {
@@ -233,6 +233,7 @@ label {
 
   .add-button {
     padding: 10px;
+    min-width: 45%;
     max-width: 50%;
   }
 

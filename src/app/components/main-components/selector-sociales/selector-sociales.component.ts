@@ -132,7 +132,7 @@ export class SelectorSocialesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
+    this.isAdmin = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO']);
     this.loadDependencies();
     this.loadFormulationStates();
   }

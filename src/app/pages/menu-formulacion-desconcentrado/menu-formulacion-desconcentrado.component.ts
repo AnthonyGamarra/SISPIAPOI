@@ -9,6 +9,7 @@ import { FooterComponent } from '../../components/utilities/footer/footer.compon
 
 import { FormulacionDesconcentradoGestionModuloComponent } from '../../components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
 import { FormulacionDesconcentradoSocialesModuloComponent } from '../../components/modules/formulacion-desconcentrado-sociales-modulo/formulacion-desconcentrado-sociales-modulo.component';
+import { FormulacionDesconcentradoSaludModuloComponent } from "../../components/modules/formulacion-desconcentrado-salud-modulo/formulacion-desconcentrado-salud-modulo.component";
 
 @Component({
   selector: 'app-menu-formulacion-desconcentrado',
@@ -18,7 +19,8 @@ import { FormulacionDesconcentradoSocialesModuloComponent } from '../../componen
     FooterComponent,
     MenubarComponent,
     FormulacionDesconcentradoGestionModuloComponent,
-    FormulacionDesconcentradoSocialesModuloComponent
+    FormulacionDesconcentradoSocialesModuloComponent,
+    FormulacionDesconcentradoSaludModuloComponent
 ],
   templateUrl: './menu-formulacion-desconcentrado.component.html',
   styleUrl: './menu-formulacion-desconcentrado.component.scss'
@@ -34,10 +36,11 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
 
     allowedRolesForAdm: string[] = ["ADMIN", "GPLANEAMIENTO"];
 
-    allowedRolesForSociales: string[] = ["ADMIN", "GPLANEAMIENTO", "UPRESUPUESTO", "UDEPENDENCIA"];
+    allowedRolesForSociales: string[] = ["ADMIN", "GPLANEAMIENTO", "UPLANEAMIENTO", "UDEPENDENCIA"];
 
     userDependencyIds: number[] = [];
     canShowSociales: boolean = false;
+    canShowSalud: boolean = false;
 
     ngOnInit(): void {
         // Obtener los IDs de dependencias del usuario y validar permisos
@@ -49,6 +52,8 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
         this.userDependencyIds = this.authService.getDependenciesFromToken();
         // Validar permisos para mostrar el componente de sociales
         this.validateSocialesPermissions();
+        // Validar permisos para mostrar el componente de salud
+        this.validateSaludPermissions();
     }
 
     private validateSocialesPermissions(): void {
@@ -60,11 +65,28 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
             return;
         }
 
-        // Para UPRESUPUESTO y UDEPENDENCIA, verificar dependencias
-        if (userRole === "UPRESUPUESTO" || userRole === "UDEPENDENCIA") {
+        // Para UPLANEAMIENTO y UDEPENDENCIA, verificar dependencias
+        if (userRole === "UPLANEAMIENTO" || userRole === "UDEPENDENCIA") {
             this.checkDependenciesSocialField();
         } else {
             this.canShowSociales = false;
+        }
+    }
+
+    private validateSaludPermissions(): void {
+        const userRole = this.authService.getUserRole();
+        
+        // ADMIN y GPLANEAMIENTO siempre pueden ver
+        if (userRole === "ADMIN" || userRole === "GPLANEAMIENTO") {
+            this.canShowSalud = true;
+            return;
+        }
+
+        // Para UPLANEAMIENTO y UDEPENDENCIA, verificar dependencias
+        if (userRole === "UPLANEAMIENTO" || userRole === "UDEPENDENCIA") {
+            this.checkDependenciesSaludField();
+        } else {
+            this.canShowSalud = false;
         }
     }
 
@@ -89,8 +111,8 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
             });
         }
         
-        // Para UPRESUPUESTO: verificar si al menos una dependencia tiene social = true
-        if (userRole === "UPRESUPUESTO") {
+        // Para UPLANEAMIENTO: verificar si al menos una dependencia tiene social = true
+        if (userRole === "UPLANEAMIENTO") {
             let checkedDependencies = 0;
             let hasSocialDependency = false;
 
@@ -121,6 +143,59 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
         }
     }
 
+    private checkDependenciesSaludField(): void {
+        const userRole = this.authService.getUserRole();
+        
+        if (this.userDependencyIds.length === 0) {
+            this.canShowSalud = false;
+            return;
+        }
+
+        // Para UDEPENDENCIA: solo verificar la primera dependencia
+        if (userRole === "UDEPENDENCIA") {
+            this.dependencyService.getById(this.userDependencyIds[0]).subscribe({
+                next: (dependency) => {
+                    this.canShowSalud = dependency.dependencyType?.idDependencyType === 2;
+                },
+                error: (error) => {
+                    console.error('Error fetching dependency:', error);
+                    this.canShowSalud = false;
+                }
+            });
+        }
+        
+        // Para UPLANEAMIENTO: verificar si al menos una dependencia tiene idDependencyType = 3
+        if (userRole === "UPLANEAMIENTO") {
+            let checkedDependencies = 0;
+            let hasSaludDependency = false;
+
+            this.userDependencyIds.forEach(depId => {
+                this.dependencyService.getById(depId).subscribe({
+                    next: (dependency) => {
+                        checkedDependencies++;
+                        if (dependency.dependencyType?.idDependencyType === 2) {
+                            hasSaludDependency = true;
+                        }
+                        
+                        // Cuando se hayan verificado todas las dependencias
+                        if (checkedDependencies === this.userDependencyIds.length) {
+                            this.canShowSalud = hasSaludDependency;
+                        }
+                    },
+                    error: (error) => {
+                        console.error('Error fetching dependency:', error);
+                        checkedDependencies++;
+                        
+                        // Cuando se hayan verificado todas las dependencias
+                        if (checkedDependencies === this.userDependencyIds.length) {
+                            this.canShowSalud = hasSaludDependency;
+                        }
+                    }
+                });
+            });
+        }
+    }
+
     canSeeEvaluacionComponent(): boolean {
       return this.authService.hasRole(this.allowedRolesForEvaluacion);
     }
@@ -131,5 +206,9 @@ export class MenuFormulacionDesconcentradoComponent implements OnInit {
 
     canSeeSocialesComponent(): boolean {
         return this.canShowSociales;
+    }
+
+    canSeeSaludComponent(): boolean {
+        return this.canShowSalud;
     }
 }
