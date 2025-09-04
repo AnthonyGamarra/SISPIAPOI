@@ -20,6 +20,7 @@ import { ReporteF9 } from './pages/reporte-f9/reporte-f9.component';
 import { FormulacionOoddSocialesComponent } from './pages/formulacion-oodd-sociales/formulacion-oodd-sociales.component';
 import { AdminMaestroGcpsComponent } from './pages/admin-maestro-gcps/admin-maestro-gcps.component';
 import { AdminUsuariosComponent } from './pages/admin-usuarios/admin-usuarios.component';
+import { FormulacionOoddSaludComponent } from './pages/formulacion-oodd-salud/formulacion-oodd-salud.component';
 
 export const routes: Routes = [
   {
@@ -49,6 +50,11 @@ export const routes: Routes = [
   {
     path: 'formulacion/formulacion-desconcentrado/sociales',
     component: FormulacionOoddSocialesComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'formulacion/formulacion-desconcentrado/salud',
+    component: FormulacionOoddSaludComponent,
     canActivate: [authGuard],
   },
   {

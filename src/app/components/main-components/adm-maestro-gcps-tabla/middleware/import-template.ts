@@ -10,6 +10,8 @@ import { Dependency } from '../../../../models/logic/dependency.model';
 import { ActivityFamilyService } from '../../../../core/services/logic/activity-family.service';
 import { HealthOperationalActivityService } from '../../../../core/services/logic/health-operational-activity.service';
 import { DependencyService } from '../../../../core/services/logic/dependency.service';
+import { StrategicObjectiveService } from '../../../../core/services/logic/strategic-objective.service';
+import { StrategicActionService } from '../../../../core/services/logic/strategic-action.service';
 import { forkJoin, Observable, of, from } from 'rxjs';
 import { map, switchMap, catchError, concatMap, delay, retry, retryWhen, take } from 'rxjs/operators';
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
@@ -34,13 +36,11 @@ export interface ExcelRowData {
   activityFamilyName: string;
   codPre: string;
   codTarif: string;
+  tarifa: number;
   name: string;
-  fonafe: boolean;
+  measurementUnit: string;
   metaProg: number;
   proyCierre: number;
-  prodTotalProy: number;
-  tarifa: number;
-  proyTarif: number;
   monthlyGoals: number[];
   monthlyBudgets: number[];
 }
@@ -53,13 +53,16 @@ export class ImportTemplateService {
   private activityFamiliesCache: ActivityFamily[] = [];
   private dependenciesCache: Dependency[] = [];
   private currentFormulation: Formulation | null = null;
+  private strategicActionIdCache: number | null = null;
 
   constructor(
     private toastr: ToastrService,
     private activityFamilyService: ActivityFamilyService,
     private healthOperationalActivityService: HealthOperationalActivityService,
     private formulationService: FormulationService,
-    private dependencyService: DependencyService
+    private dependencyService: DependencyService,
+    private strategicObjectiveService: StrategicObjectiveService,
+    private strategicActionService: StrategicActionService
   ) {}
 
   /**
@@ -67,6 +70,47 @@ export class ImportTemplateService {
    */
   setCurrentFormulation(formulation: Formulation): void {
     this.currentFormulation = formulation;
+  }
+
+  /**
+   * Busca y cachea el ID del Strategic Action con code 1
+   * que pertenece al Strategic Objective con code 1 del año especificado
+   */
+  private getStrategicActionId(year: number): Observable<number> {
+    // Si ya está en cache, retornarlo
+    if (this.strategicActionIdCache !== null) {
+      return of(this.strategicActionIdCache);
+    }
+
+    // Buscar Strategic Objective con code "1" para el año (asumiendo que pertenece al año del currentFormulation)
+    return this.strategicObjectiveService.getAll().pipe(
+      switchMap(strategicObjectives => {
+        const strategicObjective = strategicObjectives.find(so => 
+          so.code === "1"
+        );
+
+        if (!strategicObjective) {
+          throw new Error(`No se encontró Strategic Objective con code "1"`);
+        }
+
+        // Buscar Strategic Action con code "1" que pertenezca a este Strategic Objective
+        return this.strategicActionService.getAll().pipe(
+          map(strategicActions => {
+            const strategicAction = strategicActions.find(sa => 
+              sa.code === "1" && sa.strategicObjective?.idStrategicObjective === strategicObjective.idStrategicObjective
+            );
+
+            if (!strategicAction) {
+              throw new Error(`No se encontró Strategic Action con code "1" para el Strategic Objective ${strategicObjective.idStrategicObjective}`);
+            }
+
+            // Cachear el resultado
+            this.strategicActionIdCache = strategicAction.idStrategicAction!;
+            return this.strategicActionIdCache;
+          })
+        );
+      })
+    );
   }
 
   /**
@@ -78,6 +122,9 @@ export class ImportTemplateService {
     year: number,
     onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
   ): Observable<ImportResult> {
+    // Limpiar cache del Strategic Action ID para el nuevo procesamiento
+    this.strategicActionIdCache = null;
+    
     return new Observable<ImportResult>(observer => {
       const reader = new FileReader();
 
@@ -178,6 +225,9 @@ export class ImportTemplateService {
     modification: number,
     onProgress?: (progress: { processed: number; total: number; loading: boolean }) => void
   ): Observable<ImportResult> {
+    // Limpiar cache del Strategic Action ID para el nuevo procesamiento
+    this.strategicActionIdCache = null;
+    
     return new Observable<ImportResult>(observer => {
       const reader = new FileReader();
 
@@ -370,63 +420,72 @@ export class ImportTemplateService {
             next: (formulation) => {
               this.setCurrentFormulation(formulation);
               
-              try {
-                const groupActivities: OperationalActivity[] = [];
-                groupRows.forEach((rowData, idx) => {
-                  const activity = this.createOperationalActivity(rowData, idx + 1);
-                  groupActivities.push(activity);
-                });
-
-                // OPTIMIZACIÓN: Guardado en lotes de 20 con delays de 30ms
-                this.saveActivitiesOptimized(groupActivities, result, (processed, total) => {
-                  // Calcular progreso global considerando todas las actividades de todos los grupos
-                  const globalProcessed = processedActivities + processed;
-                  if (onProgress) {
-                    onProgress({ 
-                      processed: Math.min(globalProcessed, totalActivities),
-                      total: totalActivities, 
-                      loading: groupIndex + 1 < dependencyGroups.length || processed < total
+              // Obtener Strategic Action ID antes de crear las actividades
+              this.getStrategicActionId(year).subscribe({
+                next: (strategicActionId) => {
+                  try {
+                    const groupActivities: OperationalActivity[] = [];
+                    groupRows.forEach((rowData, idx) => {
+                      const activity = this.createOperationalActivity(rowData, idx + 1, strategicActionId);
+                      groupActivities.push(activity);
                     });
+
+                    // OPTIMIZACIÓN: Guardado en lotes de 20 con delays de 30ms
+                    this.saveActivitiesOptimized(groupActivities, result, (processed, total) => {
+                      // Calcular progreso global considerando todas las actividades de todos los grupos
+                      const globalProcessed = processedActivities + processed;
+                      if (onProgress) {
+                        onProgress({ 
+                          processed: Math.min(globalProcessed, totalActivities),
+                          total: totalActivities, 
+                          loading: groupIndex + 1 < dependencyGroups.length || processed < total
+                        });
+                      }
+                    }).subscribe({
+                      next: (savedActivities) => {
+                        allActivities = allActivities.concat(savedActivities);
+                        processedGroups++;
+                        
+                        processedActivities += savedActivities.length; // Usar actividades realmente guardadas
+                        if (onProgress) {
+                          onProgress({ 
+                            processed: Math.min(processedActivities, totalActivities), // Nunca exceder el total
+                            total: totalActivities, 
+                            loading: groupIndex + 1 < dependencyGroups.length 
+                          });
+                        }
+                        
+                        
+                        // Forzar limpieza de memoria para evitar Out of Memory
+                        if ((window as any).gc) {
+                          (window as any).gc();
+                        }
+                        
+                        // Delay de 100ms entre grupos para garantizar integridad
+                        setTimeout(() => processNextGroup(groupIndex + 1), 100);
+                      },
+                      error: (error) => {
+                        result.errors.push(`Error al guardar grupo ${codRed}: ${error.message}`);
+                        hasError = true;
+                        
+                        if (onProgress) {
+                          onProgress({ processed: processedActivities, total: totalActivities, loading: false });
+                        }
+                        
+                        observer.next({ ...result, success: false });
+                        observer.complete();
+                      }
+                    });
+                  } catch (error) {
+                    result.errors.push(`Error al procesar grupo ${codRed}: ${(error as Error).message}`);
+                    processNextGroup(groupIndex + 1);
                   }
-                }).subscribe({
-                  next: (savedActivities) => {
-                    allActivities = allActivities.concat(savedActivities);
-                    processedGroups++;
-                    
-                    processedActivities += savedActivities.length; // Usar actividades realmente guardadas
-                    if (onProgress) {
-                      onProgress({ 
-                        processed: Math.min(processedActivities, totalActivities), // Nunca exceder el total
-                        total: totalActivities, 
-                        loading: groupIndex + 1 < dependencyGroups.length 
-                      });
-                    }
-                    
-                    
-                    // Forzar limpieza de memoria para evitar Out of Memory
-                    if ((window as any).gc) {
-                      (window as any).gc();
-                    }
-                    
-                    // Delay de 100ms entre grupos para garantizar integridad
-                    setTimeout(() => processNextGroup(groupIndex + 1), 100);
-                  },
-                  error: (error) => {
-                    result.errors.push(`Error al guardar grupo ${codRed}: ${error.message}`);
-                    hasError = true;
-                    
-                    if (onProgress) {
-                      onProgress({ processed: processedActivities, total: totalActivities, loading: false });
-                    }
-                    
-                    observer.next({ ...result, success: false });
-                    observer.complete();
-                  }
-                });
-              } catch (error) {
-                result.errors.push(`Error al procesar grupo ${codRed}: ${(error as Error).message}`);
-                processNextGroup(groupIndex + 1);
-              }
+                },
+                error: (error) => {
+                  result.errors.push(`Error al obtener Strategic Action ID: ${error.message}`);
+                  processNextGroup(groupIndex + 1);
+                }
+              });
             },
             error: (error) => {
               result.errors.push(`Error al obtener formulación para ${codRed}: ${error.message}`);
@@ -550,7 +609,7 @@ export class ImportTemplateService {
   // Métodos auxiliares (iguales que en la versión original)
   private extractRowData(row: ExcelJS.Row, rowIndex: number): ExcelRowData | null {
     try {
-      const name = this.getCellValue(row, 12)?.toString().trim();
+      const name = this.getCellValue(row, 13)?.toString().trim();
       if (!name) {
         throw new Error('Nombre de actividad es obligatorio');
       }
@@ -567,27 +626,26 @@ export class ImportTemplateService {
         activityFamilyName: this.getCellValue(row, 9)?.toString() || '',
         codPre: this.getCellValue(row, 10)?.toString() || '',
         codTarif: this.getCellValue(row, 11)?.toString() || '',
+        tarifa: this.parseNumber(this.getCellValue(row, 12)),
         name: name,
-        fonafe: this.parseBoolean(this.getCellValue(row, 13)),
-        metaProg: this.parseNumber(this.getCellValue(row, 14)),
-        proyCierre: this.parseNumber(this.getCellValue(row, 15)),
-        prodTotalProy: this.parseNumber(this.getCellValue(row, 16)),
-        tarifa: this.parseNumber(this.getCellValue(row, 17)),
-        proyTarif: this.parseNumber(this.getCellValue(row, 18)),
-        monthlyGoals: this.extractMonthlyValues(row, 19, 30),
-        monthlyBudgets: this.extractMonthlyValues(row, 31, 42)
+        measurementUnit: this.getCellValue(row, 14)?.toString() || '',
+        metaProg: this.parseNumber(this.getCellValue(row, 15)),
+        proyCierre: this.parseNumber(this.getCellValue(row, 16)),
+        monthlyGoals: this.extractMonthlyValues(row, 17, 28),
+        monthlyBudgets: this.extractMonthlyValues(row, 29, 40)
       };
     } catch (error) {
       throw new Error(`Error en fila ${rowIndex}: ${(error as Error).message}`);
     }
   }
 
-  private createOperationalActivity(rowData: ExcelRowData, correlativeIndex: number): OperationalActivity {
+  private createOperationalActivity(rowData: ExcelRowData, correlativeIndex: number, strategicActionId: number): OperationalActivity {
     return {
-      correlativeCode: `H`,
+      strategicAction: { idStrategicAction: strategicActionId } as any,
+      correlativeCode: `S`,
       name: rowData.name,
       description: `Actividad de salud: ${rowData.name}`,
-      measurementUnit: 'Unidad',
+      measurementUnit: rowData.measurementUnit,
       goods: 0,
       remuneration: 0,
       services: 0,
@@ -603,12 +661,9 @@ export class ImportTemplateService {
       nivelAtencion: rowData.nivelAtencion,
       codPre: rowData.codPre,
       codTarif: rowData.codTarif,
-      fonafe: rowData.fonafe,
       metaProg: rowData.metaProg,
       proyCierre: rowData.proyCierre,
-      prodTotalProy: rowData.prodTotalProy,
       tarifa: rowData.tarifa,
-      proyTarif: rowData.proyTarif,
       activityFamily: this.findExistingFamily(rowData.activityFamilyName),
       monthlyGoals: this.createMonthlyGoals(rowData.monthlyGoals),
       monthlyBudgets: this.createMonthlyBudgets(rowData.monthlyBudgets)
@@ -669,7 +724,7 @@ export class ImportTemplateService {
   }
 
   private isEmptyRow(row: ExcelJS.Row): boolean {
-    const name = this.getCellValue(row, 12)?.toString().trim();
+    const name = this.getCellValue(row, 13)?.toString().trim();
     const agrupFonafe = this.getCellValue(row, 1)?.toString().trim();
     return !name && !agrupFonafe;
   }

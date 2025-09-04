@@ -1,0 +1,113 @@
+<div class="formulacion-salud-od-tabla">
+  <!-- Estado de carga -->
+  <div *ngIf="loading" class="text-center p-6">
+    <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+    <p class="mt-3 text-gray-600">Cargando datos de salud...</p>
+  </div>
+
+  <!-- Mensaje sin datos -->
+  <div *ngIf="!loading && healthData.length === 0" class="text-center p-6">
+    <h3 class="text-lg font-semibold text-gray-600">No hay actividades de salud registradas para esta formulación.</h3>
+  </div>
+
+  <!-- Tabla principal -->
+  <div *ngIf="!loading && healthData.length > 0" class="table-container">
+    <p-table #dataTable [value]="healthData" [size]="'small'" stripedRows showGridlines [resizableColumns]="true"
+      [scrollable]="true" scrollHeight="590px" columnResizeMode="expand"
+      [paginator]="true" [rows]="rows" [first]="first" [totalRecords]="totalRecords"
+      (onPage)="onPageChange($event)" responsiveLayout="scroll" sortMode="multiple">
+
+      <!-- Encabezados de la tabla -->
+      <ng-template pTemplate="header" class="table-header">
+        <tr class="cabecera">
+          <th style="min-width: 180px; max-width: 180px;" rowspan="2">Nivel de Atención</th>
+          <th style="min-width: 150px; max-width: 150px;" rowspan="2">
+            O.E. (código)
+            <i class="pi pi-info-circle ml-1" 
+               pTooltip="Objetivo Estratégico" 
+               tooltipPosition="top"></i>
+          </th>
+          <th style="min-width: 150px; max-width: 150px;" rowspan="2">
+            A.E. (código)
+            <i class="pi pi-info-circle ml-1" 
+               pTooltip="Acción Estratégica" 
+               tooltipPosition="top"></i>
+          </th>
+          <th style="min-width: 200px; max-width: 200px;" rowspan="2">Familia</th>
+          <th style="min-width: 150px; max-width: 150px;" rowspan="2">Unidad de medida</th>
+          <th colspan="5" class="text-center">Programación de metas</th>
+          <th colspan="5" class="text-center">Presupuesto S/.</th>
+        </tr>
+        <tr class="cabecera">
+          <!-- Programación de metas -->
+          <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">I TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">II TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">III TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 100px; max-width: 100px;">IV TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 120px; max-width: 120px;">TOTAL</th>
+          
+          <!-- Presupuesto -->
+          <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">I TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">II TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">III TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 130px; max-width: 130px;">IV TRIMESTRE</th>
+          <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">TOTAL</th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <textarea rows="1" cols="20" [autoResize]="true" pTextarea [disabled]="true" 
+              style="resize: none">{{ row.nivelAtencion }}</textarea>
+          </td>
+          <td>
+            <span pTooltip="{{ row.objetivoEstrategico.nombre }}" tooltipPosition="top">
+              <textarea rows="1" cols="15" [autoResize]="true" pTextarea [disabled]="true" 
+                style="resize: none">{{ row.objetivoEstrategico.codigo }}</textarea>
+            </span>
+          </td>
+          <td>
+            <span pTooltip="{{ row.accionEstrategica.nombre }}" tooltipPosition="top">
+              <textarea rows="1" cols="15" [autoResize]="true" pTextarea [disabled]="true" 
+                style="resize: none">{{ row.accionEstrategica.codigo }}</textarea>
+            </span>
+          </td>
+          <td>
+            <textarea rows="1" cols="25" [autoResize]="true" pTextarea [disabled]="true" 
+              style="resize: none">{{ row.familia }}</textarea>
+          </td>
+          <td>
+            <textarea rows="1" cols="20" [autoResize]="true" pTextarea [disabled]="true" 
+              style="resize: none">{{ row.unidadMedida }}</textarea>
+          </td>
+          
+          <!-- Metas por trimestre -->
+          <td class="montos">{{ formatNumber(row.metas.trimestre1) }}</td>
+          <td class="montos">{{ formatNumber(row.metas.trimestre2) }}</td>
+          <td class="montos">{{ formatNumber(row.metas.trimestre3) }}</td>
+          <td class="montos">{{ formatNumber(row.metas.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatNumber(row.metas.total) }}</td>
+          
+          <!-- Presupuesto por trimestre -->
+          <td class="montos">{{ formatCurrency(row.presupuesto.trimestre1) }}</td>
+          <td class="montos">{{ formatCurrency(row.presupuesto.trimestre2) }}</td>
+          <td class="montos">{{ formatCurrency(row.presupuesto.trimestre3) }}</td>
+          <td class="montos">{{ formatCurrency(row.presupuesto.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(row.presupuesto.total) }}</td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje de tabla vacía -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="15" class="text-center p-4">
+            No se encontraron actividades de salud para mostrar.
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+  </div>
+</div>

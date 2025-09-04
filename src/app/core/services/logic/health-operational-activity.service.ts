@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
+import { HealthOperationalActivitySummaryDTO } from '../../../models/logic/health-operational-activity-summary.dto';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({
@@ -107,5 +108,10 @@ export class HealthOperationalActivityService {
   getHigherCorrelativeCodeByCostCenter(idCostCenter: number): Observable<string> {
     const url = `${this.BASE_URL}/higher-correlative-code/cost-center/${idCostCenter}`;
     return this.http.get(url, { responseType: 'text' });
+  }
+
+  // Obtener resumen de actividades operacionales de salud por formulación
+  getHealthOperationalActivitySummary(idFormulation: number): Observable<HealthOperationalActivitySummaryDTO[]> {
+    return this.http.get<HealthOperationalActivitySummaryDTO[]>(`${this.BASE_URL}/summary/${idFormulation}`);
   }
 }
