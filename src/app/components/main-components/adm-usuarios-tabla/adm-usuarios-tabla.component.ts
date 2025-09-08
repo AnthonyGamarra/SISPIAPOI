@@ -220,14 +220,22 @@ export class AdmUsuariosTablaComponent implements OnInit {
   }
 
   onRowEditSave(user: User) {
-    // No modificar el email, solo validar
+    // Generar username automáticamente desde el email antes de validar
+    if (user.email?.trim()) {
+      user.username = this.getUserNameFromEmail(user.email);
+    }
+    
+    // Validar campos requeridos
     if (!this.isValidUser(user)) {
-      this.toastr.error('Por favor complete todos los campos requeridos', 'Error de validación');
+      this.toastr.error('Por favor ingrese un email válido', 'Error de validación');
       return;
     }
+    
     // Al enviar, mandamos el username (parte antes de @) como 'user'
     const userPayload = { ...user, user: this.getUserNameFromEmail(user.email) };
+    
     if (user.idUser && user.idUser > 0) {
+      // Usuario existente - mantener el idUser para actualización
       this.userService.update(user.idUser, userPayload).subscribe({
         next: (updated) => {
           this.toastr.success('Usuario actualizado correctamente.', 'Éxito');
@@ -250,7 +258,9 @@ export class AdmUsuariosTablaComponent implements OnInit {
         }
       });
     } else {
-      this.userService.create(userPayload).subscribe({
+      // Usuario nuevo - eliminar idUser del payload para creación
+      const { idUser, ...newUserPayload } = userPayload;
+      this.userService.create(newUserPayload).subscribe({
         next: () => {
           this.toastr.success('Usuario creado correctamente.', 'Éxito');
           this.loadUsers();
@@ -413,7 +423,13 @@ export class AdmUsuariosTablaComponent implements OnInit {
   }
 
   isValidUser(user: User): boolean {
-    return !!(user.username?.trim() && user.email?.trim());
+    // Solo validar email ya que username se genera automáticamente desde email
+    const email = user.email?.trim();
+    if (!email) return false;
+    
+    // Validación básica de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
   eliminarUsuario(index: number, user: User) {
