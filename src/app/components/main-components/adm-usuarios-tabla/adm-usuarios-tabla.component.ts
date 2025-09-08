@@ -25,6 +25,7 @@ import { User } from '../../../models/auth/user.model';
 import { Role } from '../../../models/auth/role.model';
 import { Dependency } from '../../../models/logic/dependency.model';
 import { UserService } from '../../../core/services/authentication/user.service';
+import { RoleService } from '../../../core/services/authentication/role.service';
 import { DependencyService } from '../../../core/services/logic/dependency.service';
 import { Table } from 'primeng/table';
 
@@ -96,6 +97,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
 
   constructor(
     private userService: UserService,
+    private roleService: RoleService,
     private toastr: ToastrService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
@@ -123,8 +125,15 @@ export class AdmUsuariosTablaComponent implements OnInit {
   }
 
   private loadAvailableRoles() {
-    const allRoles: Role[] = this.allUsers.flatMap(u => u.roles || []);
-    this.availableRoles = allRoles.filter((r, i, arr) => arr.findIndex(rr => rr.idRole === r.idRole) === i);
+    this.roleService.getAll().subscribe({
+      next: (roles) => {
+        this.availableRoles = roles;
+      },
+      error: () => {
+        this.availableRoles = [];
+        this.toastr.error('Error al cargar roles.', 'Error');
+      }
+    });
   }
 
   private loadAvailableDependencies() {
