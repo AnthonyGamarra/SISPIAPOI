@@ -68,7 +68,7 @@ export class OeAeAdminComponent implements OnInit {
   replicateYear: Date | null = null; 
 
   // minDate and maxDate for year selection in replicate dialog
-  minDate: Date = new Date(2025, 0, 1);
+  minDate: Date = new Date(2026, 0, 1);
   maxDate: Date = new Date(2200, 11, 31);
 
   constructor(
@@ -79,7 +79,7 @@ export class OeAeAdminComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadObjectives(new Date().getFullYear());
+    this.loadObjectives(new Date().getFullYear()+1);
   }
 
   loadObjectives(setYear?: number) {

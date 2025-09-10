@@ -56,4 +56,14 @@ export class FormulationService {
       return this.http.post<Formulation>(`${this.BASE_URL}/add-modificationpe/${idOriginalFormulation}/${newMonth}`, {});
     }
 
+    // Cambiar estado activo de la formulación
+    changeActiveStatus(id: number, active: boolean): Observable<Formulation> {
+      return this.http.put<Formulation>(`${this.BASE_URL}/change-active/${id}/${active}`, {});
+    }
+
+    // Cambiar estado de formulación
+    changeFormulationState(id: number, stateId: number): Observable<Formulation> {
+      return this.http.put<Formulation>(`${this.BASE_URL}/change-state/${id}/${stateId}`, {});
+    }
+
 }

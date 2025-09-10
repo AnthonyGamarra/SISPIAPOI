@@ -10,6 +10,7 @@ import { AnimationOptions } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { FileUploadModule } from 'primeng/fileupload';
+import { TooltipModule } from 'primeng/tooltip';
 import { FileUpload } from 'primeng/fileupload'; // Importante para ViewChild
 
 import { AuthService } from '../../../core/services/authentication/auth.service';
@@ -38,6 +39,7 @@ import { OcReportService } from '../../../core/services/logic/oc-report.service'
     InputTextModule,
     DialogModule,
     FileUploadModule,
+    TooltipModule,
     SafeUrlPipe
   ],
   templateUrl: './selector.component.html',
@@ -160,6 +162,7 @@ export class SelectorComponent implements OnInit {
   };
 
   isAdmin: boolean = false;
+  canChangeState: boolean = false;
 
   showChangeStateModal: boolean = false;
   formulationStateOptions: FormulationState[] = [];
@@ -179,7 +182,8 @@ export class SelectorComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isAdmin = this.authService.hasRole(['ADMIN', 'UPLANEAMIENTO', 'GPLANEAMIENTO']);
+    this.isAdmin = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO']);
+    this.canChangeState = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO', 'UPLANEAMIENTO']);
     this.loadDependencies();
     this.loadFormulationStates();
   }
@@ -443,11 +447,11 @@ onDependencyChange(): void {
 
   onFileUpdate(event: any) {
     const file = event.files[0];
-    // Limitar tamaño a 49MB
-    const maxSize = 49 * 1024 * 1024; // 49MB en bytes
+    // Limitar tamaño a 5MB
+    const maxSize = 5.1 * 1024 * 1024; // 5.1MB en bytes
     if (file) {
       if (file.size > maxSize) {
-        this.toastr.error('El archivo supera el límite de 49MB.', 'Error de tamaño');
+        this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
         if (this.fileUploadRef) {
           this.fileUploadRef.clear();
         }
@@ -642,17 +646,22 @@ onDependencyChange(): void {
       return;
     }
 
-    const formulationToUpdate: Formulation = {
-      ...this.activeFormulation,
-      formulationState: selectedState,
-    };
-
-    this.formulationService.update(formulationToUpdate).subscribe({
+    // Usar el nuevo endpoint específico para cambiar estado
+    this.formulationService.changeFormulationState(this.idFormulation, this.selectedFormulationState).subscribe({
       next: (updatedEntity) => {
+        console.log('Formulación actualizada recibida:', updatedEntity);
+        console.log('FormulationState objeto:', updatedEntity.formulationState);
         this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
         this.showChangeStateModal = false;
         this.activeFormulation = updatedEntity;
-        this.currentFormulationStateLabel = updatedEntity.formulationState?.name ?? null;
+        
+        // En lugar de usar name directamente, buscar en el array de estados disponibles
+        const currentState = this.formulationStateOptions.find(
+          state => state.idFormulationState === updatedEntity.formulationState?.idFormulationState
+        );
+        this.currentFormulationStateLabel = currentState?.name ?? null;
+        console.log('Estado encontrado en array:', currentState);
+        console.log('Nuevo estado label:', this.currentFormulationStateLabel);
         // Sincronizar el estado seleccionado con el de la formulación activa
         this.selectedFormulationState = updatedEntity.formulationState?.idFormulationState ?? null;
         // También actualiza la formulación en la lista `foundFormulations`

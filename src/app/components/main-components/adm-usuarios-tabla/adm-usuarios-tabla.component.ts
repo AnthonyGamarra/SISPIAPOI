@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -19,6 +19,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TextareaModule } from 'primeng/textarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ChipModule } from 'primeng/chip';
+import { TabViewModule } from 'primeng/tabview';
+import { TabView } from 'primeng/tabview';
 import { forkJoin, Observable } from 'rxjs';
 
 import { User } from '../../../models/auth/user.model';
@@ -27,7 +29,6 @@ import { Dependency } from '../../../models/logic/dependency.model';
 import { UserService } from '../../../core/services/authentication/user.service';
 import { RoleService } from '../../../core/services/authentication/role.service';
 import { DependencyService } from '../../../core/services/logic/dependency.service';
-import { Table } from 'primeng/table';
 
 
 
@@ -52,26 +53,14 @@ import { Table } from 'primeng/table';
     TooltipModule,
     TextareaModule,
     ProgressSpinnerModule,
-    ChipModule
+    ChipModule,
+    TabViewModule
   ],
   templateUrl: './adm-usuarios-tabla.component.html',
   styleUrl: './adm-usuarios-tabla.component.scss',
   providers: [MessageService, ConfirmationService]
 })
 export class AdmUsuariosTablaComponent implements OnInit {
-  enableUser(user: User) {
-    if (!user.idUser) return;
-    const updated: User = { ...user, enabled: true };
-    this.userService.update(user.idUser, updated).subscribe({
-      next: () => {
-        this.toastr.success('Usuario dado de alta correctamente.', 'Éxito');
-        this.loadUsers();
-      },
-      error: () => {
-        this.toastr.error('Error al dar de alta el usuario.', 'Error');
-      }
-    });
-  }
   users: User[] = [];
   allUsers: User[] = [];
   loading = false;
@@ -82,9 +71,15 @@ export class AdmUsuariosTablaComponent implements OnInit {
   userToDelete: User | null = null;
   userToDeleteIndex: number | null = null;
 
+  // Tab organization by roles
+  usersByRole: { [roleId: number]: User[] } = {};
+  availableRoles: Role[] = [];
+  Object = Object; // Make Object available in template
+  currentActiveTabRoleId: number | null = null; // Track current active tab
+  currentActiveTabIndex: number = 0; // Track current active tab index
+  
   showAddRoleDialog = false;
   showAddDependencyDialog = false;
-  availableRoles: Role[] = [];
   availableDependencies: Dependency[] = [];
   selectedRoleId: number | null = null;
   selectedDependencyId: number | null = null;
@@ -93,7 +88,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
 
   resettingUserId: number | null = null;
 
-  @ViewChild('userTable') userTable!: Table;
+  @ViewChild('tabView') tabView!: TabView;
 
   constructor(
     private userService: UserService,
@@ -106,6 +101,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.loadRoles();
     this.loadUsers();
   }
 
@@ -115,6 +111,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
       next: (data) => {
         this.allUsers = data;
         this.users = [...data];
+        this.organizeUsersByRole();
         this.loading = false;
       },
       error: () => {
@@ -122,6 +119,74 @@ export class AdmUsuariosTablaComponent implements OnInit {
         this.toastr.error('Error al cargar los usuarios.', 'Error');
       }
     });
+  }
+
+  loadUsersKeepingActiveTab() {
+    const currentTabIndex = this.currentActiveTabIndex;
+    this.loading = true;
+    this.userService.getAll().subscribe({
+      next: (data) => {
+        this.allUsers = data;
+        this.users = [...data];
+        this.organizeUsersByRole();
+        this.loading = false;
+        // Restore the active tab after loading
+        setTimeout(() => {
+          this.currentActiveTabIndex = currentTabIndex;
+          if (this.tabView) {
+            this.tabView.activeIndex = currentTabIndex;
+          }
+        }, 0);
+      },
+      error: () => {
+        this.loading = false;
+        this.toastr.error('Error al cargar los usuarios.', 'Error');
+      }
+    });
+  }
+
+  loadRoles() {
+    this.roleService.getAll().subscribe({
+      next: (roles) => {
+        this.availableRoles = roles;
+      },
+      error: () => {
+        this.availableRoles = [];
+        this.toastr.error('Error al cargar roles.', 'Error');
+      }
+    });
+  }
+
+  organizeUsersByRole() {
+    this.usersByRole = {};
+    this.users.forEach(user => {
+      if (user.roles && user.roles.length > 0) {
+        const roleId = user.roles[0].idRole;
+        if (!this.usersByRole[roleId]) {
+          this.usersByRole[roleId] = [];
+        }
+        this.usersByRole[roleId].push(user);
+      }
+    });
+    
+    // Set default active tab to the first available role if not set
+    if (!this.currentActiveTabRoleId && this.availableRoles.length > 0) {
+      this.currentActiveTabRoleId = this.availableRoles[0].idRole;
+      this.currentActiveTabIndex = 0;
+    }
+  }
+
+  onTabChange(event: any) {
+    // Update the current active tab when user switches tabs
+    this.currentActiveTabIndex = event.index;
+    if (event.index >= 0 && event.index < this.availableRoles.length) {
+      this.currentActiveTabRoleId = this.availableRoles[event.index].idRole;
+    }
+  }
+
+  getRoleName(roleId: number): string {
+    const role = this.availableRoles.find(r => r.idRole === roleId);
+    return role?.name || 'Sin rol';
   }
 
   private loadAvailableRoles() {
@@ -166,9 +231,13 @@ export class AdmUsuariosTablaComponent implements OnInit {
       const role = this.availableRoles.find(r => r.idRole === this.selectedRoleId);
       if (role) {
         this.userForRole.roles = [role];
-        // Si es usuario nuevo, solo asigna localmente
-        // Si es existente, llama a addRole
-        if (this.userForRole.idUser && this.userForRole.idUser > 0) {
+        // Si es usuario nuevo, agregarlo a la lista y organizarlo por rol
+        if (this.userForRole.idUser && this.userForRole.idUser < 0) {
+          this.users = [...this.users, this.userForRole];
+          this.organizeUsersByRole();
+          this.editingRowKeys[this.userForRole.idUser as any] = true;
+        } else if (this.userForRole.idUser && this.userForRole.idUser > 0) {
+          // Si es existente, llama a addRole
           this.addRole(this.userForRole, role);
         }
       }
@@ -251,7 +320,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
           const idx = this.users.findIndex(u => u.idUser === user.idUser);
           if (idx !== -1) {
             this.users[idx] = updated;
-            this.users = [...this.users];
+            this.organizeUsersByRole();
           }
         },
         error: () => {
@@ -261,7 +330,7 @@ export class AdmUsuariosTablaComponent implements OnInit {
             const idx = this.users.findIndex(u => u.idUser === user.idUser);
             if (idx !== -1) {
               this.users[idx] = { ...cloned };
-              this.users = [...this.users];
+              this.organizeUsersByRole();
             }
           }
         }
@@ -272,15 +341,14 @@ export class AdmUsuariosTablaComponent implements OnInit {
       this.userService.create(newUserPayload).subscribe({
         next: () => {
           this.toastr.success('Usuario creado correctamente.', 'Éxito');
-          this.loadUsers();
+          this.loadUsersKeepingActiveTab();
         },
         error: () => {
           this.toastr.error('Error al crear el usuario.', 'Error');
-          const idx = this.users.findIndex(u => u.idUser === user.idUser);
-          if (idx !== -1) {
-            this.users.splice(idx, 1);
-            this.users = [...this.users];
-          }
+          // Eliminar el usuario nuevo que no se pudo crear
+          const userIdToRemove = user.idUser;
+          this.users = this.users.filter(u => u.idUser !== userIdToRemove);
+          this.organizeUsersByRole();
         }
       });
     }
@@ -290,58 +358,59 @@ export class AdmUsuariosTablaComponent implements OnInit {
 
   onRowEditCancel(user: User, index: number) {
     if (user.idUser && user.idUser > 0) {
+      // Usuario existente - restaurar datos clonados
       const cloned = this.clonedUsers[user.idUser];
       if (cloned) {
         const idx = this.users.findIndex(u => u.idUser === user.idUser);
         if (idx !== -1) {
           this.users[idx] = { ...cloned };
+          // Reorganizar por roles después de restaurar
+          this.organizeUsersByRole();
         }
       }
     } else {
-      this.users.splice(index, 1);
-      this.users = [...this.users];
+      // Usuario nuevo - eliminar completamente
+      const userIdToRemove = user.idUser;
+      this.users = this.users.filter(u => u.idUser !== userIdToRemove);
+      // Reorganizar por roles después de eliminar
+      this.organizeUsersByRole();
+      this.toastr.info('Usuario no guardado eliminado.', 'Información');
     }
     delete this.editingRowKeys[user.idUser!];
     delete this.clonedUsers[user.idUser!];
   }
 
   addNewUser() {
-    // Crea el usuario vacío y permite edición directa
+    // If no tab is selected or no roles available, don't proceed
+    if (!this.currentActiveTabRoleId || this.availableRoles.length === 0) {
+      this.toastr.warning('Por favor selecciona un tab de rol primero.', 'Advertencia');
+      return;
+    }
+
+    // Find the role for the current active tab
+    const role = this.availableRoles.find(r => r.idRole === this.currentActiveTabRoleId);
+    if (!role) {
+      this.toastr.error('No se pudo encontrar el rol seleccionado.', 'Error');
+      return;
+    }
+
+    // Create new user with the role from current tab
     const newUser = {
       idUser: this.newUserCounter--,
       username: '',
       email: '',
       ldap: false,
       enabled: true,
-      roles: [],
+      roles: [role],
       dependencies: []
     } as User;
+    
+    // Add to users array and reorganize by role
     this.users = [...this.users, newUser];
+    this.organizeUsersByRole();
+    
+    // Set editing mode for the new user
     this.editingRowKeys[newUser.idUser as any] = true;
-    // Forzar actualización y mover paginación
-    setTimeout(() => {
-      this.cdr.detectChanges();
-      if (this.userTable) {
-        const total = this.users.length;
-        const rows = 9;
-        const lastPage = Math.ceil(total / rows) - 1;
-        this.userTable.first = lastPage * rows;
-      }
-    }, 0);
-  }
-
-  disableUser(user: User) {
-    if (!user.idUser) return;
-    const updated: User = { ...user, enabled: false };
-    this.userService.update(user.idUser, updated).subscribe({
-      next: () => {
-        this.toastr.success('Usuario dado de baja correctamente.', 'Éxito');
-        this.loadUsers();
-      },
-      error: () => {
-        this.toastr.error('Error al dar de baja el usuario.', 'Error');
-      }
-    });
   }
 
   addRole(user: User, role: Role) {
@@ -447,8 +516,10 @@ export class AdmUsuariosTablaComponent implements OnInit {
       this.userToDeleteIndex = index;
       this.showDeleteConfirmation = true;
     } else {
-      this.users.splice(index, 1);
-      this.users = [...this.users];
+      // Usuario nuevo - eliminar directamente sin confirmación
+      const userIdToRemove = user.idUser;
+      this.users = this.users.filter(u => u.idUser !== userIdToRemove);
+      this.organizeUsersByRole();
       this.toastr.info('Usuario no guardado eliminado.', 'Información');
     }
   }
@@ -457,10 +528,10 @@ export class AdmUsuariosTablaComponent implements OnInit {
     if (this.userToDelete && this.userToDelete.idUser) {
       this.userService.delete(this.userToDelete.idUser).subscribe({
         next: () => {
-          if (this.userToDeleteIndex !== null) {
-            this.users.splice(this.userToDeleteIndex, 1);
-            this.users = [...this.users];
-          }
+          // Eliminar del array principal usando filter en lugar de splice
+          const userIdToRemove = this.userToDelete!.idUser;
+          this.users = this.users.filter(u => u.idUser !== userIdToRemove);
+          this.organizeUsersByRole();
           this.toastr.success('Usuario eliminado correctamente.', 'Éxito');
           this.cancelDelete();
         },

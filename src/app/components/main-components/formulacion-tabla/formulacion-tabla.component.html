@@ -30,9 +30,8 @@
         (click)="openPrestacionesEconomicasModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
-      <button *ngIf="idDependency != null && +idDependency === 22" pButton
-        label="Programación de prestaciones sociales" icon="pi pi-calendar"
-        (click)="openPrestacionesSocialesModal()" class="col-6 md:col-2 add-button ml-auto"
+      <button *ngIf="idDependency != null && +idDependency === 22" pButton label="Programación de prestaciones sociales"
+        icon="pi pi-calendar" (click)="openPrestacionesSocialesModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
       <button pButton label="Agregar Actividad" icon="pi pi-plus" (click)="agregarActividad()"
@@ -53,9 +52,9 @@
 
     <!-- Tabla de actividades -->
     <div *ngIf="!isLoadingActivities && products.length > 0" class="table-container">
-      <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
-        [scrollable]="true" scrollHeight="590px" columnResizeMode="expand" dataKey="idOperationalActivity"
-        editMode="row" [paginator]="true" [rows]="6" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+      <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true" columnResizeMode="expand"
+        [scrollable]="true" columnResizeMode="expand" dataKey="idOperationalActivity"
+        editMode="row" [paginator]="true" [rows]="8" [rowHover]="true" [editingRowKeys]="editingRowKeys">
 
         <ng-template pTemplate="header" class="table-header" #header>
           <tr class="cabecera">
@@ -65,31 +64,32 @@
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Acción estratégica</th>
 
             <th style="min-width: 170px; max-width: 170px;" rowspan="2">Centro gestor</th>
-            <th style="min-width: 550px; max-width: 550px;" rowspan="2">Centro de costos</th>
-            <th style="min-width: 450px; max-width: 450px;" rowspan="2">Fondo financiero</th>
+            <th style="min-width: 240px; max-width: 240px;" rowspan="2">Centro de costos</th>
+            <th style="min-width: 240px; max-width: 240px;" rowspan="2">Fondo financiero</th>
 
             <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>
-            <th style="min-width: 370px; max-width: 370px;" rowspan="2">Nombre de actividad</th>
-            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Unidad de medida</th>
+            <th style="min-width: 320px; max-width: 320px;" rowspan="2">Nombre de actividad</th>
+            <th style="min-width: 180px; max-width: 180px;" rowspan="2">Unidad de medida</th>
 
 
             <th style="min-width: 300px; max-width: 300px;" rowspan="2">Tipo de medida</th>
             <th style="min-width: 120px; max-width: 120px;" rowspan="2">Prioridad</th>
 
-            <th colspan="4">Trimestre</th>
+            <th colspan="5">Trimestre</th>
             <th colspan="4">Presupuesto S/.</th>
 
-            <th style="min-width: 370px; max-width: 370px;" rowspan="2">Detalle de actividad</th>
+            <th style="min-width: 480px; max-width: 480px;" rowspan="2">Detalle de actividad</th>
           </tr>
           <tr class="cabecera">
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">I</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">II</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">III</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">IV</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Remuneraciones</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Bienes</th>
-            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Servicios</th>
-            <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Total</th>
+            <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">I</th>
+            <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">II</th>
+            <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">III</th>
+            <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">IV</th>
+            <th class="montos-cabecera" style="min-width: 120px; max-width: 120px;">Total</th>
+            <th class="montos-cabecera" style="min-width: 140px; max-width: 140px;">Remuneraciones</th>
+            <th class="montos-cabecera" style="min-width: 140px; max-width: 140px;">Bienes</th>
+            <th class="montos-cabecera" style="min-width: 140px; max-width: 140px;">Servicios</th>
+            <th class="montos-cabecera" style="min-width: 150px; max-width: 150px;">Total</th>
           </tr>
         </ng-template>
 
@@ -156,43 +156,51 @@
               </p-cellEditor>
             </td>
 
-            <td>
+            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
                     [ngModel]="getManagementCenterId(product)" (ngModelChange)="setManagementCenterId(product, $event)"
-                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
+                    styleClass="multiline-select">
                   </p-select>
                 </ng-template>
-                <ng-template pTemplate="output">
+                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
                   {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
                 </ng-template>
               </p-cellEditor>
             </td>
 
-            <td>
+            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
                     [ngModel]="getCostCenterId(product)" (ngModelChange)="setCostCenterId(product, $event)"
-                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
+                    [filter]="true" filterBy="name"
+                    styleClass="multiline-select">
                   </p-select>
                 </ng-template>
-                <ng-template pTemplate="output">
+                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
                   {{ getCostCenterName(product.costCenter?.idCostCenter) }}
                 </ng-template>
               </p-cellEditor>
             </td>
 
-            <td>
+            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <p-select [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
                     [ngModel]="getFinancialFundId(product)" (ngModelChange)="setFinancialFundId(product, $event)"
-                    [style]="{ width: '100%' }" [disabled]="state === 2 || state === 4 || !active" appendTo="body">
+                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
+                    [filter]="true" filterBy="name"
+                    styleClass="multiline-select">
                   </p-select>
                 </ng-template>
-                <ng-template pTemplate="output">
+                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
                   {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
                 </ng-template>
               </p-cellEditor>
@@ -210,11 +218,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.name"
+                  <textarea rows="1" cols="35" [autoResize]="true" pTextarea [(ngModel)]="product.name"
                     [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
                     style="resize: none"></textarea>
                 </ng-template>
-                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
+                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="35" [autoResize]="true"
                     pTextarea [disabled]="true" style="resize: none">{{ product.name }}</textarea></ng-template>
               </p-cellEditor>
             </td>
@@ -222,11 +230,11 @@
             <td>
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <textarea rows="1" cols="21" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit"
+                  <textarea rows="1" cols="18" [autoResize]="true" pTextarea [(ngModel)]="product.measurementUnit"
                     [disabled]="state === 2 || state === 4 || !active || product.idOperationalActivity > 0"
                     style="resize: none"></textarea>
                 </ng-template>
-                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="21" [autoResize]="true"
+                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="18" [autoResize]="true"
                     pTextarea [disabled]="true"
                     style="resize: none">{{ product.measurementUnit }}</textarea></ng-template>
               </p-cellEditor>
@@ -303,6 +311,17 @@
             <td class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
+                  <strong>{{ calculateQuarterlyTotalFromGoals(product) }}</strong>
+                </ng-template>
+                <ng-template pTemplate="output">
+                  <strong>{{ calculateQuarterlyTotalFromGoals(product) }}</strong>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.remuneration" type="number" step="any"
                     [disabled]="state === 2 || state === 4 || !active || !product.active" />
                 </ng-template>
@@ -332,24 +351,65 @@
 
             <td class="montos">
               <p-cellEditor>
-                <ng-template pTemplate="input">{{ (product.goods + product.remuneration + product.services) |
-                  number:'1.2-2' }}</ng-template>
-                <ng-template pTemplate="output">{{ (product.goods + product.remuneration + product.services) |
-                  number:'1.2-2' }}</ng-template>
+                <ng-template pTemplate="input"><strong>{{ (product.goods + product.remuneration + product.services) |
+                  number:'1.2-2' }}</strong></ng-template>
+                <ng-template pTemplate="output"><strong>{{ (product.goods + product.remuneration + product.services) |
+                  number:'1.2-2' }}</strong></ng-template>
               </p-cellEditor>
             </td>
 
             <td class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <textarea rows="1" cols="40" [autoResize]="true" pTextarea [(ngModel)]="product.description"
+                  <textarea rows="3" cols="54" [autoResize]="false" pTextarea [(ngModel)]="product.description"
                     [disabled]="state === 2 || state === 4 || !active" style="resize: none"></textarea>
                 </ng-template>
-                <ng-template pTemplate="output" class="text-output"><textarea rows="1" cols="40" [autoResize]="true"
-                    pTextarea [disabled]="true" style="resize: none">{{ product.description }}</textarea></ng-template>
+                <ng-template pTemplate="output" class="text-output">
+                  <div class="description-container">
+                    <div class="description-text">
+                      {{ getTruncatedDescription(product.description, 60) }}
+                    </div>
+                    <button 
+                      *ngIf="shouldShowViewMore(product.description, 60)" 
+                      pButton 
+                      type="button" 
+                      icon="pi pi-eye" 
+                      label="Ver más" 
+                      (click)="openDescriptionModal(product)" 
+                      class="add-button"
+                      style="padding: 0.25rem 3rem; font-size: 0.75rem;">
+                    </button>
+                  </div>
+                </ng-template>
               </p-cellEditor>
             </td>
 
+          </tr>
+        </ng-template>
+        
+        <ng-template pTemplate="footer">
+          <tr class="totals-row">
+            <td></td> <!-- Acciones -->
+            <td></td> <!-- Objetivo estratégico -->
+            <td></td> <!-- Acción estratégica -->
+            <td></td> <!-- Centro gestor -->
+            <td></td> <!-- Centro de costos -->
+            <td></td> <!-- Fondo financiero -->
+            <td></td> <!-- Código de actividad -->
+            <td></td> <!-- Nombre de actividad -->
+            <td></td> <!-- Unidad de medida -->
+            <td></td> <!-- Tipo de medida -->
+            <td></td> <!-- Prioridad -->
+            <td></td> <!-- Trimestre I -->
+            <td></td> <!-- Trimestre II -->
+            <td></td> <!-- Trimestre III -->
+            <td></td> <!-- Trimestre IV -->
+            <td></td> <!-- Total Trimestres -->
+            <td class="montos total-cell"><strong>{{ getTotalRemuneraciones() | number:'1.2-2' }}</strong></td> <!-- Remuneraciones -->
+            <td class="montos total-cell"><strong>{{ getTotalBienes() | number:'1.2-2' }}</strong></td> <!-- Bienes -->
+            <td class="montos total-cell"><strong>{{ getTotalServicios() | number:'1.2-2' }}</strong></td> <!-- Servicios -->
+            <td class="montos total-cell"><strong>{{ getTotalGeneral() | number:'1.2-2' }}</strong></td> <!-- Total -->
+            <td></td> <!-- Detalle de actividad -->
           </tr>
         </ng-template>
       </p-table>
@@ -395,6 +455,23 @@
         <button pButton label="Sí" icon="pi pi-check" (click)="confirmDelete()" class="custom-confirm-button mx-2">
         </button>
       </div>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal de Descripción Completa -->
+  <p-dialog [header]="'Detalle de actividad: ' + selectedActivityName" [(visible)]="displayDescriptionModal" 
+    [modal]="true" [style]="{ width: '50vw', 'max-width': '800px' }" 
+    [breakpoints]="{ '960px': '75vw', '640px': '90vw' }" [draggable]="false" [resizable]="true" 
+    [baseZIndex]="10000">
+    <div class="description-modal-content">
+      <div class="description-full-text" style="white-space: pre-wrap; line-height: 1.5; padding: 1rem 0;">
+        {{ selectedDescription }}
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cerrar" icon="pi pi-times" (click)="closeDescriptionModal()" 
+        class="p-button-secondary">
+      </button>
     </ng-template>
   </p-dialog>
 

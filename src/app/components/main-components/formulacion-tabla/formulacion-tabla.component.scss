@@ -1,5 +1,5 @@
 .table-container {
-  margin: 0px 18px;
+  margin: 30px 18px;
 }
 
 tbody td {
@@ -51,6 +51,26 @@ td .p-celleditor-input {
 
 .p-select .p-select-label {
   padding: 8px 10px;
+}
+
+/* Estilos específicos para selects con texto multilínea */
+::ng-deep .multiline-select {
+  .p-select-label {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+    padding: 8px 10px !important;
+    min-height: 2.5rem !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .p-select-dropdown {
+    align-self: flex-start !important;
+    margin-top: 4px !important;
+  }
 }
 
 .p-select:not(.p-disabled).p-focus {
@@ -348,4 +368,84 @@ label {
 ::ng-deep .p-paginator-page.p-paginator-page-selected {
     background: var(--secondary-light) !important;
     color: var(--primary) !important;
+}
+
+// Estilos para la fila de totales
+::ng-deep .totals-row {
+  background-color: #f8f9fa !important;
+  
+  td {
+    border: 1px solid #dee2e6 !important;
+    padding: 12px 20px !important;
+    vertical-align: middle !important;
+    font-weight: bold !important;
+  }
+  
+  .total-cell {
+    background-color: #e9ecef !important;
+    color: #00529B !important;
+    font-size: 0.9em !important;
+    font-weight: bold !important;
+    text-align: end !important;
+  }
+}
+
+// Asegurar que el footer de la tabla use el mismo estilo que las filas
+::ng-deep .p-datatable-tfoot tr {
+  background-color: #f8f9fa !important;
+  border-top: 2px solid #00529B !important;
+}
+
+// Estilos para el contenedor de descripción con botón "Ver más"
+.description-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 480px;
+  
+  .description-text {
+    text-align: justify;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    width: 100%;
+  }
+  
+  .p-button-sm {
+    align-self: flex-start;
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 3px !important;
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: white !important;
+    
+    &:hover {
+      background-color: #5a6268 !important;
+      border-color: #545b62 !important;
+    }
+    
+    .pi {
+      font-size: 0.7rem !important;
+      margin-right: 0.25rem !important;
+    }
+  }
+}
+
+// Estilos para el modal de descripción
+::ng-deep .description-modal-content {
+  .description-full-text {
+    text-align: justify;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    max-height: 400px;
+    overflow-y: auto;
+  }
 }

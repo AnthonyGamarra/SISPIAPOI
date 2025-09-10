@@ -24,7 +24,8 @@ import { GestionModuloComponent } from "../../components/modules/gestion-modulo/
     FormulacionModuloComponent,
     ModuloksComponent,
     ModuloReporteF9Component,
-    GestionModuloComponent
+    GestionModuloComponent,
+    EvaluacionModuloComponent
 ],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'

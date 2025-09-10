@@ -11,9 +11,17 @@
          </div>
       </div>
 
-      <div *ngIf="getDependencyTypeNames().length === 0 && !canInitiateFormulation" class="p-text-center p-mt-5">
-         <p>No hay formulaciones disponibles para el año {{selectedYear}}.</p>
+      <!-- Loader mientras se cargan las formulaciones -->
+      <div *ngIf="isLoading" class="p-text-center p-mt-5 p-mb-5">
+         <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="8" fill="transparent" animationDuration="0.5s"></p-progressSpinner>
+         <p class="p-mt-3">Cargando formulaciones...</p>
       </div>
+
+      <!-- Contenido principal (solo mostrar cuando no está cargando) -->
+      <div *ngIf="!isLoading">
+         <div *ngIf="getDependencyTypeNames().length === 0 && !canInitiateFormulation" class="p-text-center p-mt-5">
+            <p>No hay formulaciones disponibles para el año {{selectedYear}}.</p>
+         </div>
 
       <div *ngFor="let depTypeName of getDependencyTypeNames()" class="table-container">
          <p-fieldset [legend]="depTypeName">
@@ -244,6 +252,7 @@
             </div>
          </p-fieldset>
       </div>
+      </div> <!-- Cierre del div del contenido principal -->
    </p-card>
 </div>
 

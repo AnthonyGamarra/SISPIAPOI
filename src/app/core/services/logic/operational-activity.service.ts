@@ -52,5 +52,11 @@ export class OperationalActivityService {
       return this.http.get(url, { responseType: 'text' });
     }
 
+    // Obtener el código correlativo mayor por formulación
+    getHigherCorrelativeCodeByFormulation(idFormulation: number): Observable<string> {
+      const url = `${this.BASE_URL}/higher-correlative-code/formulation/${idFormulation}`;
+      return this.http.get(url, { responseType: 'text' });
+    }
+
 
 }

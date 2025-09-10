@@ -119,6 +119,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   public canInitiateFormulationPrestacionesEconomicas = false; // << NUEVA BANDERA PARA Prestaciones Económicas
   public canInitiateFormulationPrestacionesSociales = false; // << NUEVA BANDERA PARA Prestaciones Sociales
   public canInitiateFormulationActividadesSalud = false; // << NUEVA BANDERA PARA Prestaciones de Salud
+  public isLoading = false; // << NUEVA BANDERA PARA LOADER
 
   public Object = Object;
 
@@ -135,7 +136,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
     private processPEService: ProcessPEService,
     private processPSOService: ProcessPSOService
   ) {
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear()+1;
     this.selectedYear = currentYear;
   }
 
@@ -158,6 +159,7 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   loadInitialData(): void {
+    this.isLoading = true; // Mostrar loader
     forkJoin({
       dependencyTypes: this.dependencyTypeService.getAll(),
       formulationTypes: this.formulationTypeService.getAll(),
@@ -173,8 +175,10 @@ export class AdmPlanificacionTableComponent implements OnInit {
         );
         this.formulations = results.formulations;
         this.groupAndFilterFormulations();
+        this.isLoading = false; // Ocultar loader
       },
       error: (err) => {
+        this.isLoading = false; // Ocultar loader en caso de error
         this.toastr.error('Error al cargar datos iniciales.', 'Error');
         console.error('Error loading initial data', err);
       }
@@ -182,7 +186,12 @@ export class AdmPlanificacionTableComponent implements OnInit {
   }
 
   onYearChange(): void {
-    this.groupAndFilterFormulations();
+    this.isLoading = true; // Mostrar loader al cambiar año
+    // Usar setTimeout para permitir que Angular actualice la UI antes de procesar
+    setTimeout(() => {
+      this.groupAndFilterFormulations();
+      this.isLoading = false; // Ocultar loader después del procesamiento
+    }, 100);
   }
 
   groupAndFilterFormulations(): void {
@@ -319,22 +328,33 @@ export class AdmPlanificacionTableComponent implements OnInit {
       header: 'Confirmar Cambio de Estado',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        formulation.active = newActiveState;
-        // Solo cambiar el estado a idFormulationState 4 si se desactiva
-        if (!newActiveState) {
-          if (formulation.formulationState) {
-            formulation.formulationState.idFormulationState = 4;
-          } else {
-            formulation.formulationState = { idFormulationState: 4 } as FormulationState;
-          }
-        }
-        this.formulationService.update(formulation).subscribe({
-          next: () => {
-            this.toastr.success(`Formulación ${newActiveState ? 'activada' : 'desactivada'}.`, 'Éxito');
+        // Determinar el nuevo estado de formulación basado en el estado activo
+        const newFormulationStateId = newActiveState ? 3 : 4; // 3 = activo, 4 = inactivo
+        
+        // Usar ambos endpoints: cambiar estado activo y estado de formulación
+        this.formulationService.changeActiveStatus(formulation.idFormulation!, newActiveState).subscribe({
+          next: (updatedFormulation) => {
+            // Actualizar la formulación local con los datos devueltos por el backend
+            Object.assign(formulation, updatedFormulation);
+            
+            // Ahora cambiar el estado de formulación
+            this.formulationService.changeFormulationState(formulation.idFormulation!, newFormulationStateId).subscribe({
+              next: (updatedStateFormulation) => {
+                // Actualizar también el estado de formulación
+                formulation.formulationState = updatedStateFormulation.formulationState;
+                this.toastr.success(`Formulación ${newActiveState ? 'activada' : 'desactivada'} y estado actualizado.`, 'Éxito');
+              },
+              error: (err) => {
+                console.error('Error updating formulation state', err);
+                // El estado activo ya se cambió, solo mostrar advertencia sobre el estado
+                this.toastr.warning('Estado activo actualizado, pero hubo un error al cambiar el estado de formulación.', 'Advertencia');
+              }
+            });
           },
           error: (err) => {
             this.toastr.error(`Error al ${newActiveState ? 'activar' : 'desactivar'} la formulación.`, 'Error');
             console.error('Error updating formulation active state', err);
+            // Revertir el estado visual en caso de error
             formulation.active = !newActiveState;
           }
         });

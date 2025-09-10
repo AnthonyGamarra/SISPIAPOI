@@ -123,6 +123,11 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   tempSelectedStrategicActionId: number | null = null;
   year: number | null = null;
 
+  // Variables para el modal de descripción
+  displayDescriptionModal: boolean = false;
+  selectedDescription: string = '';
+  selectedActivityName: string = '';
+
   // Flags to control UI elements based on formulation state
   canEdit: boolean = false;
   canAdd: boolean = false;
@@ -194,9 +199,13 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
         this.updatePermissions();
 
-        // Verificar si la formulación realmente cambió
+        // Verificar si la formulación realmente cambió (excluyendo cambios solo de estado)
         const hasFormulationChanged = newFormulation?.idFormulation !== oldFormulation?.idFormulation ||
-          newFormulation?.modification !== oldFormulation?.modification ||
+          newFormulation?.modification !== oldFormulation?.modification;
+
+        // Verificar si solo cambió el estado (sin cambiar la formulación base)
+        const onlyStateChanged = newFormulation?.idFormulation === oldFormulation?.idFormulation &&
+          newFormulation?.modification === oldFormulation?.modification &&
           newFormulation?.formulationState?.idFormulationState !== oldFormulation?.formulationState?.idFormulationState;
 
         // Cargar datos si la formulación cambió (sin importar mostrar)
@@ -205,6 +214,15 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           this.cargarDatos();
           this.loadCombos();
           this.loadOperationalActivities();
+        }
+        // Si solo cambió el estado, actualizar permisos pero NO recargar actividades
+        else if (onlyStateChanged) {
+          console.log('Solo cambió el estado de la formulación, actualizando permisos');
+          // Las propiedades del estado ya se actualizaron arriba
+          // Forzar detección de cambios para que se actualice la UI
+          setTimeout(() => {
+            this.updatePermissions();
+          }, 0);
         }
         // O si se está mostrando por primera vez y no había formulación antes
         else if (changes['mostrar'] && changes['mostrar'].currentValue === true && !changes['mostrar'].previousValue && !oldFormulation) {
@@ -590,6 +608,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           }
           this.toastr.success('Actividad eliminada exitosamente.', 'Éxito');
           this.notifyActivityChangesToModal(); // Notificar cambios al modal
+          this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
           this.showDeleteConfirmation = false;
           this.activityToDelete = null;
           this.activityToDeleteIndex = null;
@@ -730,6 +749,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                     }
                     this.toastr.success('Actividad operativa y metas actualizadas.', 'Éxito');
                     this.notifyActivityChangesToModal(); // Notificar cambios al modal
+                    this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
                   },
                   error: (err) => {
                     this.toastr.error('Error al actualizar una o más metas.', 'Error');
@@ -738,6 +758,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
               } else {
                 this.toastr.success('Actividad operativa actualizada.', 'Éxito');
                 this.notifyActivityChangesToModal(); // Notificar cambios al modal
+                this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
               }
             },
             error: (err) => {
@@ -786,6 +807,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                       }
                       this.toastr.success('Actividad operativa creada, metas guardadas.', 'Éxito');
                       this.notifyActivityChangesToModal(); // Notificar cambios al modal
+                      this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
                     },
                     error: (err) => {
                       this.toastr.error('Error al guardar las metas de la nueva actividad.', 'Error');
@@ -794,6 +816,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
                 } else {
                   this.toastr.success('Actividad operativa creada.', 'Éxito');
                   this.notifyActivityChangesToModal(); // Notificar cambios al modal
+                  this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
                 }
               } else {
                 this.toastr.error('El ID devuelto por la creación de la actividad no es válido.', 'Error');
@@ -856,7 +879,10 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   getStrategicActionCodeDisplay(id?: number): string {
     const act = this.strategicActions.find(a => a.idStrategicAction === id);
-    return act && act.code ? `A.E. ${act.code}` : '';
+    if (act && act.code && act.strategicObjective?.code) {
+      return `A.E. ${act.strategicObjective.code}.${act.code}`;
+    }
+    return '';
   }
 
   getFinancialFundName(id?: number): string {
@@ -939,9 +965,17 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   filterStrategicActions(product: OperationalActivity): void {
     if (product.strategicAction?.strategicObjective?.idStrategicObjective) {
-      this.filteredStrategicActions = this.strategicActions.filter(
-        action => action.strategicObjective?.idStrategicObjective === product.strategicAction?.strategicObjective?.idStrategicObjective
-      );
+      const objectiveId = product.strategicAction.strategicObjective.idStrategicObjective;
+      const selectedObjective = this.strategicObjectives.find(obj => obj.idStrategicObjective === objectiveId);
+      
+      this.filteredStrategicActions = this.strategicActions
+        .filter(action => action.strategicObjective?.idStrategicObjective === objectiveId)
+        .map(action => ({
+          ...action,
+          name: selectedObjective?.code && action.code 
+            ? `A.E. ${selectedObjective.code}.${action.code}: ${action.name?.replace(/^A\.E\.\d+(\.\d+)?:\s*/, '')}`
+            : action.name
+        }));
     } else {
       this.filteredStrategicActions = [];
     }
@@ -963,7 +997,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
   // --- SAP Code Generation Logic ---
   private _generateSapCodeAndCorrelative(activity: OperationalActivity): Observable<{ sapCode: string, correlativeCode: string }> {
-    return this.sapCodeGenerator.generateSapCodeAndCorrelative(
+    return this.sapCodeGenerator.generateSapCodeAndCorrelativeByFormulation(
       activity,
       this.strategicActions,
       this.strategicObjectives,
@@ -1251,6 +1285,90 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       product.priority = {} as Priority;
     }
     product.priority.idPriority = value ?? undefined;
+  }
+
+  // << NUEVO: Método para calcular total en trimestre basado en goals
+  calculateQuarterlyTotalFromGoals(operationalActivity: OperationalActivity): number {
+    if (!operationalActivity?.goals || !operationalActivity?.measurementType) {
+      return 0;
+    }
+
+    const measurementType = operationalActivity.measurementType.idMeasurementType;
+    const goals = operationalActivity.goals;
+
+    // Obtener valores por trimestre (goalOrder 1-4)
+    const q1 = goals.find((goal: Goal) => goal.goalOrder === 1)?.value || 0;
+    const q2 = goals.find((goal: Goal) => goal.goalOrder === 2)?.value || 0;
+    const q3 = goals.find((goal: Goal) => goal.goalOrder === 3)?.value || 0;
+    const q4 = goals.find((goal: Goal) => goal.goalOrder === 4)?.value || 0;
+
+    if (measurementType === 1) {
+      // Si measurementType es 1, suma todos los trimestres
+      return q1 + q2 + q3 + q4;
+    } else {
+      // Si measurementType no es 1, retorna el último trimestre con valor
+      if (q4 > 0) return q4;
+      if (q3 > 0) return q3;
+      if (q2 > 0) return q2;
+      if (q1 > 0) return q1;
+      return 0;
+    }
+  }
+
+  // << NUEVO: Método para obtener valor de trimestre específico desde goals
+  getQuarterValueFromGoals(operationalActivity: OperationalActivity, quarter: number): number {
+    if (!operationalActivity?.goals) {
+      return 0;
+    }
+
+    const goal = operationalActivity.goals.find((goal: Goal) => goal.goalOrder === quarter);
+    return goal?.value || 0;
+  }
+
+  // --- Métodos para calcular totales de la fila de resumen ---
+  getTotalRemuneraciones(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.remuneration || 0);
+    }, 0);
+  }
+
+  getTotalBienes(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.goods || 0);
+    }, 0);
+  }
+
+  getTotalServicios(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.services || 0);
+    }, 0);
+  }
+
+  getTotalGeneral(): number {
+    return this.getTotalRemuneraciones() + this.getTotalBienes() + this.getTotalServicios();
+  }
+
+  // --- Métodos para el modal de descripción ---
+  openDescriptionModal(product: OperationalActivity): void {
+    this.selectedDescription = product.description || '';
+    this.selectedActivityName = product.name || 'Actividad';
+    this.displayDescriptionModal = true;
+  }
+
+  closeDescriptionModal(): void {
+    this.displayDescriptionModal = false;
+    this.selectedDescription = '';
+    this.selectedActivityName = '';
+  }
+
+  // Método para truncar texto y detectar si necesita "Ver más"
+  getTruncatedDescription(description: string, maxLength: number = 150): string {
+    if (!description) return '';
+    return description.length > maxLength ? description.substring(0, maxLength) + '...' : description;
+  }
+
+  shouldShowViewMore(description: string, maxLength: number = 150): boolean {
+    return !!(description && description.length > maxLength);
   }
 
 }

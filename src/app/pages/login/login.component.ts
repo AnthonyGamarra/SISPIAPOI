@@ -87,4 +87,15 @@ export class LoginComponent {
       }
     });
   }
+
+  downloadManual() {
+    const link = document.createElement('a');
+    link.href = 'resources/Manual Sectorista GPC.pdf';
+    link.download = 'Manual Sectorista GPC.pdf';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.toastr.info('Descargando manual...', 'Descarga');
+  }
 }

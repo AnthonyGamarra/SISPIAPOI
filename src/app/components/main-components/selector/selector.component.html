@@ -2,8 +2,8 @@
   <div class="selector-group col-12 lg:col-4">
     <label class="selector-label">Órgano Central:</label>
     <p-select *ngIf="isSingleDependency; else multipleDeps" [options]="dependencyOptions"
-      [(ngModel)]="selectedDependency" [disabled]="true" class="selector-select" optionLabel="label"
-      optionValue="value" (onChange)="onDependencyChange()"></p-select>
+      [(ngModel)]="selectedDependency" [disabled]="true" class="selector-select" optionLabel="label" optionValue="value"
+      (onChange)="onDependencyChange()"></p-select>
     <ng-template #multipleDeps>
       <p-select [options]="dependencyOptions" [(ngModel)]="selectedDependency" (onChange)="onDependencyChange()"
         placeholder="Seleccione" class="selector-select" optionLabel="label" optionValue="value" [filter]="true"
@@ -49,7 +49,7 @@
           activeFormulation?.formulationState?.idFormulationState !== 4 && 
           activeFormulation?.active" #fileUpdate mode="basic" chooseLabel="Actualizar sustento" [auto]="true"
         [customUpload]="true" (onSelect)="onFileUpdate($event)" [disabled]="fileUploading"
-        chooseIcon="pi pi-cloud-upload" class="w-full sm:w-auto"></p-fileUpload>
+        chooseIcon="pi pi-cloud-upload" class="w-full sm:w-auto" pTooltip="Tamaño máximo: 5 MB" tooltipPosition="top"></p-fileUpload>
     </div>
 
     <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto" *ngIf="!isLoadingFileMetadata && formulationExists && !hasSupportFile &&
@@ -58,11 +58,11 @@
            activeFormulation?.active">
       <p-fileUpload #fileUpload mode="basic" chooseLabel="Subir sustento" [auto]="true" [customUpload]="true"
         (onSelect)="onFileSelect($event)" [disabled]="fileUploading" chooseIcon="pi pi-cloud-upload"
-        class="w-full sm:w-auto"></p-fileUpload>
+        class="w-full sm:w-auto" pTooltip="Tamaño máximo: 5 MB" tooltipPosition="top"></p-fileUpload>
     </div>
 
     <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
-      *ngIf="formulationExists && isAdmin && activeFormulation?.active">
+      *ngIf="formulationExists && canChangeState && activeFormulation?.active">
       <button type="button" pButton class="selector w-full sm:w-auto" label="Cambiar estado" icon="pi pi-pencil"
         (click)="showChangeStateModal = true" [disabled]="!idFormulation"></button>
     </div>
@@ -75,8 +75,8 @@
       <button pButton type="button" icon="pi pi-download" label="Reporte"
         class="selector p-button-info mr-2 w-full sm:w-auto" (click)="downloadOcR1()"
         [disabled]="isDownloadingR1"></button>
-      <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download" label="Reporte simplificado"
-        class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
+      <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download"
+        label="Reporte simplificado" class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
         [disabled]="isDownloadingR2"></button>
     </div>
   </div>

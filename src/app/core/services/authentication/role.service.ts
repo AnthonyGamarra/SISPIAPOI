@@ -8,7 +8,7 @@ import { Role } from '../../../models/auth/role.model';
   providedIn: 'root'
 })
 export class RoleService {
-  private readonly BASE_URL = environment.apiAuthUrl + '/roles';
+  private readonly BASE_URL = environment.apiAuthUrl + '/role';
 
   constructor(private http: HttpClient) {}
 
