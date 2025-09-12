@@ -481,22 +481,64 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     });
     
     // Actualizar la lista de nombres de dependencias
-    // Ordenar las actividades dentro de cada dependencia por 'subsidio' (campo name) ascendente
+    // Ordenar y consolidar actividades por subsidio en el orden correcto
     this.dependencyNamesList = Object.keys(this.groupedActivitiesByDependency);
     const customOrder = ['incapacidad temporal', 'maternidad', 'lactancia', 'sepelio'];
     this.dependencyNamesList.forEach(depName => {
-      const arr = this.groupedActivitiesByDependency[depName];
+      let arr = this.groupedActivitiesByDependency[depName];
       if (Array.isArray(arr)) {
-        arr.sort((a: OperationalActivity, b: OperationalActivity) => {
-          const na = (a.name || '').toString().toLowerCase().trim();
-          const nb = (b.name || '').toString().toLowerCase().trim();
-          const ia = customOrder.indexOf(na);
-          const ib = customOrder.indexOf(nb);
-          if (ia !== -1 && ib !== -1) return ia - ib;
-          if (ia !== -1) return -1;
-          if (ib !== -1) return 1;
-          return nb.localeCompare(na); // resto descendente
+        // Agrupar por subsidio (name)
+        const groupedBySubsidio: { [subsidio: string]: OperationalActivity[] } = {};
+        arr.forEach(act => {
+          const subsidio = (act.name || '').toString().toLowerCase().trim();
+          if (!groupedBySubsidio[subsidio]) groupedBySubsidio[subsidio] = [];
+          groupedBySubsidio[subsidio].push(act);
         });
+        // Consolidar metas por subsidio y mantener el orden
+        const consolidatedArr: OperationalActivity[] = [];
+        customOrder.forEach(subsidio => {
+          if (groupedBySubsidio[subsidio]) {
+            // Sumar metas mensuales
+            const base = groupedBySubsidio[subsidio][0];
+            const metas = Array(12).fill(0);
+            groupedBySubsidio[subsidio].forEach(act => {
+              act.monthlyGoals?.forEach((goal, idx) => {
+                metas[idx] += goal.value || 0;
+              });
+            });
+            // Crear actividad consolidada
+            consolidatedArr.push({
+              ...base,
+              monthlyGoals: metas.map((v, i) => ({
+                idMonthlyGoal: undefined,
+                goalOrder: i + 1,
+                value: v
+              }))
+            });
+          }
+        });
+        // Agregar el resto de subsidios fuera del orden custom
+        Object.keys(groupedBySubsidio)
+          .filter(subsidio => !customOrder.includes(subsidio))
+          .forEach(subsidio => {
+            const base = groupedBySubsidio[subsidio][0];
+            const metas = Array(12).fill(0);
+            groupedBySubsidio[subsidio].forEach(act => {
+              act.monthlyGoals?.forEach((goal, idx) => {
+                metas[idx] += goal.value || 0;
+              });
+            });
+            consolidatedArr.push({
+              ...base,
+              monthlyGoals: metas.map((v, i) => ({
+                idMonthlyGoal: undefined,
+                goalOrder: i + 1,
+                value: v
+              }))
+            });
+          });
+        // Reemplazar el array agrupado por el consolidado y ordenado
+        this.groupedActivitiesByDependency[depName] = consolidatedArr;
       }
     });
   }
@@ -947,6 +989,13 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         this.toastr.success('Actividad actualizada correctamente.', 'Éxito');
         
         // Regenerar consolidado después de guardar
+        // Ordenar actividades por correlativeCode antes de consolidar
+        this.prestacionesEconomicasActivities.sort((a, b) => {
+          if (a.correlativeCode && b.correlativeCode) {
+            return a.correlativeCode.toString().localeCompare(b.correlativeCode.toString());
+          }
+          return 0;
+        });
         this.generateConsolidatedActivities();
       },
       error: (err: any) => {
@@ -979,6 +1028,13 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
             a.idOperationalActivity !== activity.idOperationalActivity
           );
           this.groupActivitiesByDependency();
+          // Ordenar actividades por correlativeCode antes de consolidar
+          this.prestacionesEconomicasActivities.sort((a, b) => {
+            if (a.correlativeCode && b.correlativeCode) {
+              return a.correlativeCode.toString().localeCompare(b.correlativeCode.toString());
+            }
+            return 0;
+          });
           this.generateConsolidatedActivities(); // Regenerar consolidado
           this.toastr.success('Actividad eliminada correctamente.', 'Éxito');
         },
@@ -1755,10 +1811,18 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         
         const totalMonthlyBudget = consolidatedItem.consolidatedBudgets?.reduce((sum: number, budget: number) => sum + (budget || 0), 0) || 0;
         
+        // Asignar correlativeCode según subsidio
+        let correlativeCode = '';
+        const nameLower = (consolidatedItem.name || '').toLowerCase();
+        if (nameLower.includes('incapacidad temporal')) correlativeCode = '001';
+        else if (nameLower.includes('maternidad')) correlativeCode = '002';
+        else if (nameLower.includes('lactancia')) correlativeCode = '003';
+        else if (nameLower.includes('sepelio')) correlativeCode = '004';
+
         const newActivity: OperationalActivity = {
           idOperationalActivity: undefined,
           sapCode: '',
-          correlativeCode: '',
+          correlativeCode,
           name: consolidatedItem.name || `Nueva Actividad Consolidada ${index + 1}`,
           description: `[AUTO] Nueva actividad generada automáticamente desde consolidado. Agrupa ${consolidatedItem.activityCount} actividades.`,
           measurementUnit: consolidatedItem.measurementUnit || '',
@@ -1807,6 +1871,13 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     });
 
     if (updatedActivities.length > 0) {
+      // Ordenar por correlativeCode antes de emitir
+      updatedActivities.sort((a, b) => {
+        if (a.correlativeCode && b.correlativeCode) {
+          return a.correlativeCode.toString().localeCompare(b.correlativeCode.toString());
+        }
+        return 0;
+      });
       // Emitir las actividades actualizadas al componente padre para actualización física
       this.activitiesCreated.emit(updatedActivities);
       

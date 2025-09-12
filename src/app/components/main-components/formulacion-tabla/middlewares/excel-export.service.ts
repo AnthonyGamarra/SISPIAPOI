@@ -628,13 +628,18 @@ export class ExcelExportService {
       }
       // Total Metas
       row.getCell(15).value = { formula: `SUM(C${currentRow}:N${currentRow})` };
-      // Presupuestos mensuales con fórmula SUMIF
+      // Presupuestos mensuales con fórmula SUMIF (12 meses, aunque fuente solo tenga hasta octubre)
       for (let m = 0; m < 12; m++) {
-        // Columna en hoja consolidado: 16 + m
-        // Columna en hoja detallada: 17 + m
         const colConsolidado = 16 + m;
         const colDetallado = 17 + m;
-        const colLetterDetallado = String.fromCharCode(65 + colDetallado - 1);
+        // Obtener la letra de columna Excel (A-Z, AA, AB)
+        let colLetterDetallado = '';
+        if (colDetallado <= 26) {
+          colLetterDetallado = String.fromCharCode(65 + colDetallado - 1);
+        } else {
+          // Para AA (27) y AB (28)
+          colLetterDetallado = 'A' + String.fromCharCode(65 + (colDetallado - 27));
+        }
         row.getCell(colConsolidado).value = {
           formula: `SUMIF('Plantilla Prestaciones'!$B$${detalleStartRow}:$B$${detalleEndRow}, $A${currentRow}, 'Plantilla Prestaciones'!$${colLetterDetallado}$${detalleStartRow}:$${colLetterDetallado}$${detalleEndRow})`
         };

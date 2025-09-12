@@ -1087,10 +1087,11 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
     // Agregar solo las nuevas actividades temporales
     if (newActivities.length > 0) {
-  this.products = [...this.products, ...newActivities];
-  // Mantener orden por correlativeCode
-  this.sortProductsByCorrelative();
+      this.products = [...this.products, ...newActivities];
     }
+
+    // Reordenar productos por correlativeCode después de cualquier actualización o creación
+    this.sortProductsByCorrelative();
 
     // Actualizar el contador de actividades
     this.activitiesCountChanged.emit(this.products.length);

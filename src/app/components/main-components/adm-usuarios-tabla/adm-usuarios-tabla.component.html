@@ -25,7 +25,7 @@
       <p-tabView #tabView [activeIndex]="currentActiveTabIndex" (onChange)="onTabChange($event)">
         <p-tabPanel *ngFor="let role of availableRoles" [header]="role.name + ' (' + (usersByRole[role.idRole] ? usersByRole[role.idRole].length : 0) + ')'">
           <p-table [value]="usersByRole[role.idRole] || []" stripedRows showGridlines [resizableColumns]="true" [scrollable]="true"
-            scrollHeight="620px" columnResizeMode="expand" dataKey="idUser" editMode="row" [paginator]="true" [rows]="9"
+            scrollHeight="630px" columnResizeMode="expand" dataKey="idUser" editMode="row" [paginator]="true" [rows]="9"
             [rowHover]="true" [editingRowKeys]="editingRowKeys">
 
             <ng-template pTemplate="header" class="table-header">
