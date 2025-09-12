@@ -6,6 +6,8 @@ export interface HealthOperationalActivitySummaryDTO {
   strategicActionName: string;
   activityFamilyName: string;
   measurementUnit: string;
+  codCenSes: string;
+  desCenSes: string;
   
   // Goals by quarter
   goalQ1: number;

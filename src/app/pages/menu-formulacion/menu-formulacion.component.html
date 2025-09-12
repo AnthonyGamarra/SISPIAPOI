@@ -1,7 +1,7 @@
 <app-menubar></app-menubar>
 <div class="modulos">
     <app-formulacion-central-modulo *ngIf="showCentral"></app-formulacion-central-modulo>
-    <!-- <app-formulacion-desconcentrado-modulo *ngIf="showDesconcentrado"></app-formulacion-desconcentrado-modulo> -->
+    <app-formulacion-desconcentrado-modulo *ngIf="showDesconcentrado"></app-formulacion-desconcentrado-modulo>
     <div *ngIf="!showCentral && !showDesconcentrado" class="no-access-message">
         <p>No tiene acceso a ningún módulo de formulación.</p>
     </div>

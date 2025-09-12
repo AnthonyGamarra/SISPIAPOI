@@ -384,9 +384,9 @@ label {
   .total-cell {
     background-color: #e9ecef !important;
     color: #00529B !important;
-    font-size: 0.9em !important;
     font-weight: bold !important;
     text-align: end !important;
+    padding: 15px 5px !important;
   }
 }
 
@@ -405,7 +405,7 @@ label {
   max-width: 480px;
   
   .description-text {
-    text-align: justify;
+    text-align: start;
     line-height: 1.4;
     margin-bottom: 0.5rem;
     word-wrap: break-word;

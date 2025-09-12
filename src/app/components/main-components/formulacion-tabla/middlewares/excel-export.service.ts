@@ -588,37 +588,59 @@ export class ExcelExportService {
       }
     });
 
-    // Crear una fila por cada subsidio único
-    Object.keys(subsidyGroups).forEach(subsidyName => {
+    // Orden específico de subsidios (asegurando trim y lower)
+    const orderedSubsidiesRaw = [
+      'Incapacidad Temporal',
+      'Maternidad',
+      'Lactancia',
+      'Sepelio'
+    ];
+    const orderedSubsidies = orderedSubsidiesRaw.map(s => s.trim().toLowerCase());
+    // Subsidios en el orden especificado primero, luego los demás
+    const allSubsidies = [
+      ...Object.keys(subsidyGroups)
+        .filter(name => orderedSubsidies.includes((name || '').trim().toLowerCase()))
+        .sort((a, b) => orderedSubsidies.indexOf((a || '').trim().toLowerCase()) - orderedSubsidies.indexOf((b || '').trim().toLowerCase())),
+      ...Object.keys(subsidyGroups)
+        .filter(name => !orderedSubsidies.includes((name || '').trim().toLowerCase()))
+        .sort()
+    ];
+
+    // Rango de filas de la hoja detallada
+    const detalleStartRow = 4;
+    const detalleEndRow = 250;
+    allSubsidies.forEach(subsidyName => {
       const subsidyActivities = subsidyGroups[subsidyName];
-      
-      // Consolidar metas y presupuestos
-      const consolidatedGoals = Array(12).fill(0);
-      const consolidatedBudgets = Array(12).fill(0);
-      
-      subsidyActivities.forEach(activity => {
-        activity.monthlyGoals?.forEach((goal, index) => {
-          consolidatedGoals[index] += goal.value || 0;
-        });
-        activity.monthlyBudgets?.forEach((budget, index) => {
-          consolidatedBudgets[index] += budget.value || 0;
-        });
-      });
-      
-      const consolidatedRow = [
-        subsidyName,
-        subsidyActivities[0]?.measurementUnit || 'Unidad',
-        ...consolidatedGoals,
-        '',
-        ...consolidatedBudgets,
-        ''
-      ];
-      
       const row = consolidatedSheet.getRow(currentRow);
-      consolidatedRow.forEach((data, colIndex) => {
-        row.getCell(colIndex + 1).value = data;
-      });
-      
+      // Subsidio y unidad de medida
+      row.getCell(1).value = subsidyName;
+      row.getCell(2).value = subsidyActivities[0]?.measurementUnit || 'Unidad';
+      // Metas mensuales con fórmula SUMIF
+      for (let m = 0; m < 12; m++) {
+        // Columna en hoja consolidado: 3 + m
+        // Columna en hoja detallada: 4 + m
+        const colConsolidado = 3 + m;
+        const colDetallado = 4 + m;
+        const colLetterDetallado = String.fromCharCode(65 + colDetallado - 1); // Excel column letter
+        row.getCell(colConsolidado).value = {
+          formula: `SUMIF('Plantilla Prestaciones'!$B$${detalleStartRow}:$B$${detalleEndRow}, $A${currentRow}, 'Plantilla Prestaciones'!$${colLetterDetallado}$${detalleStartRow}:$${colLetterDetallado}$${detalleEndRow})`
+        };
+      }
+      // Total Metas
+      row.getCell(15).value = { formula: `SUM(C${currentRow}:N${currentRow})` };
+      // Presupuestos mensuales con fórmula SUMIF
+      for (let m = 0; m < 12; m++) {
+        // Columna en hoja consolidado: 16 + m
+        // Columna en hoja detallada: 17 + m
+        const colConsolidado = 16 + m;
+        const colDetallado = 17 + m;
+        const colLetterDetallado = String.fromCharCode(65 + colDetallado - 1);
+        row.getCell(colConsolidado).value = {
+          formula: `SUMIF('Plantilla Prestaciones'!$B$${detalleStartRow}:$B$${detalleEndRow}, $A${currentRow}, 'Plantilla Prestaciones'!$${colLetterDetallado}$${detalleStartRow}:$${colLetterDetallado}$${detalleEndRow})`
+        };
+      }
+      // Total Presupuesto
+      row.getCell(28).value = { formula: `SUM(P${currentRow}:AA${currentRow})` };
       currentRow++;
     });
 

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -11,17 +11,21 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { FileUploadModule } from 'primeng/fileupload';
+import { FileUpload } from 'primeng/fileupload';
 import { ToastrService } from 'ngx-toastr';
+import { SafeUrlPipe } from '../../../../safe-url.pipe';
 
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
 import { DependencyService } from '../../../../core/services/logic/dependency.service';
 import { OperationalActivityService } from '../../../../core/services/logic/operational-activity.service';
+import { FormulationSupportFileService } from '../../../../core/services/logic/formulation-support-file.service';
 import { ExcelExportService } from '../middlewares/excel-export.service';
 import { ExcelImportService, ImportResult } from '../middlewares/excel-import.service';
 import { AuthService } from '../../../../core/services/authentication/auth.service';
 
 import { Formulation } from '../../../../models/logic/formulation.model';
 import { OperationalActivity } from '../../../../models/logic/operationalActivity.model';
+import { FormulationSupportFile } from '../../../../models/logic/formulationSupportFile.model';
 import { StrategicObjective } from '../../../../models/logic/strategicObjective.model';
 import { StrategicAction } from '../../../../models/logic/strategicAction.model';
 import { FinancialFund } from '../../../../models/logic/financialFund.model';
@@ -53,7 +57,8 @@ import { map } from 'rxjs/operators';
     InputTextModule,
     SelectModule,
     RadioButtonModule,
-    FileUploadModule
+    FileUploadModule,
+    SafeUrlPipe
   ]
 })
 export class FormulacionOspesTablaComponent implements OnDestroy {
@@ -79,6 +84,14 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   editingActivity: OperationalActivity | null = null;
   showMonthlyDetailsModal: boolean = false;
   selectedActivityForDetails: OperationalActivity | null = null;
+  // Sustento vinculado a la formulación de la dependencia con menor id
+  @ViewChild('supportFileUpload') supportFileUploadRef!: FileUpload;
+  hasSupportFile: boolean = false;
+  supportFileMetadata: FormulationSupportFile | null = null;
+  fileUploadingSupport: boolean = false;
+  selectedSupportFormulationId: number | null = null;
+  showDocumentViewer: boolean = false;
+  documentUrl: any = '';
   
   // Propiedades para vista consolidada
   showConsolidatedView: boolean = false;
@@ -114,6 +127,7 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private operationalActivityService = inject(OperationalActivityService);
+  private supportFileService = inject(FormulationSupportFileService);
   private excelExportService = inject(ExcelExportService);
   private excelImportService = inject(ExcelImportService);
   private authService = inject(AuthService);
@@ -277,6 +291,9 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
               f.modification === this.currentFormulation!.modification &&
               f.formulationType?.idFormulationType === 4 // Tipo de formulación para prestaciones económicas
             );
+
+            // Cargar metadatos del sustento asociado a la formulación de la dependencia con menor id
+            this.loadSupportForMinDependencyFormulation();
 
             if (this.prestacionesEconomicasFormulations.length === 0) {
               this.isLoading = false;
@@ -464,7 +481,24 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     });
     
     // Actualizar la lista de nombres de dependencias
+    // Ordenar las actividades dentro de cada dependencia por 'subsidio' (campo name) ascendente
     this.dependencyNamesList = Object.keys(this.groupedActivitiesByDependency);
+    const customOrder = ['incapacidad temporal', 'maternidad', 'lactancia', 'sepelio'];
+    this.dependencyNamesList.forEach(depName => {
+      const arr = this.groupedActivitiesByDependency[depName];
+      if (Array.isArray(arr)) {
+        arr.sort((a: OperationalActivity, b: OperationalActivity) => {
+          const na = (a.name || '').toString().toLowerCase().trim();
+          const nb = (b.name || '').toString().toLowerCase().trim();
+          const ia = customOrder.indexOf(na);
+          const ib = customOrder.indexOf(nb);
+          if (ia !== -1 && ib !== -1) return ia - ib;
+          if (ia !== -1) return -1;
+          if (ib !== -1) return 1;
+          return nb.localeCompare(na); // resto descendente
+        });
+      }
+    });
   }
 
   closeModal(): void {
@@ -504,6 +538,223 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
 
   getObjectKeysForActivities(): string[] {
     return Object.keys(this.groupedActivitiesByDependency || {});
+  }
+
+  // Buscar la formulación asociada a la dependencia de menor id y cargar su archivo de sustento (si existe)
+  private loadSupportForMinDependencyFormulation(): void {
+    if (!this.prestacionesEconomicasFormulations?.length) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+
+  // Encontrar la formulación cuya dependencia tenga el menor idDependency (numérico)
+  let minFormulation: any = null;
+    this.prestacionesEconomicasFormulations.forEach(f => {
+      if (f.dependency && f.dependency.idDependency !== undefined && f.dependency.idDependency !== null) {
+        if (!minFormulation || (f.dependency!.idDependency! < (minFormulation.dependency?.idDependency || Infinity))) {
+          minFormulation = f;
+        }
+      }
+    });
+
+    if (!minFormulation || !minFormulation.idFormulation) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+
+    this.selectedSupportFormulationId = minFormulation.idFormulation;
+
+    // Si la formulación ya trae metadatos en el objeto, usarlos; si no, intentar obtener por servicio
+    if (minFormulation.formulationSupportFile && minFormulation.formulationSupportFile.idFormulationSupportFile) {
+      this.hasSupportFile = true;
+      this.supportFileMetadata = minFormulation.formulationSupportFile as FormulationSupportFile;
+      return;
+    }
+
+    // Intentar cargar metadatos por idFormulation (si existe un endpoint o buscar por full formulation)
+    // Aquí asumimos que el backend devuelve metadatos junto a la formulación; si no, dejamos vacío
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+  }
+
+  // Manejo de selección de archivo de sustento (subida inicial)
+  onSupportFileSelect(event: any): void {
+    const file = event.files?.[0] || event.currentFiles?.[0];
+    if (!file || !this.selectedSupportFormulationId) {
+      this.toastr.warning('No se encontró formulación destino para subir el sustento.', 'Advertencia');
+      if (event.clear) event.clear();
+      return;
+    }
+
+    // Validaciones: tipo PDF y tamaño <= 5MB
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      this.toastr.error('Solo se permite subir archivos PDF.', 'Tipo de archivo incorrecto');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+
+    this.fileUploadingSupport = true;
+
+    // Si ya existe metadato, llamar a updateFile; si no, a uploadFile
+    if (this.supportFileMetadata && this.supportFileMetadata.idFormulationSupportFile) {
+      this.supportFileService.updateFile(this.selectedSupportFormulationId, file).subscribe({
+        next: () => {
+          this.toastr.success('Archivo de sustento actualizado correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error updating support file:', err);
+          this.toastr.error('Error al actualizar el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    } else {
+      this.supportFileService.uploadFile(file, this.selectedSupportFormulationId).subscribe({
+        next: (id) => {
+          this.toastr.success('Archivo de sustento subido correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error uploading support file:', err);
+          this.toastr.error('Error al subir el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    }
+  }
+
+  // Manejo de actualización del archivo de sustento
+  onSupportFileUpdate(event: any): void {
+    const file = event.files?.[0] || event.currentFiles?.[0];
+    if (!file || !this.selectedSupportFormulationId) {
+      this.toastr.warning('No se encontró formulación destino para actualizar el sustento.', 'Advertencia');
+      if (event.clear) event.clear();
+      return;
+    }
+
+    // Validaciones típicas: tamaño y tipo PDF
+    const maxSize = 5.1 * 1024 * 1024; // 5.1MB
+    if (file.size > maxSize) {
+      this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      this.toastr.error('Solo se permite subir archivos PDF.', 'Tipo de archivo incorrecto');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+
+    this.fileUploadingSupport = true;
+    this.supportFileService.updateFile(this.selectedSupportFormulationId, file).subscribe({
+      next: () => {
+        this.toastr.success('Archivo de sustento actualizado correctamente.', 'Éxito');
+        this.fileUploadingSupport = false;
+        this.loadPrestacionesEconomicasData();
+        if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      },
+      error: (err) => {
+        console.error('Error updating support file:', err);
+        this.toastr.error('Error al actualizar el archivo de sustento.', 'Error');
+        this.fileUploadingSupport = false;
+        if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      }
+    });
+  }
+
+  // Ver el archivo de sustento en un visor (si es PDF) o forzar descarga
+  viewSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      this.toastr.warning('No hay archivo de sustento disponible.', 'Advertencia');
+      return;
+    }
+
+    const fileId = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.getById(fileId).subscribe({
+      next: (fileDto) => {
+        if (fileDto && fileDto.file && fileDto.fileExtension) {
+          try {
+            const binaryString = window.atob(fileDto.file);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            const blob = new Blob([bytes.buffer], { type: fileDto.fileExtension });
+
+            const isPdf = fileDto.fileExtension === 'application/pdf' || fileDto.fileExtension === 'application/pdf; charset=utf-8';
+            if (isPdf) {
+              this.documentUrl = window.URL.createObjectURL(blob);
+              this.showDocumentViewer = true;
+              this.toastr.info('Cargando documento...', 'Información');
+            } else {
+              const fileName = fileDto.name || 'archivo';
+              const link = document.createElement('a');
+              link.href = window.URL.createObjectURL(blob);
+              link.download = fileName;
+              link.click();
+              window.URL.revokeObjectURL(link.href);
+              this.toastr.success('Archivo descargado correctamente.', 'Éxito');
+            }
+          } catch (e) {
+            console.error('Error decoding or creating blob:', e);
+            this.toastr.error('Error al procesar el archivo de sustento.', 'Error');
+          }
+        } else {
+          this.toastr.warning('Los datos del archivo están incompletos.', 'Advertencia');
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching support file DTO:', err);
+        this.toastr.error('Error al cargar el archivo de sustento.', 'Error');
+      }
+    });
+  }
+
+  // Borrar metadatos/archivo (si se requiere)
+  deleteSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      this.toastr.warning('No hay archivo para eliminar.', 'Advertencia');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de eliminar el archivo de sustento?')) return;
+
+    const id = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.deleteById(id).subscribe({
+      next: () => {
+        this.toastr.success('Archivo de sustento eliminado.', 'Éxito');
+        // Forzar recarga
+        this.loadPrestacionesEconomicasData();
+      },
+      error: (err) => {
+        console.error('Error deleting support file:', err);
+        this.toastr.error('Error al eliminar el archivo de sustento.', 'Error');
+      }
+    });
+  }
+
+  // Limpiar URL al cerrar visor
+  onDocumentViewerHide(): void {
+    if (this.documentUrl) {
+      window.URL.revokeObjectURL(this.documentUrl);
+      this.documentUrl = '';
+    }
+    this.showDocumentViewer = false;
   }
 
   getActivitiesForDependency(dependencyName: string): OperationalActivity[] {
@@ -1110,13 +1361,13 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     const name = originalName.toLowerCase().trim();
     
     if (name.includes('sepelio')) {
-      return 'Nombre de actividad para sepelio';
+      return 'Gestión de solicitudes para el pago de subsidios de Sepelio.';
     } else if (name.includes('maternidad')) {
-      return 'Nombre de actividad para maternidad';
+      return 'Gestión de solicitudes para el otorgamiento del pago de subsidios de Maternidad.';
     } else if (name.includes('incapacidad temporal')) {
-      return 'Nombre de actividad para incapacidad temporal';
+      return 'Gestión de solicitudes para el otorgamiento del pago de subsidios por Incapacidad Temporal.';
     } else if (name.includes('lactancia')) {
-      return 'Nombre de actividad para lactancia';
+      return 'Gestión de solicitudes para el pago de subsidios de Lactancia.';
     } else {
       // Para otros casos, mantener el nombre original con prefijo descriptivo
       return `Nombre de actividad para ${originalName.toLowerCase()}`;
@@ -1183,7 +1434,20 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     });
 
     this.consolidatedActivities = Array.from(groupedMap.values());
-    
+
+    // Ordenar consolidado por 'name' ascendente
+    const customOrder = ['incapacidad temporal', 'maternidad', 'lactancia', 'sepelio'];
+    this.consolidatedActivities.sort((a: any, b: any) => {
+      const na = (a.name || '').toString().toLowerCase().trim();
+      const nb = (b.name || '').toString().toLowerCase().trim();
+      const ia = customOrder.findIndex(sub => na.includes(sub));
+      const ib = customOrder.findIndex(sub => nb.includes(sub));
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return nb.localeCompare(na); // resto descendente
+    });
+
     // Verificar si hay cambios en el consolidado
     this.checkAndUpdateConsolidatedActivities();
   }
@@ -1354,15 +1618,23 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       // Calcular presupuesto total mensual para servicios
       const totalMonthlyBudget = consolidatedItem.consolidatedBudgets?.reduce((sum: number, budget: number) => sum + (budget || 0), 0) || 0;
       
+      // Asignar correlativeCode según subsidio
+      let correlativeCode = '';
+      const nameLower = (consolidatedItem.name || '').toLowerCase();
+      if (nameLower.includes('incapacidad temporal')) correlativeCode = '001';
+      else if (nameLower.includes('maternidad')) correlativeCode = '002';
+      else if (nameLower.includes('lactancia')) correlativeCode = '003';
+      else if (nameLower.includes('sepelio')) correlativeCode = '004';
+
       const newActivity: OperationalActivity = {
         idOperationalActivity: undefined, // Será asignado por el backend al crear físicamente
         sapCode: '',
-        correlativeCode: '',
+        correlativeCode,
         name: consolidatedItem.name || `Actividad Consolidada ${index + 1}`,
         description: `[AUTO] Actividad generada automáticamente desde consolidado. Agrupa ${consolidatedItem.activityCount} actividades.`,
         measurementUnit: consolidatedItem.measurementUnit || '',
         active: false, // Marcar como inactiva para identificar que es auto-generada
-        
+
         strategicAction: consolidatedItem.strategicAction ? {
           idStrategicAction: consolidatedItem.strategicAction.idStrategicAction,
           code: consolidatedItem.strategicAction.code,
@@ -1375,21 +1647,16 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
             endYear: consolidatedItem.strategicAction.strategicObjective.endYear
           } as StrategicObjective : {} as StrategicObjective
         } as StrategicAction : {} as StrategicAction,
-        
-        // Campos eliminados - van vacíos/nulos
-        // financialFund: undefined,
-        // managementCenter: undefined,
-        // costCenter: undefined,
-        // measurementType: undefined,
-        // priority: undefined,
-        
+
+        measurementType: { idMeasurementType: 1 } as MeasurementType,
+
         // Todo el presupuesto consolidado va a servicios
         goods: 0,
         remuneration: 0,
         services: totalMonthlyBudget,
-        
+
         formulation: this.currentFormulation!,
-        
+
         goals: this.convertMonthlyToQuarterlyGoals(consolidatedItem.consolidatedGoals || []),
         executedGoals: [
           { goalOrder: 1, value: 0, operationalActivity: {} } as any,
@@ -1397,7 +1664,7 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
           { goalOrder: 3, value: 0, operationalActivity: {} } as any,
           { goalOrder: 4, value: 0, operationalActivity: {} } as any
         ],
-        
+
         monthlyGoals: this.createMonthlyGoalsFromConsolidated(consolidatedItem.consolidatedGoals || []),
         monthlyBudgets: this.createMonthlyBudgetsFromConsolidated(consolidatedItem.consolidatedBudgets || [])
       };
@@ -1434,12 +1701,21 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
         // Calcular presupuesto total mensual para servicios
         const totalMonthlyBudget = consolidatedItem.consolidatedBudgets?.reduce((sum: number, budget: number) => sum + (budget || 0), 0) || 0;
         
+        // Asignar correlativeCode según subsidio
+        let correlativeCode = '';
+        const nameLower = (consolidatedItem.name || '').toLowerCase();
+        if (nameLower.includes('incapacidad temporal')) correlativeCode = '001';
+        else if (nameLower.includes('maternidad')) correlativeCode = '002';
+        else if (nameLower.includes('lactancia')) correlativeCode = '003';
+        else if (nameLower.includes('sepelio')) correlativeCode = '004';
+
         const updatedActivity: OperationalActivity = {
           ...activityToUpdate,
+          correlativeCode,
           name: consolidatedItem.name || `Actividad Consolidada ${index + 1}`,
           description: `[AUTO-UPD] Actividad actualizada automáticamente. Agrupa ${consolidatedItem.activityCount} actividades.`,
           measurementUnit: consolidatedItem.measurementUnit || activityToUpdate.measurementUnit,
-          
+
           strategicAction: consolidatedItem.strategicAction ? {
             idStrategicAction: consolidatedItem.strategicAction.idStrategicAction,
             code: consolidatedItem.strategicAction.code,
@@ -1452,22 +1728,22 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
               endYear: consolidatedItem.strategicAction.strategicObjective.endYear
             } as StrategicObjective : {} as StrategicObjective
           } as StrategicAction : activityToUpdate.strategicAction,
-          
+
           // Para actualizaciones: mantener los campos existentes de la actividad original
           financialFund: activityToUpdate.financialFund || undefined,
           managementCenter: activityToUpdate.managementCenter || undefined,
           costCenter: activityToUpdate.costCenter || undefined,
-          measurementType: activityToUpdate.measurementType || undefined,
+          measurementType: { idMeasurementType: 1 } as MeasurementType,
           priority: activityToUpdate.priority || undefined,
-          
+
           // Todo el presupuesto consolidado va a servicios
           goods: 0,
           remuneration: 0,
           services: totalMonthlyBudget,
-                    
+
           // Actualizar metas trimestrales basadas en las metas mensuales consolidadas
           goals: this.convertMonthlyToQuarterlyGoals(consolidatedItem.consolidatedGoals || []),
-          
+
           monthlyGoals: this.createMonthlyGoalsFromConsolidated(consolidatedItem.consolidatedGoals || []),
           monthlyBudgets: this.createMonthlyBudgetsFromConsolidated(consolidatedItem.consolidatedBudgets || [])
         };
@@ -1813,11 +2089,12 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       // Mapear datos importados a las actividades existentes del modal
       this.importPreviewData.forEach((importedActivity) => {
         // Buscar actividades existentes que coincidan
-        const matchingActivities = this.prestacionesEconomicasActivities.filter(activity => {
-          // Comparar por subsidio (nombre) y unidad de medida
-          return activity.name?.toLowerCase().trim() === importedActivity.subsidio?.toLowerCase().trim() &&
-                 activity.measurementUnit?.toLowerCase().trim() === importedActivity.measurementUnit?.toLowerCase().trim();
-        });
+          const matchingActivities = this.prestacionesEconomicasActivities.filter(activity => {
+            // Comparar por subsidio (nombre), unidad de medida y dependencia/OSPE
+            return activity.name?.toLowerCase().trim() === importedActivity.subsidio?.toLowerCase().trim() &&
+                   activity.measurementUnit?.toLowerCase().trim() === importedActivity.measurementUnit?.toLowerCase().trim() &&
+                   activity.formulation?.dependency?.name?.toLowerCase().trim() === importedActivity.dependencyName?.toLowerCase().trim();
+          });
 
         // Si se encuentran actividades coincidentes, actualizar sus datos
         if (matchingActivities.length > 0) {
@@ -1852,25 +2129,48 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
               matchedCount++;
             }
           });
+        } else {
+          // Si no hay coincidencias, crear nueva actividad con la dependencia/OSPE correcta
+          const newActivity: OperationalActivity = {
+            idOperationalActivity: undefined,
+            name: importedActivity.subsidio,
+            measurementUnit: importedActivity.measurementUnit,
+            monthlyGoals: importedActivity.monthlyGoals.map((value: number, idx: number) => ({
+              idMonthlyGoal: undefined,
+              goalOrder: idx + 1,
+              value,
+              operationalActivity: {} as OperationalActivity
+            })),
+            monthlyBudgets: importedActivity.monthlyBudgets.map((value: number, idx: number) => ({
+              idMonthlyBudget: undefined,
+              budgetOrder: idx + 1,
+              value,
+              operationalActivity: {} as OperationalActivity
+            })),
+            formulation: {
+              ...this.currentFormulation,
+              dependency: { name: importedActivity.dependencyName }
+            } as Formulation,
+            // ...otros campos necesarios del modelo
+          } as OperationalActivity;
+          activitiesToUpdate.push(newActivity);
         }
-      });
-
-      // Actualizar actividades en la base de datos
-      if (activitiesToUpdate.length > 0) {
-        this.importProgressMessage = `Encontradas ${activitiesToUpdate.length} actividades únicas para actualizar en base de datos...`;
-        this.updateActivitiesInDatabase(activitiesToUpdate, matchedCount);
-      } else {
-        this.isImporting = false;
-        this.toastr.warning('No se encontraron actividades coincidentes para actualizar.', 'Advertencia');
-        this.closeImportModal();
-      }
-
-    } catch (error) {
-      console.error('Error al actualizar datos del modal:', error);
+      }); // <-- Correctly closes forEach callback
+    // Actualizar actividades en la base de datos
+    if (activitiesToUpdate.length > 0) {
+      this.importProgressMessage = `Encontradas ${activitiesToUpdate.length} actividades únicas para actualizar en base de datos...`;
+      this.updateActivitiesInDatabase(activitiesToUpdate, matchedCount);
+    } else {
       this.isImporting = false;
-      this.toastr.error('Error al actualizar los datos del modal.', 'Error');
+      this.toastr.warning('No se encontraron actividades coincidentes para actualizar.', 'Advertencia');
+      this.closeImportModal();
     }
+  } catch (error) {
+    console.error('Error al actualizar datos del modal:', error);
+    this.isImporting = false;
+    this.toastr.error('Error al actualizar los datos del modal.', 'Error');
   }
+}
 
   private updateActivitiesInDatabase(activities: OperationalActivity[], expectedCount: number): void {
     const totalActivities = activities.length;

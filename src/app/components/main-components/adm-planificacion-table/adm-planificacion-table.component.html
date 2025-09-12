@@ -11,10 +11,12 @@
          </div>
       </div>
 
-      <!-- Loader mientras se cargan las formulaciones -->
-      <div *ngIf="isLoading" class="p-text-center p-mt-5 p-mb-5">
-         <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="8" fill="transparent" animationDuration="0.5s"></p-progressSpinner>
-         <p class="p-mt-3">Cargando formulaciones...</p>
+      <!-- Loader mientras se cargan las formulaciones (centrado vertical y horizontal) -->
+      <div *ngIf="isLoading" class="flex align-items-center justify-content-center" style="min-height:30vh;">
+         <div class="flex flex-column align-items-center">
+            <p-progressSpinner styleClass="w-4rem h-4rem" strokeWidth="8" fill="transparent" animationDuration="0.5s"></p-progressSpinner>
+            <p class="p-mt-3">Cargando formulaciones...</p>
+         </div>
       </div>
 
       <!-- Contenido principal (solo mostrar cuando no está cargando) -->
@@ -158,7 +160,16 @@
                                  <ng-container
                                     *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
                                     <th class="centered">Abierto desde</th>
-                                    <th class="centered">Activo</th>
+                                    <th class="centered">
+                                       <!-- Para Prestaciones Económicas (formulation type 4) mostrar checkbox en la cabecera que controle todos -->
+                                       <ng-container *ngIf="formTypeName === 'OODD PRESTACIONES ECONÓMICAS'; else normalHeader">
+                                          <p-checkbox [binary]="true"
+                                             [ngModel]="isHeaderActiveChecked(depTypeName, formTypeName, modNum)"
+                                             (onChange)="onHeaderActiveChange(depTypeName, formTypeName, modNum, $event)">
+                                          </p-checkbox>
+                                       </ng-container>
+                                       <ng-template #normalHeader>Activo</ng-template>
+                                    </th>
                                  </ng-container>
                               </tr>
                            </ng-template>
@@ -174,7 +185,8 @@
                                     <td class="centered">
                                        <p-checkbox *ngIf="unifiedRow.modifications[modNum]; else noFormulation"
                                           [(ngModel)]="unifiedRow.modifications[modNum].active" [binary]="true"
-                                          (onChange)="onActiveChange(unifiedRow.modifications[modNum], $event)">
+                                          (onChange)="onActiveChange(unifiedRow.modifications[modNum], $event)"
+                                          [disabled]="formTypeName === 'OODD PRESTACIONES ECONÓMICAS'">
                                        </p-checkbox>
                                        <ng-template #noFormulation>-</ng-template>
                                     </td>

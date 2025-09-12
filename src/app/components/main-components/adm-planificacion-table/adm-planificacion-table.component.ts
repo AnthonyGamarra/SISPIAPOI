@@ -991,6 +991,102 @@ export class AdmPlanificacionTableComponent implements OnInit {
     return item.dependencyName;
   }
 
+  // Devuelve true si TODOS los check de una columna (depTypeName, formTypeName, modNum) están activos
+  isHeaderActiveChecked(depTypeName: string, formTypeName: string, modNum: number): boolean {
+    const unified = this.getUnifiedFormulations(depTypeName, formTypeName);
+    if (!unified || unified.length === 0) return false;
+    for (const row of unified) {
+      const mod = row.modifications && row.modifications[modNum];
+      if (!mod || !mod.active) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Maneja el cambio desde el checkbox en la cabecera: confirma y aplica a todas las formulaciones de esa columna
+  onHeaderActiveChange(depTypeName: string, formTypeName: string, modNum: number, event: any): void {
+    const newChecked = event.checked;
+    // Capturar los estados previos de la columna para poder revertir si el usuario cancela
+    const unified = this.getUnifiedFormulations(depTypeName, formTypeName) || [];
+    const previousStates: { row: any; prevValue: boolean | null }[] = unified.map(row => {
+      const mod = row.modifications && row.modifications[modNum];
+      return { row, prevValue: mod ? !!mod.active : null };
+    });
+
+    this.confirmationService.confirm({
+      message: `¿Está seguro de ${newChecked ? 'activar' : 'desactivar'} las formulaciones para la modificatoria "${this.modificationLabels[modNum] || modNum}" de "${formTypeName}"?`,
+      header: 'Confirmar Cambio de Estado',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.applyBatchActiveChange(depTypeName, formTypeName, modNum, newChecked);
+      },
+      reject: () => {
+        // Revertir los estados locales al valor previo (no se hizo persistencia)
+        previousStates.forEach(entry => {
+          if (entry.prevValue !== null && entry.row.modifications && entry.row.modifications[modNum]) {
+            entry.row.modifications[modNum].active = entry.prevValue!;
+          }
+        });
+        // Forzar recálculo en caché / UI
+        const cacheKeys = [
+          `unifiedFormulations_${depTypeName}_${formTypeName}`,
+          `existingMods_${depTypeName}_${formTypeName}`,
+          `hasFormulations_${depTypeName}_${formTypeName}`
+        ];
+        cacheKeys.forEach(k => this.dataCache.delete(k));
+        // Recargar datos ligeramente después para asegurar re-render
+        setTimeout(() => this.loadInitialData(), 200);
+        this.toastr.info('Cambio de estado cancelado.', 'Cancelado');
+      },
+      rejectButtonProps: {
+        label: 'No',
+        icon: 'pi pi-times',
+        variant: 'outlined',
+        size: 'medium'
+      },
+      acceptButtonProps: {
+        label: 'Sí',
+        icon: 'pi pi-check',
+        size: 'medium'
+      },
+    });
+  }
+
+  // Aplica el cambio activo/inactivo a todas las formulaciones de una columna
+  private applyBatchActiveChange(depTypeName: string, formTypeName: string, modNum: number, newActiveState: boolean): void {
+    const unified = this.getUnifiedFormulations(depTypeName, formTypeName);
+    if (!unified || unified.length === 0) return;
+
+    // Recorremos y actualizamos en paralelo (pero respetando el service existente para cada formulación)
+    unified.forEach(row => {
+      const formulation: Formulation | undefined = row.modifications && row.modifications[modNum];
+      if (formulation) {
+        // Llamar al mismo flujo que onActiveChange pero sin confirmación individual
+        const newFormulationStateId = newActiveState ? 3 : 4;
+        this.formulationService.changeActiveStatus(formulation.idFormulation!, newActiveState).subscribe({
+          next: (updatedFormulation) => {
+            Object.assign(formulation, updatedFormulation);
+            this.formulationService.changeFormulationState(formulation.idFormulation!, newFormulationStateId).subscribe({
+              next: (updatedStateFormulation) => {
+                formulation.formulationState = updatedStateFormulation.formulationState;
+              },
+              error: (err) => {
+                console.error('Error updating formulation state in batch', err);
+              }
+            });
+          },
+          error: (err) => {
+            console.error('Error updating formulation active state in batch', err);
+          }
+        });
+      }
+    });
+
+    // Después de iniciar las requests, recargar los datos para sincronizar la UI
+    setTimeout(() => this.loadInitialData(), 800);
+  }
+
   // << NUEVO: Método para navegar a prestaciones de salud en nueva pestaña
   private navigateToActividadesSalud(): void {
     window.open('/gestion/adm-maestro-gcps', '_blank');

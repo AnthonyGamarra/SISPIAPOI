@@ -450,8 +450,8 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
       next: (data) => {
         // Ordenar por activity.correlativeCode (ascendente)
         data.sort((a, b) => {
-          const codeA = a.idOperationalActivity?.toString() || '';
-          const codeB = b.idOperationalActivity?.toString() || '';
+          const codeA = (a.correlativeCode || '').toString();
+          const codeB = (b.correlativeCode || '').toString();
           return codeA.localeCompare(codeB, undefined, { numeric: true });
         });
 
@@ -478,8 +478,10 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
           return activity;
         });
-        this.isLoadingActivities = false;
-        this.activitiesCountChanged.emit(this.products.length);
+  // Assign mapped activities and ensure consistent ordering by correlativeCode
+  this.isLoadingActivities = false;
+  this.sortProductsByCorrelative();
+  this.activitiesCountChanged.emit(this.products.length);
       },
       error: () => {
         this.toastr.error('Error al cargar actividades operativas.', 'Error');
@@ -1085,7 +1087,9 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
 
     // Agregar solo las nuevas actividades temporales
     if (newActivities.length > 0) {
-      this.products = [...this.products, ...newActivities];
+  this.products = [...this.products, ...newActivities];
+  // Mantener orden por correlativeCode
+  this.sortProductsByCorrelative();
     }
 
     // Actualizar el contador de actividades
@@ -1167,10 +1171,12 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
           if (tempIndex >= 0) {
             this.products[tempIndex] = createdActivity;
             this.products = [...this.products]; // Forzar detección de cambios
+            this.sortProductsByCorrelative();
           } else {
             // Si no se encuentra, agregar la actividad creada
             this.products.push(createdActivity);
             this.products = [...this.products];
+            this.sortProductsByCorrelative();
           }
         },
         error: (err) => {
@@ -1287,6 +1293,20 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     product.priority.idPriority = value ?? undefined;
   }
 
+  // Ordenar products por correlativeCode asc (si existe), dejando nulos al final
+  private sortProductsByCorrelative(): void {
+    if (!this.products || !Array.isArray(this.products)) return;
+    this.products.sort((a, b) => {
+      const ca = (a.correlativeCode || '').toString();
+      const cb = (b.correlativeCode || '').toString();
+      if (!ca && !cb) return 0;
+      if (!ca) return 1; // vacíos al final
+      if (!cb) return -1;
+      return ca.localeCompare(cb, undefined, { numeric: true });
+    });
+    this.products = [...this.products]; // trigger change detection
+  }
+
   // << NUEVO: Método para calcular total en trimestre basado en goals
   calculateQuarterlyTotalFromGoals(operationalActivity: OperationalActivity): number {
     if (!operationalActivity?.goals || !operationalActivity?.measurementType) {
@@ -1361,14 +1381,53 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
     this.selectedActivityName = '';
   }
 
+  // Helper: compute adjusted length where a single space ' ' counts as 3 characters
+  private adjustedLength(text: string): number {
+    if (!text) return 0;
+    let len = 0;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === ' ' || ch === '\t') {
+        len += 7; // espacios cuentan como 5
+      } else if (ch === '\n' || ch === '\r') {
+        len += 45; // saltos de línea cuentan como 10
+      } else {
+        len += 1;
+      }
+    }
+    return len;
+  }
+
   // Método para truncar texto y detectar si necesita "Ver más"
+  // Ahora los espacios ' ' se cuentan como 3 unidades en la longitud
   getTruncatedDescription(description: string, maxLength: number = 150): string {
     if (!description) return '';
-    return description.length > maxLength ? description.substring(0, maxLength) + '...' : description;
+
+    let acc = 0;
+    let i = 0;
+    for (; i < description.length; i++) {
+      const ch = description[i];
+      if (ch === ' ' || ch === '\t') {
+        acc += 8;
+      } else if (ch === '\n' || ch === '\r') {
+        acc += 50;
+      } else {
+        acc += 1;
+      }
+      if (acc > maxLength) break;
+    }
+
+    // Si no excede, devolver el texto completo
+    if (i >= description.length) return description;
+
+    // Devolver la porción que cabe según el conteo ajustado
+    const truncated = description.substring(0, i);
+    return truncated + '...';
   }
 
   shouldShowViewMore(description: string, maxLength: number = 150): boolean {
-    return !!(description && description.length > maxLength);
+    if (!description) return false;
+    return this.adjustedLength(description) > maxLength;
   }
 
 }
