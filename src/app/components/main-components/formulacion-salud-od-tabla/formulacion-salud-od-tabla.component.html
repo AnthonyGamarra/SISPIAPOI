@@ -17,6 +17,20 @@
       class="add-button"></button>
     <button pButton label="Mensual" (click)="setViewMode('mensual')" [disabled]="isMensual"
       class="add-button"></button>
+    <!-- Export buttons -->
+    <div class="ml-4 flex items-center gap-2">
+      <p-button label="Exportar T.Consol. (All)" icon="pi pi-file-excel" (onClick)="exportTrimestralConsolidadoNivel('ALL')" styleClass="p-button-success"></p-button>
+      <p-button label="Exportar T.Detallado (All)" icon="pi pi-file-excel" (onClick)="exportTrimestralDetalladoNivel('ALL')" styleClass="p-button-warning"></p-button>
+      <p-button label="Exportar M.Consol. (All)" icon="pi pi-file-excel" (onClick)="exportMensualConsolidadoNivel('ALL')" styleClass="p-button-success"></p-button>
+      <p-button label="Exportar M.Detallado (All)" icon="pi pi-file-excel" (onClick)="exportMensualDetalladoNivel('ALL')" styleClass="p-button-warning"></p-button>
+      <!-- Quick per-level exports -->
+      <div class="ml-2">
+        <small class="text-sm">Nivel:</small>
+        <p-button label="I" (onClick)="exportTrimestralConsolidadoNivel('I')" styleClass="p-button-text"></p-button>
+        <p-button label="II" (onClick)="exportTrimestralConsolidadoNivel('II')" styleClass="p-button-text"></p-button>
+        <p-button label="III" (onClick)="exportTrimestralConsolidadoNivel('III')" styleClass="p-button-text"></p-button>
+      </div>
+    </div>
   </div>
 
   <!-- Loader de filtrado -->
@@ -191,7 +205,7 @@
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
-          <td>{{ row.unidadMedida }}</td>
+            <td>Atenciones</td>
           <!-- Render metas (12) then Total Metas immediately after metas, then presupuesto (12) -->
           <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
           <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
@@ -395,7 +409,7 @@
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
-          <td>{{ row.unidadMedida }}</td>
+            <td>Atenciones</td>
           <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
           <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
           <td *ngFor="let m of row.meses" class="montos">{{ formatCurrency(m.presupuesto) }}</td>
@@ -618,7 +632,7 @@
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
-          <td>{{ row.unidadMedida }}</td>
+            <td>Atenciones</td>
           <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
           <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
           <td *ngFor="let m of row.meses" class="montos">{{ formatCurrency(m.presupuesto) }}</td>

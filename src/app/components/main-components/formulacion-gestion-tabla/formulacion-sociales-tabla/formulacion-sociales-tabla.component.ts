@@ -108,7 +108,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   displayModal: boolean = false;
   prestacionesEconomicasFormulations: Formulation[] = [];
   prestacionesEconomicasActivities: OperationalActivity[] = [];
-  // Copia sin filtrar de las actividades (se usa para exportar incluyendo actividades con todos los meses en 0)
+  // Mantener una copia sin filtrar para export (incluye actividades con monthly zeros)
   originalPrestacionesEconomicasActivities: OperationalActivity[] = [];
   groupedActivitiesByDependency: { [dependencyName: string]: { [familyName: string]: OperationalActivity[] } } = {};
   dependencyNamesList: string[] = [];
@@ -119,9 +119,24 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   
   // Propiedades para vista consolidada
   showConsolidatedView: boolean = false;
+  showQuarterlyView: boolean = false;
   consolidatedActivities: any[] = [];
   consolidatedActivitiesByFamily: { [familyName: string]: any[] } = {}; // Nueva propiedad para agrupar por familia
   consolidatedFamilyNames: string[] = []; // Lista de nombres de familias para iteración
+  
+  // Filter control for dependencies under the 'Vista' controls
+  selectedDependencyFilter: string | null = null;
+
+  get dependencyOptions(): { label: string; value: string }[] {
+    return (this.dependencyNamesList || []).map(d => ({ label: d, value: d }));
+  }
+
+  // Return dependency names filtered by the selectedDependencyFilter (case-insensitive)
+  getFilteredDependencyNames(): string[] {
+    if (!this.selectedDependencyFilter) return this.dependencyNamesList || [];
+    const q = this.selectedDependencyFilter.toLowerCase();
+    return (this.dependencyNamesList || []).filter(d => d.toLowerCase().includes(q));
+  }
   
   // Propiedades para importación de Excel
   showImportModal: boolean = false;
@@ -148,6 +163,8 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   private lastActivitiesHash: string = ''; // Para detectar cambios en actividades originales
   private observationInterval: any = null; // Para observación periódica
   private isUpdatingActivities: boolean = false; // Para evitar actualizaciones concurrentes
+  // Cache temporal para actividades actualizadas por importación
+  private importUpdatedActivitiesCache: OperationalActivity[] = [];
 
   private toastr = inject(ToastrService);
   private formulationService = inject(FormulationService);
@@ -174,11 +191,11 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
         return;
       }
 
-  this.displayModal = true;
-  this.loadFormulationStates(); // Cargar estados disponibles
-  this.loadPrestacionesEconomicasDataForCurrentDependency(); // Solo cargar para la dependencia actual
-  this.loadOrderedActivityDetailNames(); // Cargar orden de ActivityDetail
-  this.startAutoObservation(); // Iniciar observación automática
+      this.displayModal = true;
+      this.loadFormulationStates(); // Cargar estados disponibles
+    this.loadPrestacionesEconomicasData();
+    this.loadOrderedActivityDetailNames(); // Cargar orden de ActivityDetail
+    this.startAutoObservation(); // Iniciar observación automática
   }
 
   // Obtiene y ordena los nombres de ActivityDetail según la lógica solicitada
@@ -189,7 +206,8 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
         const filtered = details.filter((d: ActivityDetail) => d.formulationType?.idFormulationType === 5);
         // Ordenar únicamente por idActivityDetail asc
         filtered.sort((a: ActivityDetail, b: ActivityDetail) => (a.idActivityDetail ?? 0) - (b.idActivityDetail ?? 0));
-        this.orderedActivityDetails = filtered;
+        this.orderedActivityDetails = filtered.sort((a: ActivityDetail, b: ActivityDetail) => (a.idActivityDetail ?? 0) - (b.idActivityDetail ?? 0));
+        console.log('Detalles de actividad ordenados por idActivityDetail:', this.orderedActivityDetails);
         this.orderedActivityDetailNames = filtered.map((d: ActivityDetail) => d.name);
         this.orderedActivityDetailMU = filtered.map((d: ActivityDetail) => d.measurementUnit ? d.measurementUnit : '');
         console.log('Orden de ActivityDetail.name (solo id asc):', this.orderedActivityDetailNames, this.orderedActivityDetailMU);
@@ -244,7 +262,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   // Método público para recargar datos desde el componente padre
   public reloadData(): void {
     if (this.displayModal && this.currentFormulation?.year && this.currentFormulation?.modification) {
-      this.loadPrestacionesEconomicasDataForCurrentDependency();
+      this.loadPrestacionesEconomicasData();
     }
   }
 
@@ -336,115 +354,194 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     }
   }
 
-  // NUEVO: Solo cargar formulaciones de la dependencia actual
-  private loadPrestacionesEconomicasDataForCurrentDependency(): void {
-    if (!this.currentFormulation?.year || !this.currentFormulation?.modification || !this.currentFormulation?.dependency?.idDependency) {
+  private loadPrestacionesEconomicasData(): void {
+    if (!this.currentFormulation?.year || !this.currentFormulation?.modification) {
       return;
     }
+
+    // Cuando se obtienen las actividades, llamar a orderOperationalActivities
+    // Ejemplo (dentro del next del observable):
+    // this.prestacionesEconomicasActivities = activities;
+    // this.orderOperationalActivities();
+
     this.isLoading = true;
-    // Obtener solo la formulación de la dependencia actual
-    this.formulationService.searchByDependencyAndYear(
-      this.currentFormulation.dependency.idDependency,
-      this.currentFormulation.year
-    ).subscribe({
-      next: (formulations: Formulation[]) => {
-        // Filtrar por modificación y tipo de formulación
-        const filtered = (formulations || []).filter(f => 
-          f.modification === this.currentFormulation!.modification &&
-          f.formulationType?.idFormulationType === 5 // Tipo de formulación para prestaciones sociales
-        );
-        if (filtered.length > 0) {
-          const formulation = filtered[0];
-          this.prestacionesEconomicasFormulations = [formulation];
-          // Obtener actividades de la formulación
-          this.operationalActivityService.searchByFormulation(formulation.idFormulation!).subscribe({
-            next: (activities: OperationalActivity[]) => {
-              const mapped = activities.map((activity) => {
-                // Crear objeto SIMPLE sin referencias profundas
-                const cleanActivity: OperationalActivity = {
-                  idOperationalActivity: activity.idOperationalActivity,
-                  name: activity.name,
-                  measurementUnit: activity.measurementUnit,
-                  description: activity.description,
-                  sapCode: activity.sapCode,
-                  correlativeCode: activity.correlativeCode,
-                  active: activity.active,
-                  goods: activity.goods,
-                  remuneration: activity.remuneration,
-                  services: activity.services,
-                  activityFamily: activity.activityFamily,
-                  managementCenter: activity.managementCenter ? {
-                    idManagementCenter: activity.managementCenter.idManagementCenter,
-                    name: activity.managementCenter.name
-                  } as ManagementCenter : undefined,
-                  costCenter: activity.costCenter ? {
-                    idCostCenter: activity.costCenter.idCostCenter,
-                    name: activity.costCenter.name
-                  } as CostCenter : undefined,
-                  financialFund: activity.financialFund ? {
-                    idFinancialFund: activity.financialFund.idFinancialFund,
-                    name: activity.financialFund.name
-                  } as FinancialFund : undefined,
-                  priority: activity.priority ? {
-                    idPriority: activity.priority.idPriority,
-                    name: activity.priority.name
-                  } as Priority : undefined,
-                  measurementType: activity.measurementType ? {
-                    idMeasurementType: activity.measurementType.idMeasurementType,
-                    name: activity.measurementType.name
-                  } as MeasurementType : undefined,
-                  strategicAction: activity.strategicAction ? {
-                    idStrategicAction: activity.strategicAction.idStrategicAction,
-                    code: activity.strategicAction.code,
-                    name: activity.strategicAction.name,
-                    strategicObjective: activity.strategicAction.strategicObjective ? {
-                      idStrategicObjective: activity.strategicAction.strategicObjective.idStrategicObjective,
-                      name: activity.strategicAction.strategicObjective.name,
-                      code: activity.strategicAction.strategicObjective.code
-                    } as StrategicObjective : undefined
-                  } as StrategicAction : undefined,
-                  formulation: {
-                    idFormulation: activity.formulation?.idFormulation,
-                    dependency: {
-                      name: this.currentFormulation?.dependency?.name || 'Sin dependencia'
-                    }
-                  } as Formulation,
-                  monthlyGoals: this.createCleanMonthlyGoals(activity.monthlyGoals || []),
-                  monthlyBudgets: this.createCleanMonthlyBudgets(activity.monthlyBudgets || [])
-                };
-                return cleanActivity;
-              });
+    
+    // Primero obtener todas las dependencias con dependencyType = 2 y ospe = true
+    this.dependencyService.getAll().subscribe({
+      next: (allDependencies) => {
+          // Filtrar dependencias de tipo 2, ospe = false y social = true
+          const prestacionesEconomicasDependencies = allDependencies.filter(dep => 
+            dep.dependencyType?.idDependencyType === 2 && 
+            dep.ospe === false && dep.social === true
+          );
 
-              // Guardar copia original (sin filtrar) para exportar incluyendo actividades vacías
-              this.originalPrestacionesEconomicasActivities = mapped;
+          if (prestacionesEconomicasDependencies.length === 0) {
+            this.isLoading = false;
+            this.prestacionesEconomicasFormulations = [];
+            this.prestacionesEconomicasActivities = [];
+            this.toastr.info('No se encontraron dependencias de prestaciones sociales.', 'Información');
+            return;
+          }
 
-              // Filtrar actividades vacías para la UI
-              this.prestacionesEconomicasActivities = mapped.filter(a => !this.isActivityEmpty(a));
+          // Buscar solo la formulación de tipo 5 con la dependencia que viene del componente
+          const currentDependencyId = this.currentFormulation?.dependency?.idDependency;
+          if (!currentDependencyId) {
+            this.isLoading = false;
+            this.prestacionesEconomicasFormulations = [];
+            this.prestacionesEconomicasActivities = [];
+            this.toastr.info('No se encontró la dependencia actual en la formulación.', 'Información');
+            return;
+          }
 
-              this.groupActivitiesByDependency();
-              this.generateConsolidatedActivities();
-              this.lastActivitiesHash = this.createOriginalActivitiesHash();
-              if (this.consolidatedActivities.length > 0) {
-                setTimeout(() => {
-                  this.cleanDuplicateAutoGeneratedActivities();
-                }, 1000);
-              }
+          // Buscar la dependencia filtrada
+          const currentDependency = prestacionesEconomicasDependencies.find(dep => dep.idDependency === currentDependencyId);
+          if (!currentDependency) {
+            this.isLoading = false;
+            this.prestacionesEconomicasFormulations = [];
+            this.prestacionesEconomicasActivities = [];
+            this.toastr.info('La dependencia actual no es de prestaciones sociales.', 'Información');
+            return;
+          }
+
+          // Buscar formulaciones para la dependencia actual, año y modificación especificados
+          this.formulationService.searchByDependencyAndYear(currentDependencyId, this.currentFormulation!.year!).subscribe({
+            next: (formulations: Formulation[]) => {
+              // Filtrar por modificación y tipo de formulación 5
+              this.prestacionesEconomicasFormulations = formulations.filter(f => 
+                f.modification === this.currentFormulation!.modification &&
+                f.formulationType?.idFormulationType === 5
+              );
+
+            if (this.prestacionesEconomicasFormulations.length === 0) {
               this.isLoading = false;
-            },
-            error: () => {
               this.prestacionesEconomicasActivities = [];
-              this.isLoading = false;
+              this.toastr.info('No se encontraron formulaciones de prestaciones sociales para el año y modificación seleccionados.', 'Información');
+              return;
             }
-          });
-        } else {
-          this.prestacionesEconomicasFormulations = [];
-          this.prestacionesEconomicasActivities = [];
-          this.isLoading = false;
-        }
+
+            // Cargar actividades operativas para todas las formulaciones encontradas
+            const activityRequests: Observable<OperationalActivity[]>[] = this.prestacionesEconomicasFormulations.map(f => 
+              this.operationalActivityService.searchByFormulation(f.idFormulation!)
+            );
+
+            forkJoin(activityRequests).subscribe({
+              next: (activityArrays) => {
+                // Combinar todas las actividades y crear objetos SIMPLES sin referencias circulares
+                const mapped = activityArrays.flat().map((activity) => {
+                  // Encontrar el nombre de la dependencia directamente aquí
+                  const formulation = this.prestacionesEconomicasFormulations.find(f => 
+                    f.idFormulation === activity.formulation?.idFormulation
+                  );
+                  const dependencyName = formulation?.dependency?.name || 'Sin dependencia';
+                  
+                  // Crear objeto SIMPLE sin referencias profundas
+                  const cleanActivity: OperationalActivity = {
+                    // IDs y propiedades básicas
+                    idOperationalActivity: activity.idOperationalActivity,
+                    name: activity.name,
+                    measurementUnit: activity.measurementUnit,
+                    description: activity.description,
+                    sapCode: activity.sapCode,
+                    correlativeCode: activity.correlativeCode,
+                    active: activity.active,
+                    goods: activity.goods,
+                    remuneration: activity.remuneration,
+                    services: activity.services,
+                    activityFamily: activity.activityFamily,
+                    
+                    // Objetos relacionados SOLO con IDs y nombres - SIN referencias circulares
+                    managementCenter: activity.managementCenter ? {
+                      idManagementCenter: activity.managementCenter.idManagementCenter,
+                      name: activity.managementCenter.name
+                    } as ManagementCenter : undefined,
+                    
+                    costCenter: activity.costCenter ? {
+                      idCostCenter: activity.costCenter.idCostCenter,
+                      name: activity.costCenter.name
+                    } as CostCenter : undefined,
+                    
+                    financialFund: activity.financialFund ? {
+                      idFinancialFund: activity.financialFund.idFinancialFund,
+                      name: activity.financialFund.name
+                    } as FinancialFund : undefined,
+                    
+                    priority: activity.priority ? {
+                      idPriority: activity.priority.idPriority,
+                      name: activity.priority.name
+                    } as Priority : undefined,
+                    
+                    measurementType: activity.measurementType ? {
+                      idMeasurementType: activity.measurementType.idMeasurementType,
+                      name: activity.measurementType.name
+                    } as MeasurementType : undefined,
+                    
+                    // StrategicAction SIN referencias profundas
+                    strategicAction: activity.strategicAction ? {
+                      idStrategicAction: activity.strategicAction.idStrategicAction,
+                      code: activity.strategicAction.code,
+                      name: activity.strategicAction.name,
+                      strategicObjective: activity.strategicAction.strategicObjective ? {
+                        idStrategicObjective: activity.strategicAction.strategicObjective.idStrategicObjective,
+                        name: activity.strategicAction.strategicObjective.name,
+                        code: activity.strategicAction.strategicObjective.code
+                      } as StrategicObjective : undefined
+                    } as StrategicAction : undefined,
+                    
+                    // Formulation SIMPLE
+                    formulation: {
+                      idFormulation: activity.formulation?.idFormulation,
+                      dependency: {
+                        name: dependencyName
+                      }
+                    } as Formulation,
+                    
+                    // Arrays NUEVOS sin referencias
+                    monthlyGoals: this.createCleanMonthlyGoals(activity.monthlyGoals || []),
+                    monthlyBudgets: this.createCleanMonthlyBudgets(activity.monthlyBudgets || [])
+                  };
+                  
+                  return cleanActivity;
+                });
+                // Guardar copia original (sin filtrar) para export
+                this.originalPrestacionesEconomicasActivities = mapped;
+                // Filtrar actividades vacías (todos los monthlyGoals y monthlyBudgets en 0) para la vista
+                this.prestacionesEconomicasActivities = mapped.filter(act => !this.isActivityEmpty(act));
+
+                this.groupActivitiesByDependency();
+                this.generateConsolidatedActivities(); // Generar vista consolidada
+                
+                // Establecer hash inicial después de cargar los datos
+                this.lastActivitiesHash = this.createOriginalActivitiesHash();
+                
+                // Limpiar duplicados si es necesario (solo en la primera carga)
+                if (this.consolidatedActivities.length > 0) {
+                  setTimeout(() => {
+                    this.cleanDuplicateAutoGeneratedActivities();
+                  }, 1000);
+                }
+                
+                this.isLoading = false;
+              },
+              error: (err) => {
+                console.error('Error loading activities:', err);
+                this.toastr.error('Error al cargar actividades de prestaciones sociales.', 'Error');
+                this.isLoading = false;
+                this.prestacionesEconomicasActivities = [];
+              }
+            });
+          },
+          error: (err) => {
+            console.error('Error loading formulations:', err);
+            this.toastr.error('Error al cargar formulaciones de prestaciones sociales.', 'Error');
+            this.isLoading = false;
+            this.prestacionesEconomicasFormulations = [];
+            this.prestacionesEconomicasActivities = [];
+          }
+        });
       },
-      error: () => {
-        this.prestacionesEconomicasFormulations = [];
-        this.prestacionesEconomicasActivities = [];
+      error: (err) => {
+        console.error('Error loading dependencies:', err);
+        this.toastr.error('Error al cargar dependencias.', 'Error');
         this.isLoading = false;
       }
     });
@@ -476,11 +573,11 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     return budgets;
   }
 
-  // Devuelve true si todas las metas mensuales y todos los presupuestos mensuales son 0 o están ausentes
+  // Helper para detectar actividades "vacías" (todos los monthlyGoals y monthlyBudgets en 0)
   private isActivityEmpty(activity: OperationalActivity | null | undefined): boolean {
     if (!activity) return true;
-    const allGoalsZero = !activity.monthlyGoals || activity.monthlyGoals.every(g => (g?.value || 0) === 0);
-    const allBudgetsZero = !activity.monthlyBudgets || activity.monthlyBudgets.every(b => (b?.value || 0) === 0);
+    const allGoalsZero = !(activity.monthlyGoals || []).some(g => (g?.value || 0) !== 0);
+    const allBudgetsZero = !(activity.monthlyBudgets || []).some(b => (b?.value || 0) !== 0);
     return allGoalsZero && allBudgetsZero;
   }
 
@@ -488,14 +585,16 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     this.groupedActivitiesByDependency = {};
     this.dependencyNamesList = [];
     
-    if (!this.prestacionesEconomicasActivities?.length) {
+  if (!this.prestacionesEconomicasActivities?.length) {
       return;
     }
 
     // Usar un Set para evitar duplicados
     const processedActivities = new Set<number>();
     
-  this.prestacionesEconomicasActivities.forEach((activity) => {
+    this.prestacionesEconomicasActivities.forEach((activity) => {
+      // Ignorar actividades vacías por seguridad
+      if (this.isActivityEmpty(activity)) return;
       // Evitar procesar actividades duplicadas
       if (processedActivities.has(activity.idOperationalActivity!)) {
         return;
@@ -517,10 +616,22 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       this.groupedActivitiesByDependency[dependencyName][familyName].push(activity);
     });
     
-    // Actualizar la lista de nombres de dependencias ordenada alfabéticamente ignorando tildes
-    const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    // Actualizar la lista de nombres de dependencias ordenada por la ÚLTIMA palabra (ignorando tildes y puntuación)
+    const normalize = (str: string) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    // extrae la última palabra y elimina caracteres no alfanuméricos (Unicode-aware)
+    const lastWord = (s: string) => {
+      const token = (s || '').trim().split(/\s+/).slice(-1)[0] || s || '';
+      // eliminar puntuación y símbolos, conservar letras y números
+      return token.replace(/[^\p{L}\p{N}]/gu, '');
+    };
+
     this.dependencyNamesList = Object.keys(this.groupedActivitiesByDependency)
-      .sort((a, b) => normalize(a).localeCompare(normalize(b)));
+      .sort((a, b) => {
+        const na = normalize(lastWord(a));
+        const nb = normalize(lastWord(b));
+        if (na === nb) return normalize(a).localeCompare(normalize(b)); // fallback to full name
+        return na.localeCompare(nb);
+      });
   }
 
   closeModal(): void {
@@ -816,11 +927,11 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
 
     this.operationalActivityService.update(activityToUpdate).subscribe({
       next: () => {
-        // Actualizar la actividad en la lista
+        // Actualizar la actividad en la lista VISIBLE
         const index = this.prestacionesEconomicasActivities.findIndex(a => 
           a.idOperationalActivity === activityToUpdate.idOperationalActivity
         );
-        if (index !== -1) {
+  if (index !== -1) {
           // Obtener los objetos completos para la visualización
           const fullManagementCenter = this.managementCenters.find(mc => 
             mc.idManagementCenter === activityToUpdate.managementCenter?.idManagementCenter
@@ -852,29 +963,36 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
             monthlyGoals: activityToUpdate.monthlyGoals,
             monthlyBudgets: activityToUpdate.monthlyBudgets
           };
-          // Mantener copia original sincronizada si existe
-          const origIndex = this.originalPrestacionesEconomicasActivities.findIndex(a => a.idOperationalActivity === activityToUpdate.idOperationalActivity);
-          if (origIndex !== -1) {
-            this.originalPrestacionesEconomicasActivities[origIndex] = { ...this.originalPrestacionesEconomicasActivities[origIndex],
+          
+          this.groupActivitiesByDependency();
+        }
+        
+        // También sincronizar la copia original (sin filtrar) para export/import futuros
+        if (activityToUpdate.idOperationalActivity) {
+          const origIdx = (this.originalPrestacionesEconomicasActivities || []).findIndex(a => a.idOperationalActivity === activityToUpdate.idOperationalActivity);
+          if (origIdx !== -1) {
+            this.originalPrestacionesEconomicasActivities[origIdx] = {
+              ...this.originalPrestacionesEconomicasActivities[origIdx],
               name: activityToUpdate.name,
               measurementUnit: activityToUpdate.measurementUnit,
               description: activityToUpdate.description,
-              managementCenter: fullManagementCenter || activityToUpdate.managementCenter,
-              costCenter: fullCostCenter || activityToUpdate.costCenter,
-              financialFund: fullFinancialFund || activityToUpdate.financialFund,
-              priority: fullPriority || activityToUpdate.priority,
-              measurementType: fullMeasurementType || activityToUpdate.measurementType,
+              managementCenter: activityToUpdate.managementCenter,
+              costCenter: activityToUpdate.costCenter,
+              financialFund: activityToUpdate.financialFund,
+              priority: activityToUpdate.priority,
+              measurementType: activityToUpdate.measurementType,
               monthlyGoals: activityToUpdate.monthlyGoals,
               monthlyBudgets: activityToUpdate.monthlyBudgets
             } as OperationalActivity;
           }
-
-          this.groupActivitiesByDependency();
         }
-        
+
+        // Recalcular la lista visible a partir de la copia original (ocultar actividades vacías)
+        this.prestacionesEconomicasActivities = (this.originalPrestacionesEconomicasActivities || []).filter(act => !this.isActivityEmpty(act));
+
         this.editingActivity = null;
         this.toastr.success('Actividad actualizada correctamente.', 'Éxito');
-        
+
         // Regenerar consolidado después de guardar
         this.generateConsolidatedActivities();
       },
@@ -904,13 +1022,13 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       this.operationalActivityService.deleteById(activity.idOperationalActivity).subscribe({
         next: () => {
           // Remover la actividad de la lista
-            this.prestacionesEconomicasActivities = this.prestacionesEconomicasActivities.filter(a => 
-              a.idOperationalActivity !== activity.idOperationalActivity
-            );
-            // Remover también de la copia original usada para export
-            this.originalPrestacionesEconomicasActivities = this.originalPrestacionesEconomicasActivities.filter(a =>
-              a.idOperationalActivity !== activity.idOperationalActivity
-            );
+          this.prestacionesEconomicasActivities = this.prestacionesEconomicasActivities.filter(a => 
+            a.idOperationalActivity !== activity.idOperationalActivity
+          );
+          // También remover de la copia original para mantener consistencia en export/import
+          this.originalPrestacionesEconomicasActivities = (this.originalPrestacionesEconomicasActivities || []).filter(a => a.idOperationalActivity !== activity.idOperationalActivity);
+          // Re-filtrar la vista desde la copia original
+          this.prestacionesEconomicasActivities = (this.originalPrestacionesEconomicasActivities || []).filter(act => !this.isActivityEmpty(act));
           this.groupActivitiesByDependency();
           this.generateConsolidatedActivities(); // Regenerar consolidado
           this.toastr.success('Actividad eliminada correctamente.', 'Éxito');
@@ -1156,6 +1274,55 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     return total;
   }
 
+  getQuarterlyBudget(activity: OperationalActivity, quarter: number): number {
+    if (!activity?.monthlyBudgets || activity.monthlyBudgets.length === 0) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3 + 1;
+    const endMonth = quarter * 3;
+    
+    let total = 0;
+    for (let month = startMonth; month <= endMonth; month++) {
+      const budget = activity.monthlyBudgets.find(b => b.budgetOrder === month);
+      total += budget?.value || 0;
+    }
+    
+    return total;
+  }
+
+  getConsolidatedQuarterlyGoals(consolidatedItem: any, quarter: number): number {
+    if (!consolidatedItem?.consolidatedGoals) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3;
+    const endMonth = quarter * 3 - 1;
+    
+    let total = 0;
+    for (let month = startMonth; month <= endMonth; month++) {
+      total += consolidatedItem.consolidatedGoals[month] || 0;
+    }
+    
+    return total;
+  }
+
+  getConsolidatedQuarterlyBudgets(consolidatedItem: any, quarter: number): number {
+    if (!consolidatedItem?.consolidatedBudgets) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3;
+    const endMonth = quarter * 3 - 1;
+    
+    let total = 0;
+    for (let month = startMonth; month <= endMonth; month++) {
+      total += consolidatedItem.consolidatedBudgets[month] || 0;
+    }
+    
+    return total;
+  }
+
   getTotalBudgetByType(activity: OperationalActivity, type: 'remuneration' | 'goods' | 'services'): number {
     if (!activity?.monthlyBudgets || activity.monthlyBudgets.length === 0) {
       // Si no hay presupuesto mensual, usar los valores básicos
@@ -1275,7 +1442,30 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     if (!activity?.monthlyGoals || activity.monthlyGoals.length === 0) {
       return 0;
     }
-    return activity.monthlyGoals.reduce((total, goal) => total + (goal.value || 0), 0);
+
+    // Determinar la familia padre: si la familia es subfamilia, usar parentActivityFamily
+    const fam = activity.activityFamily;
+    let parentFam = fam;
+    if (fam && fam.parentActivityFamily) {
+      parentFam = fam.parentActivityFamily as any;
+    }
+
+    const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
+
+    // Si measurementTypeId === 1 => sumar todos los meses
+    if (measurementTypeId === 1) {
+      return activity.monthlyGoals.reduce((total, goal) => total + (goal?.value || 0), 0);
+    }
+
+    // Si measurementTypeId === 2 o 3 => tomar solo el último mes (acumulativos)
+    if (measurementTypeId === 2 || measurementTypeId === 3) {
+      // Buscar goalOrder 12 (Diciembre)
+      const last = activity.monthlyGoals.find(g => g.goalOrder === 12);
+      return last?.value || 0;
+    }
+
+    // Fallback: sumar todos los meses
+    return activity.monthlyGoals.reduce((total, goal) => total + (goal?.value || 0), 0);
   }
 
   getTotalMonthlyBudgets(activity: OperationalActivity | null): number {
@@ -1302,6 +1492,8 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     const groupedMap = new Map<string, any>();
 
     this.prestacionesEconomicasActivities.forEach(activity => {
+      // Ignorar actividades vacías
+      if (this.isActivityEmpty(activity)) return;
       // Crear clave única para agrupar
       const groupKey = this.createGroupKey(activity);
       
@@ -1367,96 +1559,89 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
 
   // Método para agrupar actividades consolidadas por familia
   private groupConsolidatedActivitiesByFamily(): void {
-    // Build grouped map by dependency and family to follow the same ordering used in the detailed view
+    // Build mapping by dependency then by family following the same ordering as the detailed view
     this.consolidatedActivitiesByFamily = {};
     this.consolidatedFamilyNames = [];
     if (!this.consolidatedActivities?.length) return;
 
-    // Map consolidated items by dependencyName -> familyId -> items[]
-    const mapByDepAndFamily: { [dep: string]: { [familyId: string]: any[] } } = {};
+    // Helper: map each consolidated item to its dependency name using original activities
+    const consolidatedByDependencyAndFamily: { [dependency: string]: { [familyId: string]: any[] } } = {};
 
     this.consolidatedActivities.forEach(item => {
-      const matchingActivity = this.prestacionesEconomicasActivities.find(a => this.createGroupKey(a) === item.groupKey);
-      const depName = matchingActivity?.formulation?.dependency?.name || 'Sin dependencia';
+      // Find a matching original activity to know its dependency and family id
+      const matchingActivity = this.prestacionesEconomicasActivities.find(act => this.createGroupKey(act) === item.groupKey);
+      const dependencyName = matchingActivity?.formulation?.dependency?.name || 'Sin dependencia';
       const familyId = String(item.activityFamily?.idActivityFamily || '');
 
-      if (!mapByDepAndFamily[depName]) mapByDepAndFamily[depName] = {};
-      if (!mapByDepAndFamily[depName][familyId]) mapByDepAndFamily[depName][familyId] = [];
-      mapByDepAndFamily[depName][familyId].push(item);
+      if (!consolidatedByDependencyAndFamily[dependencyName]) consolidatedByDependencyAndFamily[dependencyName] = {};
+      if (!consolidatedByDependencyAndFamily[dependencyName][familyId]) consolidatedByDependencyAndFamily[dependencyName][familyId] = [];
+      consolidatedByDependencyAndFamily[dependencyName][familyId].push(item);
     });
-
-    const ordered: string[] = [];
 
     // Iterate dependencies in the same order as detailed view
-    (this.dependencyNamesList || []).forEach(depName => {
-      const familyKeys = this.getFamilyNamesForDependency(depName) || [];
-      familyKeys.forEach(familyKey => {
-        const familyId = (familyKey.includes('|') ? familyKey.split('|')[1] : '');
-        const items = mapByDepAndFamily[depName]?.[familyId] || [];
-        if (items.length) {
-          // Sort consolidated items within the family using the detailed ordering
-          this.sortConsolidatedItems(depName, familyKey, items);
-          this.consolidatedActivitiesByFamily[familyKey] = items;
-          ordered.push(familyKey);
-        }
-      });
-    });
+    const deps = this.dependencyNamesList && this.dependencyNamesList.length ? this.dependencyNamesList : Object.keys(consolidatedByDependencyAndFamily);
 
-    // Add any leftover families (that weren't present in grouped Activities for the dependencies above)
-    // This ensures we don't lose any consolidated items
-    const leftoverFamilies: { [familyKey: string]: any[] } = {};
-    this.consolidatedActivities.forEach(item => {
-      const familyId = String(item.activityFamily?.idActivityFamily || '');
-      // Try to find a familyKey already used
-      const existingKey = ordered.find(k => k.endsWith('|' + familyId));
-      if (!existingKey) {
-        const name = item.activityFamily?.name || 'Sin familia';
-        const familyKey = `${name}|${familyId}`;
-        if (!leftoverFamilies[familyKey]) leftoverFamilies[familyKey] = [];
-        leftoverFamilies[familyKey].push(item);
+    deps.forEach(depName => {
+      const familyKeysForDep = this.getFamilyNamesForDependency(depName); // returns array like "1. Name|id"
+      if (!familyKeysForDep || familyKeysForDep.length === 0) {
+        // Fallback: include any family ids present for this dep
+        const ids = Object.keys(consolidatedByDependencyAndFamily[depName] || {});
+        ids.forEach(id => {
+          const items = consolidatedByDependencyAndFamily[depName][id] || [];
+          if (items.length) {
+            // create display key without numbering if we don't have family name info
+            const displayKey = items[0].activityFamily?.name ? `${items[0].activityFamily.name}|${id}` : `Sin familia|${id}`;
+            this.consolidatedActivitiesByFamily[displayKey] = this.sortConsolidatedItems(depName, displayKey, items);
+            this.consolidatedFamilyNames.push(displayKey);
+          }
+        });
+      } else {
+        familyKeysForDep.forEach(famKey => {
+          // famKey includes numbering and id like "1. Name|id" or "1.1. Name|id"
+          const famId = famKey.includes('|') ? famKey.split('|').pop() || '' : '';
+          const items = (consolidatedByDependencyAndFamily[depName] && consolidatedByDependencyAndFamily[depName][famId]) || [];
+          // Add only if there are consolidated items for that family
+          if (items.length) {
+            this.consolidatedActivitiesByFamily[famKey] = this.sortConsolidatedItems(depName, famKey, items);
+            this.consolidatedFamilyNames.push(famKey);
+          }
+        });
       }
     });
-
-    Object.keys(leftoverFamilies).forEach(fk => {
-      const items = leftoverFamilies[fk];
-      // Try to get a display key that matches numbering if possible
-      const displayKey = fk.includes('.') ? fk : fk; // keep as is
-      this.sortConsolidatedItems('', displayKey, items);
-      // Avoid duplicates
-      if (!this.consolidatedActivitiesByFamily[displayKey]) {
-        this.consolidatedActivitiesByFamily[displayKey] = items;
-        ordered.push(displayKey);
-      }
-    });
-
-    this.consolidatedFamilyNames = ordered;
   }
 
-  // Sort consolidated items inside a family using the ActivityDetail ordering used by the detailed list
-  private sortConsolidatedItems(dependencyName: string, familyKey: string, items: any[]): void {
-    if (!items || !items.length) return;
-    try {
-      const orderedActivities = this.getOrderedActivitiesForDependencyAndFamily(dependencyName, familyKey) || [];
-      items.sort((a: any, b: any) => {
-        const parse = (it: any) => {
-          const parts = (it.groupKey || '').split('|');
-          return { name: parts[3] || '', mu: parts[4] || '' };
-        };
-        const pa = parse(a);
-        const pb = parse(b);
+  // Sort consolidated items by the orderedActivityDetails / orderedActivityDetailNames within same dependency/family
+  private sortConsolidatedItems(dependencyName: string, familyKey: string, items: any[]): any[] {
+    // We need to order consolidated items by the ActivityDetail ordering.
+    // For matching, build a map from groupKey -> representative original activities
+    const groupKeyToActivity: { [groupKey: string]: OperationalActivity } = {};
+    this.prestacionesEconomicasActivities.forEach(act => {
+      const gk = this.createGroupKey(act);
+      if (!groupKeyToActivity[gk]) groupKeyToActivity[gk] = act;
+    });
 
-        const idxA = orderedActivities.findIndex((act: OperationalActivity) => act.name === pa.name && (act.measurementUnit || '') === (pa.mu || ''));
-        const idxB = orderedActivities.findIndex((act: OperationalActivity) => act.name === pb.name && (act.measurementUnit || '') === (pb.mu || ''));
+    // Use getOrderedActivitiesForDependencyAndFamily to determine order of activity names within the family
+    const familyActivitiesOrdered = this.getOrderedActivitiesForDependencyAndFamily(dependencyName, familyKey);
 
-        if (idxA === -1 && idxB === -1) return 0;
-        if (idxA === -1) return 1;
-        if (idxB === -1) return -1;
-        return idxA - idxB;
-      });
-    } catch (e) {
-      // fallback: keep original order
-      console.warn('Could not sort consolidated items for', familyKey, e);
-    }
+    // Build order index by groupKey using representative activity
+    const orderIndex: { [groupKey: string]: number } = {};
+    items.forEach((it: any) => {
+      const rep = groupKeyToActivity[it.groupKey];
+      if (rep) {
+        const idx = familyActivitiesOrdered.findIndex(a => this.createGroupKey(a) === it.groupKey);
+        orderIndex[it.groupKey] = idx !== -1 ? idx : Number.MAX_SAFE_INTEGER;
+      } else {
+        orderIndex[it.groupKey] = Number.MAX_SAFE_INTEGER;
+      }
+    });
+
+    // Sort by index then by name as fallback
+    return [...items].sort((a: any, b: any) => {
+      const ia = orderIndex[a.groupKey] ?? Number.MAX_SAFE_INTEGER;
+      const ib = orderIndex[b.groupKey] ?? Number.MAX_SAFE_INTEGER;
+      if (ia === ib) return (a.name || '').localeCompare(b.name || '');
+      return ia - ib;
+    });
   }
 
   // Método para extraer información de centros del consolidado
@@ -1602,19 +1787,24 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       return 0;
     }
 
-    // Determine measurement type using the activity family; if subfamily, use its parent
-    const family = consolidatedItem.activityFamily;
-    const parentFam = family?.parentActivityFamily ? family.parentActivityFamily : family;
+    // Determine measurement type from the activity family (use parent family if this is a subfamily)
+    const fam = consolidatedItem.activityFamily;
+    let parentFam = fam;
+    if (fam && fam.parentActivityFamily) {
+      parentFam = fam.parentActivityFamily as any;
+    }
+
     const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
 
-    // measurementType: 1 => sum all months; 2 or 3 => use last month (December)
+    // If measurementTypeId === 1 => sum all months
     if (measurementTypeId === 1) {
       return consolidatedItem.consolidatedGoals.reduce((total: number, goal: number) => total + (goal || 0), 0);
     }
 
+    // If measurementTypeId === 2 or 3 => take only the last month (December)
     if (measurementTypeId === 2 || measurementTypeId === 3) {
-      // Use December (index 11) as the representative month
-      return consolidatedItem.consolidatedGoals[11] || 0;
+      const last = consolidatedItem.consolidatedGoals[11]; // index 11 => month 12
+      return last || 0;
     }
 
     // Fallback: sum all months
@@ -2000,22 +2190,18 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       // });
       
       // Exportar vista detallada
-      // Para exportación usar la copia original sin filtrar (incluir actividades con todos los meses en 0)
-      const sourceActivities = (this.originalPrestacionesEconomicasActivities && this.originalPrestacionesEconomicasActivities.length)
-        ? this.originalPrestacionesEconomicasActivities
-        : this.prestacionesEconomicasActivities;
-
-      // Construir flatGroupedActivities a partir de la fuente original para preservar el orden y familias
+      // Para exportar plantilla queremos incluir todas las actividades, incluso las que tienen todos los meses en 0
+      const sourceActivities = this.originalPrestacionesEconomicasActivities && this.originalPrestacionesEconomicasActivities.length ? this.originalPrestacionesEconomicasActivities : this.prestacionesEconomicasActivities;
       const flatGroupedActivities: { [dependencyName: string]: OperationalActivity[] } = {};
-      const deps = new Set<string>();
-      (sourceActivities || []).forEach(act => deps.add(act.formulation?.dependency?.name || 'Sin dependencia'));
-      Array.from(deps).forEach(dependencyName => {
-        flatGroupedActivities[dependencyName] = (sourceActivities || []).filter(a => (a.formulation?.dependency?.name || 'Sin dependencia') === dependencyName);
+      // Construir el grouped map basándose en sourceActivities
+      sourceActivities.forEach(act => {
+        const depName = act.formulation?.dependency?.name || 'Sin dependencia';
+        if (!flatGroupedActivities[depName]) flatGroupedActivities[depName] = [];
+        flatGroupedActivities[depName].push(act);
       });
-
-      // Obtener dependencyNamesList para export basado en la fuente original
+      // For export, derive dependency names from the source grouping so hidden/zero-only
+      // activities are included even when UI's dependencyNamesList is filtered.
       const exportDependencyNames = Object.keys(flatGroupedActivities).sort((a, b) => a.localeCompare(b));
-
       this.excelExportService.exportOperationalActivitiesToExcel(
         sourceActivities,
         flatGroupedActivities,
@@ -2151,7 +2337,8 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       this.importPreviewData.forEach((importedActivity) => {
         // Obtener todas las activityFamilies disponibles para la resolución (familias únicas)
         const familyMap = new Map<number, any>();
-        this.prestacionesEconomicasActivities.forEach(act => {
+        // Buscar en la copia ORIGINAL sin filtrar para poder emparejar actividades ocultas
+        (this.originalPrestacionesEconomicasActivities || []).forEach(act => {
           if (act.activityFamily && act.activityFamily.idActivityFamily !== undefined) {
             familyMap.set(act.activityFamily.idActivityFamily, act.activityFamily);
           }
@@ -2178,13 +2365,8 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
           console.log(`  Es familia principal`);
         }
 
-        // Buscar actividades existentes que coincidan en la COPIA ORIGINAL (incluye actividades ocultas)
-        const searchPool = (this.originalPrestacionesEconomicasActivities && this.originalPrestacionesEconomicasActivities.length)
-          ? this.originalPrestacionesEconomicasActivities
-          : this.prestacionesEconomicasActivities;
-
-        // Buscar actividades coincidentes en la fuente sin filtrar
-        const matchingActivities = (searchPool || []).filter(activity => {
+  // Buscar actividades existentes que coincidan (buscar en la copia ORIGINAL para incluir actividades ocultas)
+  const matchingActivities = (this.originalPrestacionesEconomicasActivities || []).filter(activity => {
           // PRIMERA CONDICIÓN: Debe pertenecer a la misma dependencia
           const dependencyMatch = activity.formulation?.dependency?.name?.toLowerCase().trim() === importedActivity.dependencyName?.toLowerCase().trim();
           
@@ -2232,9 +2414,9 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
         });
 
         // Si no se encontraron actividades con la lógica jerárquica, intentar búsqueda más flexible
-        if (matchingActivities.length === 0 && resolvedActivityFamily) {
+  if (matchingActivities.length === 0 && resolvedActivityFamily) {
           console.log(`  No se encontraron actividades con jerarquía, intentando búsqueda por dependencia, nombre y unidad solamente...`);
-          const fallbackActivities = this.prestacionesEconomicasActivities.filter(activity => {
+          const fallbackActivities = (this.originalPrestacionesEconomicasActivities || []).filter(activity => {
             const dependencyMatch = activity.formulation?.dependency?.name?.toLowerCase().trim() === importedActivity.dependencyName?.toLowerCase().trim();
             const nameMatch = activity.name?.toLowerCase().trim() === importedActivity.subsidio?.toLowerCase().trim();
             const unitMatch = activity.measurementUnit?.toLowerCase().trim() === importedActivity.measurementUnit?.toLowerCase().trim();
@@ -2299,7 +2481,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
               }
             }
 
-            // Actualizar metas mensuales y presupuestos sobre la actividad en la fuente original
+            // Actualizar metas mensuales
             if (activity.monthlyGoals) {
               activity.monthlyGoals.forEach((goal, index) => {
                 if (index < importedActivity.monthlyGoals.length) {
@@ -2308,6 +2490,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
               });
             }
 
+            // Actualizar presupuestos mensuales
             if (activity.monthlyBudgets) {
               activity.monthlyBudgets.forEach((budget, index) => {
                 if (index < importedActivity.monthlyBudgets.length) {
@@ -2399,6 +2582,16 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
         next: () => {
           batchSuccessCount++;
           console.log(`✓ Actividad ${globalIndex + 1}/${totalActivities} actualizada exitosamente`);
+          // Guardar en cache para fusionar en la copia original más tarde
+          try {
+            // Cache the original activity (which still contains nested objects like formulation.dependency)
+            // The payload (activityToUpdate) intentionally strips related nested objects to send to the API,
+            // but since the update endpoint returns void we must keep the full original for local merging.
+            this.importUpdatedActivitiesCache = this.importUpdatedActivitiesCache || [];
+            this.importUpdatedActivitiesCache.push(activity as OperationalActivity);
+          } catch (e) {
+            console.warn('No se pudo cachear actividad actualizada:', e);
+          }
           
           // Si es la última del lote, procesar siguiente lote
           if (batchSuccessCount + batchErrorCount === batchTotal) {
@@ -2503,13 +2696,24 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     this.importProgressMessage = 'Finalizando importación...';
     
     // Reagrupar actividades por dependencia después de la actualización
-    // Si tenemos una copia original, re-filtrar la UI basada en ella, sino reagrupar a partir de prestacionesEconomicasActivities
-    if (this.originalPrestacionesEconomicasActivities && this.originalPrestacionesEconomicasActivities.length) {
-      // Actualizar la copia original: idealmente deberíamos re-fetch desde la BD, pero asumimos que las actividadesToUpdate
-      // fueron aplicadas directamente sobre los objetos dentro originalPrestacionesEconomicasActivities.
-      // Ahora re-filtrar la UI para ocultar las actividades que sigan vacías.
-      this.prestacionesEconomicasActivities = this.originalPrestacionesEconomicasActivities.filter(a => !this.isActivityEmpty(a));
+    // Merge updates into original copy (if any)
+    if (this.importUpdatedActivitiesCache && this.importUpdatedActivitiesCache.length) {
+      this.importUpdatedActivitiesCache.forEach(updated => {
+        const idx = (this.originalPrestacionesEconomicasActivities || []).findIndex(a => a.idOperationalActivity === updated.idOperationalActivity);
+        if (idx !== -1) {
+          this.originalPrestacionesEconomicasActivities[idx] = { ...this.originalPrestacionesEconomicasActivities[idx], ...updated } as OperationalActivity;
+        } else {
+          // If not present, push
+          (this.originalPrestacionesEconomicasActivities = this.originalPrestacionesEconomicasActivities || []).push(updated);
+        }
+      });
+      // Clear cache
+      this.importUpdatedActivitiesCache = [];
     }
+
+    // Re-derive visible list from original copy (hiding fully-zero activities)
+    this.prestacionesEconomicasActivities = (this.originalPrestacionesEconomicasActivities || []).filter(act => !this.isActivityEmpty(act));
+
     this.groupActivitiesByDependency();
     
     // Regenerar vista consolidada si está activa

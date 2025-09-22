@@ -70,6 +70,10 @@
         </span>
       </div>
     </div>
+    <div class="my-3">
+      <p-select *ngIf="!showConsolidatedView" class="py-1" [options]="dependencyOptions" [(ngModel)]="selectedDependencyFilter" filter="true"
+        filterPlaceholder="Buscar dependencia" placeholder="Filtrar dependencia" appendTo="body" [showClear]="true"></p-select>
+    </div>
   </div>
   
   <!-- Spinner de carga -->
@@ -101,6 +105,19 @@
             <label for="showConsolidated" class="text-sm md:text-base text-gray-800">Consolidada</label>
           </div>
         </div>
+        <!-- Control de vista temporal -->
+        <div class="flex align-items-center gap-4 ml-4">
+          <div class="flex align-items-center gap-2">
+            <input type="radio" id="showMonthly" name="timeViewType" [value]="false" 
+                   [(ngModel)]="showQuarterlyView" class="form-radio">
+            <label for="showMonthly" class="text-sm md:text-base text-gray-800">Mensual</label>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <input type="radio" id="showQuarterly" name="timeViewType" [value]="true" 
+                   [(ngModel)]="showQuarterlyView" class="form-radio">
+            <label for="showQuarterly" class="text-sm md:text-base text-gray-800">Trimestral</label>
+          </div>
+        </div>
       </div>
       
       <!-- Botones de Excel -->
@@ -128,7 +145,7 @@
 
   <!-- Tablas de prestaciones económicas agrupadas por dependencia (Vista Detallada) -->
   <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && !showConsolidatedView" class="tables-container m-4">
-    <div *ngFor="let dependencyName of dependencyNamesList" class="dependency-section mb-4">
+    <div *ngFor="let dependencyName of getFilteredDependencyNames()" class="dependency-section mb-4">
       <!-- Título de la dependencia -->
       <h3 class="dependency-title text-xl font-bold mb-4 p-3 bg-blue-100 rounded-lg border-l-4 border-blue-500">
         {{ dependencyName }}
@@ -144,42 +161,58 @@
           <tr class="cabecera">
             <!-- <th style="min-width: 180px; max-width: 180px;" rowspan="2">Objetivo estratégico</th>
             <th style="min-width: 200px; max-width: 200px;" rowspan="2">Acción estratégica</th> -->
-            <th style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
-            <th style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
-            <th colspan="12">Metas Mensuales</th>
+            <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
+            <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-            <th colspan="12">Presupuesto Mensual S/.</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} S/.</th>
             <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
             <!-- <th style="min-width: 300px; max-width: 300px;" rowspan="2">Detalle</th> -->
-            <th style="min-width: 180px; max-width: 180px;" rowspan="2">Acciones</th>
+            <th *ngIf="!showQuarterlyView" style="min-width: 180px; max-width: 180px;" rowspan="2">Acciones</th>
           </tr>
           <tr class="cabecera">
-            <!-- Metas Mensuales -->
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
-            <!-- Presupuesto Mensual -->
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+            <!-- Metas Mensuales/Trimestrales -->
+            <ng-container *ngIf="!showQuarterlyView">
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+            </ng-container>
+            <ng-container *ngIf="showQuarterlyView">
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
+            </ng-container>
+            <!-- Presupuesto Mensual/Trimestral -->
+            <ng-container *ngIf="!showQuarterlyView">
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+            </ng-container>
+            <ng-container *ngIf="showQuarterlyView">
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
+              <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
+            </ng-container>
           </tr>
         </ng-template>
 
@@ -199,7 +232,7 @@
 
             <!-- El código SAP se oculta como solicitaste -->
             
-            <td>
+            <td pFrozenColumn>
               <ng-container *ngIf="!isEditing(activity)">
                 <div class="activity-name">{{ activity?.name }}</div>
               </ng-container>
@@ -212,7 +245,7 @@
               </ng-container>
             </td>
             
-            <td>
+            <td pFrozenColumn>
               <ng-container *ngIf="!isEditing(activity)">
                 {{ activity?.measurementUnit }}
               </ng-container>
@@ -224,163 +257,171 @@
               </ng-container>
             </td>
 
-            <!-- Metas Mensuales (enero - diciembre) -->
-            <td class="montos" [ngClass]="getMonthEditableClass(0)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[0]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText min="0" step="0.01"
-                  [value]="editingActivity?.monthlyGoals?.[0]?.value || 0"
-                  (input)="updateMonthlyGoal(0, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(0)"
-                  [class]="!isMonthEditable(0) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(1)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[1]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText min="0" step="0.01"
-                  [value]="editingActivity?.monthlyGoals?.[1]?.value || 0"
-                  (input)="updateMonthlyGoal(1, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(1)"
-                  [class]="!isMonthEditable(1) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(2)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[2]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText min="0" step="0.01"
-                  [value]="editingActivity?.monthlyGoals?.[2]?.value || 0"
-                  (input)="updateMonthlyGoal(2, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(2)"
-                  [class]="!isMonthEditable(2) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(3)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[3]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[3]?.value || 0"
-                  (input)="updateMonthlyGoal(3, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(3)"
-                  [class]="!isMonthEditable(3) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(4)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[4]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[4]?.value || 0"
-                  (input)="updateMonthlyGoal(4, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(4)"
-                  [class]="!isMonthEditable(4) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(5)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[5]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[5]?.value || 0"
-                  (input)="updateMonthlyGoal(5, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(5)"
-                  [class]="!isMonthEditable(5) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(6)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[6]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[6]?.value || 0"
-                  (input)="updateMonthlyGoal(6, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(6)"
-                  [class]="!isMonthEditable(6) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(7)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[7]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[7]?.value || 0"
-                  (input)="updateMonthlyGoal(7, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(7)"
-                  [class]="!isMonthEditable(7) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(8)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[8]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[8]?.value || 0"
-                  (input)="updateMonthlyGoal(8, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(8)"
-                  [class]="!isMonthEditable(8) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(9)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[9]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[9]?.value || 0"
-                  (input)="updateMonthlyGoal(9, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(9)"
-                  [class]="!isMonthEditable(9) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(10)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[10]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyGoals?.[10]?.value || 0"
-                  (input)="updateMonthlyGoal(10, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(10)"
-                  [class]="!isMonthEditable(10) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(11)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyGoals?.[11]?.value || 0 }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText min="0" step="0.01"
-                  [value]="editingActivity?.monthlyGoals?.[11]?.value || 0"
-                  (input)="updateMonthlyGoal(11, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(11)"
-                  [class]="!isMonthEditable(11) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
+            <!-- Metas Mensuales/Trimestrales -->
+            <ng-container *ngIf="!showQuarterlyView">
+              <td class="montos" [ngClass]="getMonthEditableClass(0)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[0]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText min="0" step="0.01"
+                    [value]="editingActivity?.monthlyGoals?.[0]?.value || 0"
+                    (input)="updateMonthlyGoal(0, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(1)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[1]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText min="0" step="0.01"
+                    [value]="editingActivity?.monthlyGoals?.[1]?.value || 0"
+                    (input)="updateMonthlyGoal(1, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(2)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[2]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText min="0" step="0.01"
+                    [value]="editingActivity?.monthlyGoals?.[2]?.value || 0"
+                    (input)="updateMonthlyGoal(2, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(3)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[3]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[3]?.value || 0"
+                    (input)="updateMonthlyGoal(3, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(4)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[4]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[4]?.value || 0"
+                    (input)="updateMonthlyGoal(4, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(5)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[5]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[5]?.value || 0"
+                    (input)="updateMonthlyGoal(5, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(6)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[6]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[6]?.value || 0"
+                    (input)="updateMonthlyGoal(6, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(7)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[7]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[7]?.value || 0"
+                    (input)="updateMonthlyGoal(7, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(8)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[8]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[8]?.value || 0"
+                    (input)="updateMonthlyGoal(8, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(9)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[9]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[9]?.value || 0"
+                    (input)="updateMonthlyGoal(9, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(10)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[10]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyGoals?.[10]?.value || 0"
+                    (input)="updateMonthlyGoal(10, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(11)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyGoals?.[11]?.value || 0 }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText min="0" step="0.01"
+                    [value]="editingActivity?.monthlyGoals?.[11]?.value || 0"
+                    (input)="updateMonthlyGoal(11, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+            </ng-container>
+            <ng-container *ngIf="showQuarterlyView">
+              <td class="montos">{{ getQuarterlyGoal(activity, 1) }}</td>
+              <td class="montos">{{ getQuarterlyGoal(activity, 2) }}</td>
+              <td class="montos">{{ getQuarterlyGoal(activity, 3) }}</td>
+              <td class="montos">{{ getQuarterlyGoal(activity, 4) }}</td>
+            </ng-container>
 
             <!-- Total de Metas Mensuales -->
             <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">
@@ -392,163 +433,171 @@
               </ng-container>
             </td>
 
-            <!-- Presupuesto Mensual (enero - diciembre) -->
-            <td class="montos" [ngClass]="getMonthEditableClass(0)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[0]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[0]?.value || 0"
-                  (input)="updateMonthlyBudget(0, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(0)"
-                  [class]="!isMonthEditable(0) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(1)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[1]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[1]?.value || 0"
-                  (input)="updateMonthlyBudget(1, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(1)"
-                  [class]="!isMonthEditable(1) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(2)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[2]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[2]?.value || 0"
-                  (input)="updateMonthlyBudget(2, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(2)"
-                  [class]="!isMonthEditable(2) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(3)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[3]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[3]?.value || 0"
-                  (input)="updateMonthlyBudget(3, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(3)"
-                  [class]="!isMonthEditable(3) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(4)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[4]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[4]?.value || 0"
-                  (input)="updateMonthlyBudget(4, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(4)"
-                  [class]="!isMonthEditable(4) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(5)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[5]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[5]?.value || 0"
-                  (input)="updateMonthlyBudget(5, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(5)"
-                  [class]="!isMonthEditable(5) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(6)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[6]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[6]?.value || 0"
-                  (input)="updateMonthlyBudget(6, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(6)"
-                  [class]="!isMonthEditable(6) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(7)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[7]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[7]?.value || 0"
-                  (input)="updateMonthlyBudget(7, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(7)"
-                  [class]="!isMonthEditable(7) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(8)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[8]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[8]?.value || 0"
-                  (input)="updateMonthlyBudget(8, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(8)"
-                  [class]="!isMonthEditable(8) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(9)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[9]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[9]?.value || 0"
-                  (input)="updateMonthlyBudget(9, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(9)"
-                  [class]="!isMonthEditable(9) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(10)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[10]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText 
-                  [value]="editingActivity?.monthlyBudgets?.[10]?.value || 0"
-                  (input)="updateMonthlyBudget(10, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(10)"
-                  [class]="!isMonthEditable(10) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
-            <td class="montos" [ngClass]="getMonthEditableClass(11)">
-              <ng-container *ngIf="!isEditing(activity)">
-                {{ activity?.monthlyBudgets?.[11]?.value | number:'1.2-2' }}
-              </ng-container>
-              <ng-container *ngIf="isEditing(activity)">
-                <input type="number" pInputText min="0" step="0.01"
-                  [value]="editingActivity?.monthlyBudgets?.[11]?.value || 0"
-                  (input)="updateMonthlyBudget(11, $any($event.target).value)"
-                  [disabled]="!isMonthEditable(11)"
-                  [class]="!isMonthEditable(11) ? 'locked-input' : ''"
-                  style="min-width: 150px;" />
-              </ng-container>
-            </td>
+            <!-- Presupuesto Mensual/Trimestral -->
+            <ng-container *ngIf="!showQuarterlyView">
+              <td class="montos" [ngClass]="getMonthEditableClass(0)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[0]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[0]?.value || 0"
+                    (input)="updateMonthlyBudget(0, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(1)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[1]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[1]?.value || 0"
+                    (input)="updateMonthlyBudget(1, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(2)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[2]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[2]?.value || 0"
+                    (input)="updateMonthlyBudget(2, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(3)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[3]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[3]?.value || 0"
+                    (input)="updateMonthlyBudget(3, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(4)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[4]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[4]?.value || 0"
+                    (input)="updateMonthlyBudget(4, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(5)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[5]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[5]?.value || 0"
+                    (input)="updateMonthlyBudget(5, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(6)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[6]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[6]?.value || 0"
+                    (input)="updateMonthlyBudget(6, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(7)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[7]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[7]?.value || 0"
+                    (input)="updateMonthlyBudget(7, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(8)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[8]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[8]?.value || 0"
+                    (input)="updateMonthlyBudget(8, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(9)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[9]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[9]?.value || 0"
+                    (input)="updateMonthlyBudget(9, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(10)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[10]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText 
+                    [value]="editingActivity?.monthlyBudgets?.[10]?.value || 0"
+                    (input)="updateMonthlyBudget(10, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+              <td class="montos" [ngClass]="getMonthEditableClass(11)">
+                <ng-container *ngIf="!isEditing(activity)">
+                  {{ activity?.monthlyBudgets?.[11]?.value | number:'1.2-2' }}
+                </ng-container>
+                <ng-container *ngIf="isEditing(activity)">
+                  <input type="number" pInputText min="0" step="0.01"
+                    [value]="editingActivity?.monthlyBudgets?.[11]?.value || 0"
+                    (input)="updateMonthlyBudget(11, $any($event.target).value)"
+                    [disabled]="!isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''"
+                    style="min-width: 150px;" />
+                </ng-container>
+              </td>
+            </ng-container>
+            <ng-container *ngIf="showQuarterlyView">
+              <td class="montos">{{ getQuarterlyBudget(activity, 1) | number:'1.2-2' }}</td>
+              <td class="montos">{{ getQuarterlyBudget(activity, 2) | number:'1.2-2' }}</td>
+              <td class="montos">{{ getQuarterlyBudget(activity, 3) | number:'1.2-2' }}</td>
+              <td class="montos">{{ getQuarterlyBudget(activity, 4) | number:'1.2-2' }}</td>
+            </ng-container>
 
             <!-- Total de Presupuesto Mensual -->
             <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">
@@ -573,7 +622,7 @@
             </td> -->
 
             <!-- Botones de Acciones -->
-            <td>
+            <td *ngIf="!showQuarterlyView">
               <div class="action-buttons flex gap-1">
                 <ng-container *ngIf="!isEditing(activity)">
                   <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text p-button-sm"
@@ -617,41 +666,57 @@
         <tr class="cabecera">
           <!-- <th style="min-width: 180px; max-width: 180px;" rowspan="2">Objetivo estratégico</th>
           <th style="min-width: 200px; max-width: 200px;" rowspan="2">Acción estratégica</th> -->
-          <th style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
-          <th style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
+          <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
+          <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
           <!-- <th style="min-width: 180px; max-width: 180px;" rowspan="2">Actividades</th> -->
-          <th colspan="12">Metas Mensuales Consolidadas</th>
+          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }} Consolidadas</th>
           <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-          <th colspan="12">Presupuesto Mensual Consolidado S/.</th>
+          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} Consolidado S/.</th>
           <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
         </tr>
         <tr class="cabecera">
           <!-- Metas Mensuales -->
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+          <ng-container *ngIf="!showQuarterlyView">
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+          </ng-container>
+          <ng-container *ngIf="showQuarterlyView">
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
+          </ng-container>
           <!-- Presupuesto Mensual -->
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-          <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+          <ng-container *ngIf="!showQuarterlyView">
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
+          </ng-container>
+          <ng-container *ngIf="showQuarterlyView">
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
+            <th class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
+          </ng-container>
         </tr>
       </ng-template>
 
@@ -669,23 +734,31 @@
             </span>
           </td> -->
 
-          <td>{{ consolidatedItem?.name }}</td>
-          <td>{{ consolidatedItem?.measurementUnit }}</td>
+          <td pFrozenColumn>{{ consolidatedItem?.name }}</td>
+          <td pFrozenColumn>{{ consolidatedItem?.measurementUnit }}</td>
           <!-- <td class="text-center font-bold">{{ consolidatedItem?.activityCount }}</td> -->
 
           <!-- Metas Consolidadas (enero - diciembre) -->
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[0] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[1] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[2] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[3] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[4] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[5] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[6] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[7] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[8] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[9] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[10] || 0 }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[11] || 0 }}</td>
+          <ng-container *ngIf="!showQuarterlyView">
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[0] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[1] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[2] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[3] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[4] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[5] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[6] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[7] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[8] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[9] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[10] || 0 }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedGoals?.[11] || 0 }}</td>
+          </ng-container>
+          <ng-container *ngIf="showQuarterlyView">
+            <td class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 1) }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 2) }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 3) }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 4) }}</td>
+          </ng-container>
 
           <!-- Total de Metas Consolidadas -->
           <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">
@@ -693,18 +766,26 @@
           </td>
 
           <!-- Presupuesto Consolidado (enero - diciembre) -->
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[0] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[1] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[2] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[3] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[4] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[5] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[6] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[7] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[8] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[9] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[10] | number:'1.2-2' }}</td>
-          <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[11] | number:'1.2-2' }}</td>
+          <ng-container *ngIf="!showQuarterlyView">
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[0] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[1] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[2] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[3] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[4] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[5] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[6] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[7] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[8] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[9] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[10] | number:'1.2-2' }}</td>
+            <td class="montos">{{ consolidatedItem?.consolidatedBudgets?.[11] | number:'1.2-2' }}</td>
+          </ng-container>
+          <ng-container *ngIf="showQuarterlyView">
+            <td class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 1) | number:'1.2-2' }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 2) | number:'1.2-2' }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 3) | number:'1.2-2' }}</td>
+            <td class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 4) | number:'1.2-2' }}</td>
+          </ng-container>
 
           <!-- Total de Presupuesto Consolidado -->
           <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">

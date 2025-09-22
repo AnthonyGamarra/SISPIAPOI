@@ -14,6 +14,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { HealthOperationalActivityService } from '../../../core/services/logic/health-operational-activity.service';
 import { HealthOperationalActivitySummaryDTO } from '../../../models/logic/health-operational-activity-summary.dto';
 import { Formulation } from '../../../models/logic/formulation.model';
+import { exportTrimestralConsolidadoExcel, exportTrimestralDetalladoExcel } from './reportes-trimestrales';
+import { exportMensualConsolidadoExcel, exportMensualDetalladoExcel } from './reportes-mensuales';
 
 // Definir interface para la tabla original
 interface HealthTableRow {
@@ -722,5 +724,62 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
 
   private computeTotalMetas(groupedMensual: any[]): number {
     return (groupedMensual || []).reduce((sum: number, row: any) => sum + this.sumMesMetas(row), 0);
+  }
+
+  // Helpers to build dependency and formulation metadata used in exports
+  // NOTE: assumption: `idDependency` may contain the dependency name; if not, replace with a proper dependency object.
+  private buildDependencyMeta(): { name?: string } {
+  // Prefer the dependency name available in currentFormulation.dependency, fall back to idDependency string
+  const depName = (this.currentFormulation && (this.currentFormulation.dependency as any)?.name) || (this.idDependency as any) || '';
+  return { name: depName };
+  }
+
+  private buildFormulationMeta(): { year?: string | number | undefined, modification?: number | undefined } {
+    const year = this.currentFormulation?.year ?? this.ano ?? undefined;
+    const modification = (this.currentFormulation && (this.currentFormulation as any).modification) ?? 1;
+    return { year, modification };
+  }
+
+  // Export helpers per level and for all levels
+  exportTrimestralConsolidadoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
+    let rows: any[] = [];
+    if (nivel === 'I') rows = this.groupedHealthDataNivelI;
+    else if (nivel === 'II') rows = this.groupedHealthDataNivelII;
+    else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
+    else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
+
+    exportTrimestralConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_consolidado_${nivel}.xls`);
+  }
+
+  exportTrimestralDetalladoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
+    let rows: any[] = [];
+    if (nivel === 'I') rows = this.groupedHealthDataNivelI;
+    else if (nivel === 'II') rows = this.groupedHealthDataNivelII;
+    else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
+    else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
+
+    const details = rows.flatMap(r => r.detalles || []);
+    exportTrimestralDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_detallado_${nivel}.xls`);
+  }
+
+  exportMensualConsolidadoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
+    let rows: any[] = [];
+    if (nivel === 'I') rows = this.groupedHealthDataNivelI;
+    else if (nivel === 'II') rows = this.groupedHealthDataNivelII;
+    else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
+    else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
+
+    exportMensualConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_consolidado_${nivel}.xls`);
+  }
+
+  exportMensualDetalladoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
+    let rows: any[] = [];
+    if (nivel === 'I') rows = this.groupedHealthDataNivelI;
+    else if (nivel === 'II') rows = this.groupedHealthDataNivelII;
+    else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
+    else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
+
+    const details = rows.flatMap(r => r.detalles || []);
+    exportMensualDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_detallado_${nivel}.xls`);
   }
 }

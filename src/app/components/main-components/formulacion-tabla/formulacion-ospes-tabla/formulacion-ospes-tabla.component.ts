@@ -96,6 +96,22 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
   // Propiedades para vista consolidada
   showConsolidatedView: boolean = false;
   consolidatedActivities: any[] = [];
+  // Filter control for dependencies under the 'Vista' controls
+  selectedDependencyFilter: string | null = null;
+
+  // Nueva propiedad para alternar entre vista mensual y trimestral
+  showQuarterlyView: boolean = false;
+
+  get dependencyOptions(): { label: string; value: string }[] {
+    return (this.dependencyNamesList || []).map(name => ({ label: name, value: name }));
+  }
+
+  // Return dependency names filtered by the selectedDependencyFilter (case-insensitive)
+  getFilteredDependencyNames(): string[] {
+    if (!this.selectedDependencyFilter) return this.dependencyNamesList || [];
+    const q = this.selectedDependencyFilter.toLowerCase();
+    return (this.dependencyNamesList || []).filter(n => n.toLowerCase().includes(q));
+  }
   
   // Propiedades para importación de Excel
   showImportModal: boolean = false;
@@ -1279,6 +1295,23 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
     return total;
   }
 
+  getQuarterlyBudget(activity: OperationalActivity, quarter: number): number {
+    if (!activity?.monthlyBudgets || activity.monthlyBudgets.length === 0) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3 + 1;
+    const endMonth = quarter * 3;
+    
+    let total = 0;
+    for (let month = startMonth; month <= endMonth; month++) {
+      const budget = activity.monthlyBudgets.find(b => b.budgetOrder === month);
+      total += budget?.value || 0;
+    }
+    
+    return total;
+  }
+
   getTotalBudgetByType(activity: OperationalActivity, type: 'remuneration' | 'goods' | 'services'): number {
     if (!activity?.monthlyBudgets || activity.monthlyBudgets.length === 0) {
       // Si no hay presupuesto mensual, usar los valores básicos
@@ -1652,6 +1685,38 @@ export class FormulacionOspesTablaComponent implements OnDestroy {
       return 0;
     }
     return consolidatedItem.consolidatedBudgets.reduce((total: number, budget: number) => total + (budget || 0), 0);
+  }
+
+  getConsolidatedQuarterlyGoals(consolidatedItem: any, quarter: number): number {
+    if (!consolidatedItem?.consolidatedGoals) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3;
+    const endMonth = quarter * 3;
+    
+    let total = 0;
+    for (let month = startMonth; month < endMonth; month++) {
+      total += consolidatedItem.consolidatedGoals[month] || 0;
+    }
+    
+    return total;
+  }
+
+  getConsolidatedQuarterlyBudgets(consolidatedItem: any, quarter: number): number {
+    if (!consolidatedItem?.consolidatedBudgets) {
+      return 0;
+    }
+    
+    const startMonth = (quarter - 1) * 3;
+    const endMonth = quarter * 3;
+    
+    let total = 0;
+    for (let month = startMonth; month < endMonth; month++) {
+      total += consolidatedItem.consolidatedBudgets[month] || 0;
+    }
+    
+    return total;
   }
 
   // Método para cambiar entre vistas
