@@ -61,6 +61,12 @@ import { Observable, forkJoin } from 'rxjs';
   providers: [ConfirmationService]
 })
 export class AdmPlanificacionTableComponent implements OnInit {
+  // Devuelve true si el tipo de formulación es una de las especiales (Salud, Económicas, Sociales)
+  isPrestacionesEspeciales(formTypeName: string): boolean {
+    return formTypeName === 'OODD PRESTACIONES DE SALUD' ||
+           formTypeName === 'OODD PRESTACIONES ECONÓMICAS' ||
+           formTypeName === 'OODD PRESTACIONES SOCIALES';
+  }
 
   formulations: Formulation[] = [];
   years: number[] = [];
@@ -906,10 +912,16 @@ export class AdmPlanificacionTableComponent implements OnInit {
       return [];
     }
 
+    const existingMods = this.getExistingModifications(depTypeName, formTypeName);
+    if (existingMods.length === 0) {
+      this.dataCache.set(cacheKey, []);
+      return [];
+    }
+
     const dependenciesMap = new Map<string, any>();
 
-    // Para Prestaciones de Salud, solo mostrar Formulación Inicial (1) y Primera Modificatoria (2)
-    [1, 2].forEach(mod => {
+    // Procesar todas las modificaciones existentes
+    existingMods.forEach(mod => {
       const formulations = group[mod] || [];
       formulations.forEach(formulation => {
         const depName = formulation.dependency?.name;
@@ -918,35 +930,36 @@ export class AdmPlanificacionTableComponent implements OnInit {
         if (!dependenciesMap.has(depName)) {
           dependenciesMap.set(depName, {
             dependencyName: depName,
-            formulacionInicial: null,
-            primeraModificatoria: null
+            modifications: {}
           });
         }
-
-        if (mod === 1) {
-          dependenciesMap.get(depName)!.formulacionInicial = formulation;
-        } else if (mod === 2) {
-          dependenciesMap.get(depName)!.primeraModificatoria = formulation;
-        }
+        dependenciesMap.get(depName)!.modifications[mod] = formulation;
       });
     });
 
-    // También incluir dependencias que no tienen formulaciones para mostrar "No iniciado"
+    // Incluir dependencias que no tienen formulaciones para mostrar "No iniciado" en todas las columnas
     const allDependencies = this.getAllDependenciesForType(depTypeName, formTypeName);
     allDependencies.forEach(depName => {
       if (!dependenciesMap.has(depName)) {
         dependenciesMap.set(depName, {
           dependencyName: depName,
-          formulacionInicial: null,
-          primeraModificatoria: null
+          modifications: {}
         });
       }
+    });
+
+    // Asegurar que todas las dependencias tengan todas las modificaciones (aunque sean null)
+    dependenciesMap.forEach(depObj => {
+      existingMods.forEach(mod => {
+        if (!depObj.modifications.hasOwnProperty(mod)) {
+          depObj.modifications[mod] = null;
+        }
+      });
     });
 
     const result = Array.from(dependenciesMap.values()).sort((a, b) => 
       a.dependencyName.localeCompare(b.dependencyName)
     );
-    
     this.dataCache.set(cacheKey, result);
     return result;
   }

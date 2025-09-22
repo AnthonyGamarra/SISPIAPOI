@@ -3,22 +3,20 @@
   <div class="filter-section mb-1 p-4 bg-gray-50 rounded-lg">
     <h4 class="text-md font-semibold text-gray-700 mb-2">Filtrar por Centro Asistencial</h4>
     <div class="flex items-center gap-2">
-      <p-select
-        [options]="desCenSesOptions"
-        [(ngModel)]="selectedDesCenSes"
-        (onChange)="applyFilter()"
-        placeholder="Seleccionar Centro Asistencial"
-        [filter]="true"
-        class="flex-1"
-      ></p-select>
-      <p-button
-        label="Limpiar Filtro"
-        icon="pi pi-times"
-        (onClick)="clearFilter()"
-        [disabled]="!selectedDesCenSes"
-        styleClass="p-button-secondary"
-      ></p-button>
+      <p-select [options]="desCenSesOptions" [(ngModel)]="selectedDesCenSes" (onChange)="applyFilter()"
+        placeholder="Seleccionar Centro Asistencial" [filter]="true" class="flex-1"></p-select>
+      <p-button label="Limpiar Filtro" icon="pi pi-times" (onClick)="clearFilter()" [disabled]="!selectedDesCenSes"
+        styleClass="p-button-secondary"></p-button>
     </div>
+  </div>
+
+  <!-- Total General (zona superior) -->
+  <!-- Vista: switch Trimestral / Mensual -->
+  <div *ngIf="!loading && totalRecords > 0" class="view-toggle m-3 flex gap-2 items-center">
+    <button pButton label="Trimestral" (click)="setViewMode('trimestral')" [disabled]="isTrimestral"
+      class="add-button"></button>
+    <button pButton label="Mensual" (click)="setViewMode('mensual')" [disabled]="isMensual"
+      class="add-button"></button>
   </div>
 
   <!-- Loader de filtrado -->
@@ -34,39 +32,52 @@
   </div>
 
   <!-- Mensaje sin datos -->
-  <div *ngIf="!loading && groupedHealthDataNivelI.length === 0 && groupedHealthDataNivelII.length === 0 && groupedHealthDataNivelIII.length === 0" class="text-center p-6">
+  <div
+    *ngIf="!loading && groupedHealthDataNivelI.length === 0 && groupedHealthDataNivelII.length === 0 && groupedHealthDataNivelIII.length === 0"
+    class="text-center p-6">
     <h3 class="text-lg font-semibold text-gray-600">No hay actividades de salud registradas para esta formulación.</h3>
   </div>
 
   <!-- Tabla Nivel I -->
-  <div *ngIf="!loading && groupedHealthDataNivelI.length > 0" class="table-container mb-6">
+  <!-- Resumen Total Presupuesto -->
+  <div *ngIf="!loading && groupedHealthDataNivelI.length > 0 && isTrimestral" class="table-container mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel I</h3>
-    <p-table [value]="groupedHealthDataNivelI" dataKey="id" [size]="'small'" stripedRows showGridlines 
-      [resizableColumns]="true" [scrollable]="true" scrollHeight="400px" columnResizeMode="expand"
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelI" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
       responsiveLayout="scroll">
       <ng-template pTemplate="header">
         <tr class="cabecera">
-          <th style="width: 50px;"></th>
-          <th style="min-width: 180px; max-width: 180px;">Familia</th>
-          <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-          <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-          <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-          <th style="min-width: 150px; max-width: 150px;">Total Presupuesto S/.</th>
+          <th style="min-width: 50px; max-width: 50px;"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="font-bold bg-gray-100">
+          <td colspan="8" class="text-right">Total Nivel I:</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelI.t1) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelI.t2) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelI.t3) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelI.t4) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelI.total) }}</td>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>
             <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'I')"
-              class="p-button-text p-button-rounded p-button-plain" 
-              [icon]="isRowExpanded(row.id, 'I') ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'I') ? 'pi pi pi-minus' : 'pi pi-plus'">
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
@@ -84,31 +95,31 @@
         </tr>
         <tr *ngIf="isRowExpanded(row.id, 'I')">
           <td colspan="14">
-            <p-table [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
+            <p-table class="fixed-table" [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
               <ng-template pTemplate="header">
-                <tr>
-                  <th style="width: 50px;"></th>
-                  <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
-                  <th style="min-width: 80px; max-width: 80px;">A.E. (código)</th>
-                  <th style="min-width: 150px; max-width: 150px;">Centro Asistencial</th>
-                  <th style="min-width: 150px; max-width: 150px;">Nombre de Actividad</th>
-                  <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-                  <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-                  <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-                  <th style="min-width: 150px; max-width: 150px;">Total Presup. S/.</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-detail>
-                <tr>
-                  <td></td>
-                  <td>
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px;"></th>
+          <!-- <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
+                  <th style="min-width: 80px; max-width: 80px;">A.E. (código)</th> -->
+          <!-- <th style="min-width: 300px; max-width: 300px;">Centro Asistencial</th> -->
+          <th style="min-width: 330px; max-width: 330px">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td></td>
+          <!-- <td>
                     <span pTooltip="{{ detail.objetivoEstrategico.nombre }}" tooltipPosition="top">
                       {{ detail.objetivoEstrategico.codigo }}
                     </span>
@@ -117,65 +128,163 @@
                     <span pTooltip="{{ detail.accionEstrategica.nombre }}" tooltipPosition="top">
                       {{ detail.accionEstrategica.codigo }}
                     </span>
-                  </td>
-                  <td>{{ detail.desCenSes }}</td>
-                  <td>{{ detail.accionEstrategica.nombre }}</td>
-                  <td>{{ detail.unidadMedida }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </td>
+                  </td> -->
+          <!-- <td>{{ detail.desCenSes }}</td> -->
+          <td>{{ detail.accionEstrategica.nombre }}</td>
+          <td>{{ detail.unidadMedida }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
+    </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="13" class="text-center p-4">
+          No se encontraron actividades de Nivel I para mostrar.
+        </td>
+      </tr>
+    </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Tabla Nivel I - Mensual -->
+  <div *ngIf="!loading && groupedHealthDataNivelIMensual.length > 0 && isMensual" class="table-container mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel I - Mensual</h3>
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelIMensual" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
+      responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr class="cabecera">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <!-- Month metas columns -->
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Meta</th>
+          <!-- Total metas placed immediately after Diciembre Meta -->
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <!-- Month presupuesto columns -->
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 140px; max-width: 140px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
         <tr>
-          <td colspan="13" class="text-center p-4">
-            No se encontraron actividades de Nivel I para mostrar.
+          <td>
+            <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'I')"
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'I') ? 'pi pi pi-minus' : 'pi pi-plus'">
+            </button>
           </td>
+          <td class="font-bold text-lg">{{ row.familia }}</td>
+          <td>{{ row.unidadMedida }}</td>
+          <!-- Render metas (12) then Total Metas immediately after metas, then presupuesto (12) -->
+          <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
+          <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
+          <td *ngFor="let m of row.meses" class="montos">{{ formatCurrency(m.presupuesto) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(sumMesPresupuesto(row)) }}</td>
+        </tr>
+        <tr *ngIf="isRowExpanded(row.id, 'I')">
+          <td colspan="29">
+            <p-table class="fixed-table" [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
+              <ng-template pTemplate="header">
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <!-- detail header: metas 12, then total metas, then presupuesto 12, then total presupuesto -->
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Meta</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 140px; max-width: 140px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
         </tr>
       </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td style="min-width: 50px; max-width: 50px"></td>
+          <td style="min-width: 330px; max-width: 330px">{{ detail.accionEstrategica.nombre }}</td>
+          <td style="min-width: 200px; max-width: 200px">{{ detail.unidadMedida }}</td>
+          <!-- Convert detail trimestral to monthly evenly: metas (12), then total metas, then presupuesto (12), then total presupuesto -->
+          <td *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatNumber(monthlyMetaForDetail(detail, mIndex)) }}</td>
+          <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatCurrency(monthlyBudgetForDetail(detail, mIndex)) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <tr class="font-bold bg-gray-100">
+        <td colspan="16" class="text-right">Total Nivel I:</td>
+        <td *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10,11]" class="text-right">{{
+          formatCurrency(totalPresupuestoMensualNivelI[i]) }}</td>
+        <td class="text-right">{{ formatCurrency(sumArray(totalPresupuestoMensualNivelI)) }}</td>
+      </tr>
+    </ng-template>
     </p-table>
   </div>
 
   <!-- Tabla Nivel II -->
-  <div *ngIf="!loading && groupedHealthDataNivelII.length > 0" class="table-container mb-6">
+  <div *ngIf="!loading && groupedHealthDataNivelII.length > 0 && isTrimestral" class="table-container mb-6">
     <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel II</h3>
-    <p-table [value]="groupedHealthDataNivelII" dataKey="id" [size]="'small'" stripedRows showGridlines 
-      [resizableColumns]="true" [scrollable]="true" scrollHeight="400px" columnResizeMode="expand"
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelII" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
       responsiveLayout="scroll">
       <ng-template pTemplate="header">
         <tr class="cabecera">
-          <th style="width: 50px;"></th>
-          <th style="min-width: 180px; max-width: 180px;">Familia</th>
-          <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-          <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-          <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-          <th style="min-width: 150px; max-width: 150px;">Total Presupuesto S/.</th>
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="font-bold bg-gray-100">
+          <td colspan="8" class="text-right">Total Nivel II:</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelII.t1) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelII.t2) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelII.t3) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelII.t4) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelII.total) }}</td>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>
             <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'II')"
-              class="p-button-text p-button-rounded p-button-plain" 
-              [icon]="isRowExpanded(row.id, 'II') ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'II') ? 'pi pi pi-minus' : 'pi pi-plus'">
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
@@ -193,31 +302,31 @@
         </tr>
         <tr *ngIf="isRowExpanded(row.id, 'II')">
           <td colspan="14">
-            <p-table [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
+            <p-table class="fixed-table" [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
               <ng-template pTemplate="header">
-                <tr>
-                  <th style="width: 50px;"></th>
-                  <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <!-- <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
                   <th style="min-width: 80px; max-width: 80px;">A.E. (código)</th>
-                  <th style="min-width: 150px; max-width: 150px;">Centro Asistencial</th>
-                  <th style="min-width: 150px; max-width: 150px;">Nombre de Actividad</th>
-                  <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-                  <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-                  <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-                  <th style="min-width: 150px; max-width: 150px;">Total Presup. S/.</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-detail>
-                <tr>
-                  <td></td>
-                  <td>
+                  <th style="min-width: 170px; max-width: 170px;">Centro Asistencial</th> -->
+          <th style="min-width: 330px; max-width: 330px">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td></td>
+          <!-- <td>
                     <span pTooltip="{{ detail.objetivoEstrategico.nombre }}" tooltipPosition="top">
                       {{ detail.objetivoEstrategico.codigo }}
                     </span>
@@ -227,64 +336,178 @@
                       {{ detail.accionEstrategica.codigo }}
                     </span>
                   </td>
-                  <td>{{ detail.desCenSes }}</td>
-                  <td>{{ detail.accionEstrategica.nombre }}</td>
-                  <td>{{ detail.unidadMedida }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="13" class="text-center p-4">
-            No se encontraron actividades de Nivel II para mostrar.
-          </td>
+                  <td>{{ detail.desCenSes }}</td> -->
+          <td>{{ detail.accionEstrategica.nombre }}</td>
+          <td>{{ detail.unidadMedida }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
         </tr>
       </ng-template>
     </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="13" class="text-center p-4">
+          No se encontraron actividades de Nivel II para mostrar.
+        </td>
+      </tr>
+    </ng-template>
+    </p-table>
   </div>
 
-  <!-- Tabla Nivel III -->
-  <div *ngIf="!loading && groupedHealthDataNivelIII.length > 0" class="table-container mb-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel III</h3>
-    <p-table [value]="groupedHealthDataNivelIII" dataKey="id" [size]="'small'" stripedRows showGridlines 
-      [resizableColumns]="true" [scrollable]="true" scrollHeight="400px" columnResizeMode="expand"
+  <!-- Tabla Nivel II - Mensual -->
+  <div *ngIf="!loading && groupedHealthDataNivelIIMensual.length > 0 && isMensual" class="table-container mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel II - Mensual</h3>
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelIIMensual" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
       responsiveLayout="scroll">
       <ng-template pTemplate="header">
         <tr class="cabecera">
-          <th style="width: 50px;"></th>
-          <th style="min-width: 180px; max-width: 180px;">Familia</th>
-          <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-          <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-          <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-          <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-          <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-          <th style="min-width: 150px; max-width: 150px;">Total Presupuesto S/.</th>
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Meta</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 140px; max-width: 140px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-row>
         <tr>
           <td>
+            <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'II')"
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'II') ? 'pi pi pi-minus' : 'pi pi-plus'">
+            </button>
+          </td>
+          <td class="font-bold text-lg">{{ row.familia }}</td>
+          <td>{{ row.unidadMedida }}</td>
+          <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
+          <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
+          <td *ngFor="let m of row.meses" class="montos">{{ formatCurrency(m.presupuesto) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(sumMesPresupuesto(row)) }}</td>
+        </tr>
+        <tr *ngIf="isRowExpanded(row.id, 'II')">
+          <td colspan="29">
+            <p-table class="fixed-table" [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
+              <ng-template pTemplate="header">
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 100px; max-width: 100px">{{mName}} Meta</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td style="min-width: 50px; max-width: 50px"></td>
+          <td style="min-width: 330px; max-width: 330px">{{ detail.accionEstrategica.nombre }}</td>
+          <td style="min-width: 200px; max-width: 200px">{{ detail.unidadMedida }}</td>
+          <td style="min-width: 120px; max-width: 120px" *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatNumber(monthlyMetaForDetail(detail, mIndex)) }}</td>
+          <td style="min-width: 170px; max-width: 170px" class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td style="min-width: 140px; max-width: 140px" *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatCurrency(monthlyBudgetForDetail(detail, mIndex)) }}</td>
+          <td style="min-width: 240px; max-width: 240px" class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <tr class="font-bold bg-gray-100">
+        <td colspan="16" class="text-right">Total Nivel II:</td>
+        <td *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10,11]" class="text-right">{{
+          formatCurrency(totalPresupuestoMensualNivelII[i]) }}</td>
+        <td class="text-right">{{ formatCurrency(sumArray(totalPresupuestoMensualNivelII)) }}</td>
+      </tr>
+    </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Tabla Nivel III -->
+  <div *ngIf="!loading && groupedHealthDataNivelIII.length > 0 && isTrimestral" class="table-container mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel III</h3>
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelIII" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
+      responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr class="cabecera">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="font-bold bg-gray-100">
+          <td colspan="8" class="text-right">Total Nivel III:</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelIII.t1) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelIII.t2) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelIII.t3) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelIII.t4) }}</td>
+          <td class="text-right">{{ formatCurrency(totalPresupuestoNivelIII.total) }}</td>
+        </tr>
+      </ng-template>
+      <!-- Total General -->
+      <div *ngIf="!loading" class="mb-6">
+        <div class="p-4 bg-blue-50 rounded-lg flex flex-wrap gap-4 items-center justify-end">
+          <span class="font-bold text-lg">Total General:</span>
+          <ng-container *ngIf="isTrimestral">
+            <span>T1: <span class="font-bold">{{ formatCurrency(totalPresupuestoGeneral.t1) }}</span></span>
+            <span>T2: <span class="font-bold">{{ formatCurrency(totalPresupuestoGeneral.t2) }}</span></span>
+            <span>T3: <span class="font-bold">{{ formatCurrency(totalPresupuestoGeneral.t3) }}</span></span>
+            <span>T4: <span class="font-bold">{{ formatCurrency(totalPresupuestoGeneral.t4) }}</span></span>
+            <span>Total: <span class="font-bold">{{ formatCurrency(totalPresupuestoGeneral.total) }}</span></span>
+          </ng-container>
+          <ng-container *ngIf="isMensual">
+            <!-- compute monthly totals by summing mensual grouped arrays across levels -->
+            <ng-container
+              *ngIf="groupedHealthDataNivelIMensual || groupedHealthDataNivelIIMensual || groupedHealthDataNivelIIIMensual">
+              <span *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]">M{{mIndex+1}}: <span class="font-bold">{{
+                  formatCurrency(monthlyTotalForMonth(mIndex)) }}</span></span>
+              <span>Total: <span class="font-bold">{{ formatCurrency(monthlyTotalAll()) }}</span></span>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
             <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'III')"
-              class="p-button-text p-button-rounded p-button-plain" 
-              [icon]="isRowExpanded(row.id, 'III') ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'III') ? 'pi pi pi-minus' : 'pi pi-plus'">
             </button>
           </td>
           <td class="font-bold text-lg">{{ row.familia }}</td>
@@ -304,29 +527,29 @@
           <td colspan="14">
             <p-table [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
               <ng-template pTemplate="header">
-                <tr>
-                  <th style="width: 50px;"></th>
-                  <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px;"></th>
+          <!-- <th style="min-width: 80px; max-width: 80px;">O.E. (código)</th>
                   <th style="min-width: 80px; max-width: 80px;">A.E. (código)</th>
-                  <th style="min-width: 150px; max-width: 150px;">Centro Asistencial</th>
-                  <th style="min-width: 150px; max-width: 150px;">Nombre de Actividad</th>
-                  <th style="min-width: 150px; max-width: 150px;">Unidad de medida</th>
-                  <th style="min-width: 120px; max-width: 120px;">I Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">II Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">III Trimestre</th>
-                  <th style="min-width: 100px; max-width: 100px;">IV Trimestre</th>
-                  <th style="min-width: 120px; max-width: 120px;">Total Metas</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T1 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T2 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T3 S/.</th>
-                  <th style="min-width: 170px; max-width: 170px;">Presupuesto T4 S/.</th>
-                  <th style="min-width: 150px; max-width: 150px;">Total Presup. S/.</th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-detail>
-                <tr>
-                  <td></td>
-                  <td>
+                  <th style="min-width: 170px; max-width: 170px;">Centro Asistencial</th> -->
+          <th style="min-width: 330px; max-width: 330px;">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px;">Unidad de medida</th>
+          <th style="min-width: 160px; max-width: 160px;">I Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px;">II Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px;">III Trimestre</th>
+          <th style="min-width: 160px; max-width: 160px;">IV Trimestre</th>
+          <th style="min-width: 170px; max-width: 170px;">Total Metas</th>
+          <th style="min-width: 210px; max-width: 210px;">Presupuesto T1 S/.</th>
+          <th style="min-width: 210px; max-width: 210px;">Presupuesto T2 S/.</th>
+          <th style="min-width: 210px; max-width: 210px;">Presupuesto T3 S/.</th>
+          <th style="min-width: 210px; max-width: 210px;">Presupuesto T4 S/.</th>
+          <th style="min-width: 240px; max-width: 240px;">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td></td>
+          <!-- <td>
                     <span pTooltip="{{ detail.objetivoEstrategico.nombre }}" tooltipPosition="top">
                       {{ detail.objetivoEstrategico.codigo }}
                     </span>
@@ -336,32 +559,208 @@
                       {{ detail.accionEstrategica.codigo }}
                     </span>
                   </td>
-                  <td>{{ detail.desCenSes }}</td>
-                  <td>{{ detail.accionEstrategica.nombre }}</td>
-                  <td>{{ detail.unidadMedida }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
-                  <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
-                  <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
-                  <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </td>
+                  <td>{{ detail.desCenSes }}</td> -->
+          <td>{{ detail.accionEstrategica.nombre }}</td>
+          <td>{{ detail.unidadMedida }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre1) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre2) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre3) }}</td>
+          <td class="montos">{{ formatNumber(detail.metas.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre1) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre2) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre3) }}</td>
+          <td class="montos">{{ formatCurrency(detail.presupuesto.trimestre4) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
+    </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="13" class="text-center p-4">
+          No se encontraron actividades de Nivel III para mostrar.
+        </td>
+      </tr>
+    </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Tabla Nivel III - Mensual -->
+  <div *ngIf="!loading && groupedHealthDataNivelIIIMensual.length > 0 && isMensual" class="table-container mb-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Nivel III - Mensual</h3>
+    <p-table class="fixed-table" [value]="groupedHealthDataNivelIIIMensual" dataKey="id" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="500px" columnResizeMode="expand"
+      responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr class="cabecera">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Familia</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Meta</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 140px; max-width: 140px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
         <tr>
-          <td colspan="13" class="text-center p-4">
-            No se encontraron actividades de Nivel III para mostrar.
+          <td>
+            <button type="button" pButton pRipple (click)="toggleRowExpansion(row.id, 'III')"
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="isRowExpanded(row.id, 'III') ? 'pi pi pi-minus' : 'pi pi-plus'">
+            </button>
           </td>
+          <td class="font-bold text-lg">{{ row.familia }}</td>
+          <td>{{ row.unidadMedida }}</td>
+          <td *ngFor="let m of row.meses" class="montos">{{ formatNumber(m.metas) }}</td>
+          <td class="montos font-bold">{{ formatNumber(sumMesMetas(row)) }}</td>
+          <td *ngFor="let m of row.meses" class="montos">{{ formatCurrency(m.presupuesto) }}</td>
+          <td class="montos font-bold">{{ formatCurrency(sumMesPresupuesto(row)) }}</td>
+        </tr>
+        <tr *ngIf="isRowExpanded(row.id, 'III')">
+          <td colspan="29">
+            <p-table class="fixed-table" [value]="row.detalles" [size]="'small'" stripedRows showGridlines>
+              <ng-template pTemplate="header">
+        <tr class="cabecera-detalle">
+          <th style="min-width: 50px; max-width: 50px"></th>
+          <th style="min-width: 330px; max-width: 330px">Nombre de Actividad</th>
+          <th style="min-width: 200px; max-width: 200px">Unidad de medida</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 100px; max-width: 100px">{{mName}} Meta</th>
+          <th style="min-width: 170px; max-width: 170px">Total Metas</th>
+          <th
+            *ngFor="let mName of ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']"
+            style="min-width: 120px; max-width: 120px">{{mName}} Presupuesto S/.</th>
+          <th style="min-width: 240px; max-width: 240px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-detail>
+        <tr>
+          <td style="min-width: 50px; max-width: 50px"></td>
+          <td style="min-width: 330px; max-width: 330px">{{ detail.accionEstrategica.nombre }}</td>
+          <td style="min-width: 200px; max-width: 200px">{{ detail.unidadMedida }}</td>
+          <td style="min-width: 120px; max-width: 120px" *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatNumber(monthlyMetaForDetail(detail, mIndex)) }}</td>
+          <td style="min-width: 170px; max-width: 170px" class="montos font-bold">{{ formatNumber(detail.metas.total) }}</td>
+          <td style="min-width: 140px; max-width: 140px" *ngFor="let mIndex of [0,1,2,3,4,5,6,7,8,9,10,11]" class="montos">{{
+            formatCurrency(monthlyBudgetForDetail(detail, mIndex)) }}</td>
+          <td style="min-width: 240px; max-width: 240px" class="montos font-bold">{{ formatCurrency(detail.presupuesto.total) }}</td>
+        </tr>
+      </ng-template>
+    </p-table>
+    </td>
+    </tr>
+    </ng-template>
+    <ng-template pTemplate="footer">
+      <tr class="font-bold bg-gray-100">
+        <td colspan="16" class="text-right">Total Nivel III:</td>
+        <td *ngFor="let i of [0,1,2,3,4,5,6,7,8,9,10,11]" class="text-right">{{
+          formatCurrency(totalPresupuestoMensualNivelIII[i]) }}</td>
+        <td class="text-right">{{ formatCurrency(sumArray(totalPresupuestoMensualNivelIII)) }}</td>
+      </tr>
+    </ng-template>
+    </p-table>
+  </div>
+
+  <div *ngIf="!loading && totalPresupuestoGeneral.total" class="table-container mb-4">
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Total Presupuesto</h3>
+    <p-table class="fixed-table" [value]="[totalPresupuestoGeneral]" dataKey="total" [size]="'small'" stripedRows
+      showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="100px" columnResizeMode="expand"
+      responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr class="cabecera-total">
+          <ng-container *ngIf="isTrimestral">
+            <th style="min-width: 50px; max-width: 50px;"></th>
+            <th style="min-width: 330px; max-width: 330px;"></th>
+            <th style="min-width: 200px; max-width: 200px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 170px; max-width: 170px;"></th>
+            <th style="min-width: 210px; max-width: 210px;">Presupuesto T1 S/.</th>
+            <th style="min-width: 210px; max-width: 210px;">Presupuesto T2 S/.</th>
+            <th style="min-width: 210px; max-width: 210px;">Presupuesto T3 S/.</th>
+            <th style="min-width: 210px; max-width: 210px;">Presupuesto T4 S/.</th>
+            <th style="min-width: 240px; max-width: 240px;">Total Presupuesto S/.</th>
+          </ng-container>
+          <ng-container *ngIf="isMensual">
+            <!-- show month-labeled presupuesto columns (Enero..Diciembre Presupuesto S/.) -->
+            <th style="min-width: 50px; max-width: 50px;"></th>
+            <th style="min-width: 330px; max-width: 330px;"></th>
+            <th style="min-width: 200px; max-width: 200px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 160px; max-width: 160px;"></th>
+            <th style="min-width: 170px; max-width: 170px;"></th>
+            <th style="min-width: 160px; max-width: 160px;">Enero Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Febrero Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Marzo Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Abril Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Mayo Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Junio Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Julio Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Agosto Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Septiembre Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Octubre Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Noviembre Presupuesto S/.</th>
+            <th style="min-width: 160px; max-width: 160px;">Diciembre Presupuesto S/.</th>
+            <th style="min-width: 240px; max-width: 240px;">Total Presupuesto S/.</th>
+          </ng-container>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <ng-container *ngIf="isTrimestral">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="montos font-bold">{{ formatCurrency(row.t1) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(row.t2) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(row.t3) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(row.t4) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(row.total) }}</td>
+          </ng-container>
+          <ng-container *ngIf="isMensual">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(0)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(1)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(2)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(3)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(4)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(5)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(6)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(7)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(8)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(9)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(10)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(11)) }}</td>
+            <td class="montos font-bold">{{ formatCurrency(monthlyTotalAll()) }}</td>
+          </ng-container>
         </tr>
       </ng-template>
     </p-table>
   </div>
+
 </div>

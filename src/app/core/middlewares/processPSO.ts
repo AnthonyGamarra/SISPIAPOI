@@ -30,9 +30,13 @@ export class ProcessPSOService {
       // Primero obtener todas las dependencias OODD con ospe = false (prestaciones sociales)
       this.dependencyService.getAll().subscribe({
         next: (allDependencies: Dependency[]) => {
+          // Excluir dependencias con id 61, 62 y 115
+          const excludedIds = [61, 62, 115];
           const prestacionesSocialesDependencies = allDependencies.filter(dep => 
             dep.dependencyType?.idDependencyType === 2 && 
-            dep.ospe === false
+            dep.ospe === false &&
+            typeof dep.idDependency === 'number' &&
+            !excludedIds.includes(dep.idDependency)
           );
 
           if (prestacionesSocialesDependencies.length === 0) {
@@ -186,12 +190,15 @@ export class ProcessPSOService {
   ): Observable<any> {
     return new Observable(observer => {
       let maxModification = 0;
-      // Solo considerar formulaciones Prestaciones Sociales (tipo 2, tipo 5) con ospe = false
+      // Solo considerar formulaciones Prestaciones Sociales (tipo 2, tipo 5) con ospe = false y excluyendo ids 61, 62, 115
+      const excludedIds = [61, 62, 115];
       const prestacionesSocialesFormulations = formulations.filter(f =>
         f.year === selectedYear &&
         f.dependency?.dependencyType?.idDependencyType === 2 &&
         f.formulationType?.idFormulationType === 5 &&
-        f.dependency?.ospe === false
+        f.dependency?.ospe === false &&
+        typeof f.dependency?.idDependency === 'number' &&
+        !excludedIds.includes(f.dependency.idDependency)
       );
 
       prestacionesSocialesFormulations.forEach(f => {

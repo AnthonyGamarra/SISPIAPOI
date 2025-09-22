@@ -67,8 +67,20 @@ tbody td {
 
 ::ng-deep .cabecera th{
   color: #ffffff !important;
-  background-color: #00529B !important;
+  background-color: var(--primary) !important;
   font-weight: bold !important;
+  border-radius: 5px;
+}
+
+::ng-deep .cabecera-detalle th{
+  color: var(--primary-darker) !important;
+  background-color: var(--secondary-light) !important;
+  border-radius: 5px;
+}
+
+::ng-deep .cabecera-total th{
+  color: white !important;
+  background-color: var(--primary-darker) !important;
   border-radius: 5px;
 }
 
@@ -196,4 +208,16 @@ textarea[disabled] {
     padding: 8px 6px;
     font-size: 0.85em;
   }
+}
+
+.formulacion-salud-od-tabla .fixed-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.formulacion-salud-od-tabla td,
+.formulacion-salud-od-tabla th {
+  white-space: normal; /* allow wrapping */
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }

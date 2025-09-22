@@ -55,80 +55,68 @@ export class FormulacionOoddSaludComponent {
    */
   manejarBusqueda(
     event: {
-      ano?: string | null; // Made optional as `formulation` might carry it
-      dependencia?: string | null; // Made optional
-      idFormulation?: number | null; // Made optional
-    } | Formulation | undefined | null, // Can receive either the event object, a full Formulation, or undefined/null
-    formulation?: Formulation | null // For direct Formulation object
+      ano?: string | null;
+      dependencia?: string | null;
+      idFormulation?: number | null;
+    } | Formulation | undefined | null,
+    formulation?: Formulation | null
   ): void {
     console.log('manejarBusqueda llamado con event:', event, 'formulation:', formulation);
     let selectedFormulation: Formulation | null = null;
 
-    // Handle explicit undefined/null cases (when selector clears the formulation)
+    // Limpia la formulación y fuerza el loader antes de procesar el nuevo evento
+    this.currentFormulation = null;
+    this.cdr.detectChanges();
+
+    // Si el evento es nulo, solo limpia y retorna
     if (event === undefined || event === null) {
       console.log('Evento nulo/undefined - limpiando formulación');
-      // Force change detection by temporarily setting to a different value
-      this.currentFormulation = {} as any; // Temporary non-null value
-      this.cdr.detectChanges(); // Force first change detection
-      
-      // Use setTimeout to trigger change detection in next cycle
-      setTimeout(() => {
-        this.currentFormulation = null;
-        this.cdr.detectChanges(); // Force second change detection
-      }, 0);
       return;
     }
 
-    // Determine if `event` is a full `Formulation` object or the intermediate `{ano, dependencia, idFormulation}`
+    // Determina si el evento es una formulación completa
     if (event && (event as Formulation).idFormulation) {
-        selectedFormulation = event as Formulation;
-        // Para prestaciones salud, verificar que la dependencia tenga social = true
-        if (selectedFormulation.dependency?.social !== true) {
-          this.currentFormulation = null;
-          return;
-        }
-        // Update selected year and dependency from formulation
-        this.selectedYear = selectedFormulation.year?.toString() || null;
-        this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
+      selectedFormulation = event as Formulation;
+      if (selectedFormulation.dependency?.social !== true) {
+        return;
+      }
+      this.selectedYear = selectedFormulation.year?.toString() || null;
+      this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
     } else if (formulation && (formulation as Formulation).idFormulation) {
-        selectedFormulation = formulation as Formulation;
-        // Para prestaciones salud, verificar que la dependencia tenga social = true
-        if (selectedFormulation.dependency?.social !== true) {
-          this.currentFormulation = null;
-          return;
-        }
-        // Update selected year and dependency from formulation
-        this.selectedYear = selectedFormulation.year?.toString() || null;
-        this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
+      selectedFormulation = formulation as Formulation;
+      if (selectedFormulation.dependency?.social !== true) {
+        return;
+      }
+      this.selectedYear = selectedFormulation.year?.toString() || null;
+      this.selectedDependency = selectedFormulation.dependency?.idDependency?.toString() || null;
     } else if (event && (event as any).idFormulation) {
-        // This handles the original `buscar` event structure
-        this.selectedYear = (event as any).ano;
-        this.selectedDependency = (event as any).dependencia;
-        selectedFormulation = {
-            idFormulation: (event as any).idFormulation,
-            year: (event as any).ano ? parseInt((event as any).ano, 10) : undefined,
-            dependency: (event as any).dependencia ? { idDependency: parseInt((event as any).dependencia, 10) } as any : undefined,
-            // You might need to fetch the full object if only ID is available
-            // For now, let's assume the Selector sends the full object if available
-        } as Formulation;
+      this.selectedYear = (event as any).ano;
+      this.selectedDependency = (event as any).dependencia;
+      selectedFormulation = {
+        idFormulation: (event as any).idFormulation,
+        year: (event as any).ano ? parseInt((event as any).ano, 10) : undefined,
+        dependency: (event as any).dependencia ? { idDependency: parseInt((event as any).dependencia, 10) } as any : undefined,
+      } as Formulation;
     } else {
-        // If event has ano/dependencia but no formulation, still store the selections
-        if (event && (event as any).ano !== undefined) {
-            this.selectedYear = (event as any).ano;
-        }
-        if (event && (event as any).dependencia !== undefined) {
-            this.selectedDependency = (event as any).dependencia;
-        }
+      if (event && (event as any).ano !== undefined) {
+        this.selectedYear = (event as any).ano;
+      }
+      if (event && (event as any).dependencia !== undefined) {
+        this.selectedDependency = (event as any).dependencia;
+      }
     }
 
+    // Si no hay formulación válida, no asigna nada
     if (!selectedFormulation?.idFormulation) {
-      // If no valid formulation is selected or created, clear formulation but keep selections
       console.log('No se encontró formulación válida');
-      this.currentFormulation = null;
       return;
     }
-    console.log('Estableciendo formulación seleccionada:', selectedFormulation);
-    this.currentFormulation = selectedFormulation;
+    // Asigna la formulación y fuerza el cambio visual
+    setTimeout(() => {
+      console.log('[PADRE] Asignando currentFormulation en manejarBusqueda:', selectedFormulation);
+      this.currentFormulation = selectedFormulation;
+      this.cdr.detectChanges();
+    }, 0);
   }
 
   /**
@@ -166,16 +154,23 @@ export class FormulacionOoddSaludComponent {
    */
   onSelectorChange(data: { ano?: string | null; dependencia?: string | null }): void {
     console.log('onSelectorChange llamado con:', data);
+    let limpiar = false;
     if (data.ano !== undefined) {
+      if (this.selectedYear !== data.ano) {
+        limpiar = true;
+      }
       this.selectedYear = data.ano;
       console.log('Año cambiado a:', this.selectedYear);
-      // Clear table when year changes to avoid showing old data
-      this.limpiarTabla();
     }
     if (data.dependencia !== undefined) {
+      if (this.selectedDependency !== data.dependencia) {
+        limpiar = true;
+      }
       this.selectedDependency = data.dependencia;
       console.log('Dependencia cambiada a:', this.selectedDependency);
-      // Clear table when dependency changes to avoid showing old data
+    }
+    // Solo limpiar si realmente cambió año o dependencia
+    if (limpiar) {
       this.limpiarTabla();
     }
 
@@ -207,7 +202,7 @@ export class FormulacionOoddSaludComponent {
         // No filtrar por formulationType ya que puede ser null
         const socialFormulations = formulations.filter(f => {
           // Verificar si la dependencia tiene ospe = false
-          const isSaludDependency = f.dependency?.ospe === false;
+          const isSaludDependency = f.dependency?.ospe === false && f.formulationType?.idFormulationType === 3;
           console.log(`Formulación ${f.idFormulation} - dependencia salud: ${isSaludDependency}`);
           return isSaludDependency;
         });
@@ -219,12 +214,19 @@ export class FormulacionOoddSaludComponent {
           const sortedFormulations = socialFormulations.sort((a, b) => 
             (b.modification || 0) - (a.modification || 0)
           );
-          console.log('Formulación seleccionada:', sortedFormulations[0]);
+          console.log('[PADRE] Asignando currentFormulation en buscarFormulacionAutomatica:', sortedFormulations[0]);
           this.currentFormulation = sortedFormulations[0];
+          // Actualizar también los otros inputs para el hijo
+          this.selectedYear = sortedFormulations[0].year?.toString() || null;
+          this.selectedDependency = sortedFormulations[0].dependency?.idDependency?.toString() || null;
+          this.cdr.detectChanges();
         } else {
           // No se encontró formulación
-          console.log('No se encontraron formulaciones salud');
+          console.log('[PADRE] No se encontraron formulaciones salud, asignando null a currentFormulation');
           this.currentFormulation = null;
+          this.selectedYear = null;
+          this.selectedDependency = null;
+          this.cdr.detectChanges();
         }
       },
       error: (err) => {

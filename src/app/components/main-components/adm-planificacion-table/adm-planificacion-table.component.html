@@ -108,44 +108,41 @@
                   <!-- Nueva tabla unificada para OODD -->
                   <div *ngIf="hasFormulations(depTypeName, formTypeName)" class="table-container">
                      
-                     <!-- Tabla especial para OODD PRESTACIONES DE SALUD -->
-                     <div *ngIf="isPrestacionesDeSalud(formTypeName)" class="table-responsive">
+                     <!-- Tabla especial para OODD PRESTACIONES DE SALUD, ECONÓMICAS y SOCIALES -->
+                     <div *ngIf="isPrestacionesEspeciales(formTypeName)" class="table-responsive">
                         <p-table [value]="getUnifiedFormulationsPrestacionesSalud(depTypeName, formTypeName)" [paginator]="true"
                            [rows]="10" [tableStyle]="{ 'min-width': '20%' }" stripedRows showGridlines>
                            <ng-template pTemplate="header">
                               <tr>
                                  <th class="centered">Dependencia</th>
-                                 <th class="centered">Formulación Inicial</th>
-                                 <th class="centered">Primera Modificatoria</th>
+                                 <th *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber" class="centered">
+                                    {{ modificationLabels[modNum] || 'Modificatoria Desconocida' }}
+                                 </th>
                               </tr>
                            </ng-template>
                            <ng-template pTemplate="body" let-prestacionRow>
                               <tr>
                                  <td>{{ prestacionRow.dependencyName }}</td>
-                                 <td class="centered">
-                                    <p-badge 
-                                       [value]="prestacionRow.formulacionInicial ? 'Iniciado' : 'No iniciado'"
-                                       [severity]="prestacionRow.formulacionInicial ? 'success' : 'secondary'">
-                                    </p-badge>
-                                 </td>
-                                 <td class="centered">
-                                    <p-badge 
-                                       [value]="prestacionRow.primeraModificatoria ? 'Iniciado' : 'No iniciado'"
-                                       [severity]="prestacionRow.primeraModificatoria ? 'success' : 'secondary'">
-                                    </p-badge>
-                                 </td>
+                                 <ng-container *ngFor="let modNum of getExistingModifications(depTypeName, formTypeName); trackBy: trackByModNumber">
+                                    <td class="centered">
+                                       <p-badge 
+                                          [value]="prestacionRow.modifications[modNum] ? 'Iniciado' : 'No iniciado'"
+                                          [severity]="prestacionRow.modifications[modNum] ? 'success' : 'secondary'">
+                                       </p-badge>
+                                    </td>
+                                 </ng-container>
                               </tr>
                            </ng-template>
                            <ng-template pTemplate="emptymessage">
                               <tr>
-                                 <td colspan="3" class="p-text-center">No hay formulaciones en este grupo.</td>
+                                 <td [attr.colspan]="1 + getExistingModifications(depTypeName, formTypeName).length" class="p-text-center">No hay formulaciones en este grupo.</td>
                               </tr>
                            </ng-template>
                         </p-table>
                      </div>
 
                      <!-- Tabla normal para otros tipos de formulación OODD -->
-                     <div *ngIf="!isPrestacionesDeSalud(formTypeName)" class="table-responsive">
+                     <div *ngIf="!isPrestacionesEspeciales(formTypeName)" class="table-responsive">
                         <p-table [value]="getUnifiedFormulations(depTypeName, formTypeName)" [paginator]="true"
                            [rows]="10" [tableStyle]="{ 'min-width': '20%' }" stripedRows showGridlines>
                            <ng-template pTemplate="header">

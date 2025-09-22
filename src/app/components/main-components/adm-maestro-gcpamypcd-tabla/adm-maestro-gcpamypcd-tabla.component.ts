@@ -27,14 +27,20 @@ import { StrategicAction } from '../../../models/logic/strategicAction.model';
 import { StrategicObjective } from '../../../models/logic/strategicObjective.model';
 import { FormulationType } from '../../../models/logic/formulationType.model';
 import { ActivityFamily } from '../../../models/logic/activityFamily.model';
+import { MeasurementType } from '../../../models/logic/measurementType.model';
 import { Dependency } from '../../../models/logic/dependency.model';
+import { Formulation } from '../../../models/logic/formulation.model';
+import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
 
 import { ActivityDetailService } from '../../../core/services/logic/activity-detail.service';
 import { StrategicActionService } from '../../../core/services/logic/strategic-action.service';
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
 import { FormulationTypeService } from '../../../core/services/logic/formulation-type.service';
 import { ActivityFamilyService } from '../../../core/services/logic/activity-family.service';
+import { MeasurementTypeService } from '../../../core/services/logic/measurement-type.service';
 import { DependencyService } from '../../../core/services/logic/dependency.service';
+import { FormulationService } from '../../../core/services/logic/formulation.service';
+import { OperationalActivityService } from '../../../core/services/logic/operational-activity.service';
 
 @Component({
   selector: 'app-adm-maestro-gcpamypcd-tabla',
@@ -63,6 +69,15 @@ import { DependencyService } from '../../../core/services/logic/dependency.servi
   providers: [MessageService, ConfirmationService]
 })
 export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
+  getChildFamiliesForParent(parentId: number): ActivityFamily[] {
+    return this.childFamilies.filter(f => f.parentActivityFamily && f.parentActivityFamily.idActivityFamily === parentId);
+  }
+  // Helpers para jerarquía de familias
+  parentFamilies: ActivityFamily[] = [];
+  childFamilies: ActivityFamily[] = [];
+  showAddSubFamilyModal = false;
+  parentFamilyForSub: ActivityFamily | null = null;
+  newSubFamilyName = '';
 
   // ViewChild references for tables
   @ViewChild('familiesTable') familiesTable!: Table;
@@ -77,6 +92,7 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
   filteredStrategicActions: StrategicAction[] = [];
   formulationTypes: FormulationType[] = [];
   activityFamilies: ActivityFamily[] = [];
+  measurementTypes: MeasurementType[] = [];
   dependencies: Dependency[] = [];
   groupedActivitiesByFamily: { [familyName: string]: ActivityDetail[] } = {};
 
@@ -134,7 +150,10 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
     private strategicObjectiveService: StrategicObjectiveService,
     private formulationTypeService: FormulationTypeService,
     private activityFamilyService: ActivityFamilyService,
+  private measurementTypeService: MeasurementTypeService,
     private dependencyService: DependencyService,
+  private formulationService: FormulationService,
+  private operationalActivityService: OperationalActivityService,
     private toastr: ToastrService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
@@ -142,6 +161,7 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
 
   ngOnInit() {
     this.loadYearsAndData();
+    this.splitFamiliesByHierarchy();
   }
 
   loadYearsAndData() {
@@ -174,7 +194,8 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
       this.loadStrategicObjectives(),
       this.loadStrategicActions(),
       this.loadFormulationTypes(),
-      this.loadActivityFamilies(),
+  this.loadActivityFamilies(),
+  this.loadMeasurementTypes(),
       this.loadDependencies()
     ]).then(() => {
       this.loadActivityDetails();
@@ -246,16 +267,43 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
     return new Promise((resolve, reject) => {
       this.activityFamilyService.getAll().subscribe({
         next: (data) => {
-          // Filter only families with type 'sociales' and sort alphabetically
-          this.activityFamilies = data
-            .filter(af => af.active && af.type === 'sociales')
-            .sort((a, b) => a.name.localeCompare(b.name));
+          this.activityFamilies = data.filter(af => af.active && af.type === 'sociales').sort((a, b) => a.name.localeCompare(b.name));
+          this.splitFamiliesByHierarchy();
           resolve();
         },
         error: (error) => reject(error)
       });
     });
   }
+
+    loadMeasurementTypes(): Promise<void> {
+      return new Promise((resolve, reject) => {
+        this.measurementTypeService.getAll().subscribe({
+          next: (data) => {
+            this.measurementTypes = data.filter(mt => mt.active).sort((a, b) => a.name.localeCompare(b.name));
+            resolve();
+          },
+          error: (error) => reject(error)
+        });
+      });
+    }
+
+    getMeasurementTypeName(id?: number): string {
+      if (!id) return '';
+      const mt = this.measurementTypes.find(m => m.idMeasurementType === id);
+      return mt?.name || '';
+    }
+
+    onFamilyMeasurementTypeChange(family: ActivityFamily, idMeasurementType?: number) {
+      if (!idMeasurementType) {
+        delete family.measurementType;
+        return;
+      }
+      const mt = this.measurementTypes.find(m => m.idMeasurementType === idMeasurementType);
+      if (mt) {
+        family.measurementType = mt;
+      }
+    }
 
   loadDependencies(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -306,18 +354,22 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
 
   groupActivitiesByFamily() {
     this.groupedActivitiesByFamily = {};
-
     this.activityDetails.forEach(activity => {
-      // Only group activities that belong to families with type 'sociales'
-      if (activity.activityFamily && activity.activityFamily.type === 'sociales') {
-        const familyName = activity.activityFamily.name || 'Sin unidad operativa';
-
-        if (!this.groupedActivitiesByFamily[familyName]) {
-          this.groupedActivitiesByFamily[familyName] = [];
+      const famId = activity.activityFamily?.idActivityFamily;
+      if (famId) {
+        if (!this.groupedActivitiesByFamily[famId]) {
+          this.groupedActivitiesByFamily[famId] = [];
         }
-
-        this.groupedActivitiesByFamily[familyName].push(activity);
+        this.groupedActivitiesByFamily[famId].push(activity);
       }
+    });
+    // Ensure activities within each family are ordered by idActivityDetail (ascending)
+    Object.keys(this.groupedActivitiesByFamily).forEach(key => {
+      this.groupedActivitiesByFamily[parseInt(key, 10)] = this.groupedActivitiesByFamily[parseInt(key, 10)].sort((a, b) => {
+        const idA = a.idActivityDetail ?? 0;
+        const idB = b.idActivityDetail ?? 0;
+        return idA - idB;
+      });
     });
   }
 
@@ -424,6 +476,14 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
 
           // Refresh grouping after creating activity
           this.groupActivitiesByFamily();
+          // Also attempt to create corresponding OperationalActivity entries
+          // in formulations of type 5 that are modifications (modification > 0)
+          if (createdActivity) {
+            this.createRelatedOperationalActivities(createdActivity)
+              .catch(() => {
+                // Errors handled/logged inside helper; continue
+              });
+          }
         },
         error: (err) => {
           this.toastr.error('Error al crear la actividad.', 'Error');
@@ -530,16 +590,16 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
     setTimeout(() => {
       const familyActivities = this.getActivitiesForFamily(family.name);
       const familyIndex = this.activityFamilies.findIndex(f => f.idActivityFamily === familyId);
-      
+
       if (this.activitiesTables && familyIndex >= 0) {
         const activitiesTablesArray = this.activitiesTables.toArray();
         const familyTable = activitiesTablesArray[familyIndex];
-        
+
         if (familyTable) {
           const totalRecords = familyActivities.length;
           const rowsPerPage = familyTable.rows || 11;
           const lastPage = Math.ceil(totalRecords / rowsPerPage) - 1;
-          
+
           if (familyTable.first !== lastPage * rowsPerPage) {
             familyTable.first = lastPage * rowsPerPage;
           }
@@ -754,42 +814,173 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
   eliminarActividad(index: number, activity: ActivityDetail) {
     if (activity.idActivityDetail && activity.idActivityDetail > 0) {
       this.activityToDelete = activity;
+      // store the index optionally but we'll remove by id to be safe
       this.activityToDeleteIndex = index;
       this.showDeleteConfirmation = true;
     } else {
-      // It's a new (unsaved) activity, remove directly from the table
-      this.activityDetails.splice(index, 1);
-      this.activityDetails = [...this.activityDetails]; // Force change detection for the table
+      // It's a new (unsaved) activity, remove directly from the arrays by id
+      this.activityDetails = this.activityDetails.filter(ad => ad.idActivityDetail !== activity.idActivityDetail);
+      this.allActivityDetails = this.allActivityDetails.filter(ad => ad.idActivityDetail !== activity.idActivityDetail);
+      this.groupActivitiesByFamily();
       this.toastr.info('Actividad no guardada eliminada.', 'Información');
     }
   }
 
   confirmDelete() {
     if (this.activityToDelete && this.activityToDelete.idActivityDetail) {
-      this.activityDetailService.delete(this.activityToDelete.idActivityDetail).subscribe({
+      const idToDelete = this.activityToDelete.idActivityDetail;
+      // show loader while deleting and processing related deletions
+      this.loading = true;
+      const deletedActivityCopy = this.activityToDelete;
+      this.activityDetailService.delete(idToDelete).subscribe({
         next: () => {
-          if (this.activityToDeleteIndex !== null) {
-            // Remove from current view
-            this.activityDetails.splice(this.activityToDeleteIndex, 1);
-            this.activityDetails = [...this.activityDetails];
+          // Remove by id to avoid issues with grouped/paginated indexes
+          this.activityDetails = this.activityDetails.filter(ad => ad.idActivityDetail !== idToDelete);
+          this.allActivityDetails = this.allActivityDetails.filter(ad => ad.idActivityDetail !== idToDelete);
+          this.groupActivitiesByFamily(); // refresca agrupación
 
-            // Remove from all activities array
-            const allActivityIndex = this.allActivityDetails.findIndex(ad =>
-              ad.idActivityDetail === this.activityToDelete!.idActivityDetail
-            );
-            if (allActivityIndex !== -1) {
-              this.allActivityDetails.splice(allActivityIndex, 1);
-            }
+          // After deleting the activity detail, also remove matching operational activities
+          // from formulations of type 5 that are modifications (modification > 0)
+          if (deletedActivityCopy) {
+            this.deleteRelatedOperationalActivities(deletedActivityCopy)
+              .catch(() => {
+                // Errors are handled/logged in helper; continue to cleanup
+              })
+              .finally(() => {
+                this.loading = false;
+                this.toastr.success('Actividad eliminada correctamente.', 'Éxito');
+                this.cancelDelete();
+              });
+          } else {
+            this.loading = false;
+            this.toastr.success('Actividad eliminada correctamente.', 'Éxito');
+            this.cancelDelete();
           }
-          this.toastr.success('Actividad eliminada correctamente.', 'Éxito');
-          this.cancelDelete();
         },
         error: (error) => {
           console.error('Error deleting activity:', error);
           this.toastr.error('Error al eliminar la actividad.', 'Error');
+          this.loading = false;
           this.cancelDelete();
         }
       });
+    }
+  }
+
+  // Delete OperationalActivity entries that belong to formulations with type=5 and modification>0
+  // matching by name and activityFamily of the deleted ActivityDetail
+  async deleteRelatedOperationalActivities(deletedActivity: ActivityDetail): Promise<void> {
+    try {
+      // 1) Get all formulations and filter by formulationType.idFormulationType === 5 and modification > 0
+  const formulations = await this.formulationService.getAll().toPromise() as Formulation[] | undefined;
+  const formArray: Formulation[] = Array.isArray(formulations) ? formulations : [];
+  // Only consider formulations of type 5 that are modifications and belong to the currently selected year
+  const targetFormulations = formArray.filter(f =>
+    f.formulationType &&
+    f.formulationType.idFormulationType === 5 &&
+    (f.modification ?? 0) > 0 &&
+    f.year === this.selectedYear
+  );
+
+      // 2) For each formulation, search OperationalActivity by formulation id
+      const deletePromises: Promise<void>[] = [];
+
+      for (const form of targetFormulations) {
+        if (!form.idFormulation) continue;
+  const ops = await this.operationalActivityService.searchByFormulation(form.idFormulation).toPromise() as OperationalActivity[] | undefined;
+  const opsArray: OperationalActivity[] = Array.isArray(ops) ? ops : [];
+  // 3) Within ops, find those matching by name and activityFamily
+  const toDelete = opsArray.filter(op => {
+          const sameName = op.name?.trim() === deletedActivity.name?.trim();
+          const sameFamily = (op.activityFamily?.idActivityFamily ?? null) === (deletedActivity.activityFamily?.idActivityFamily ?? null);
+          return sameName && sameFamily;
+        });
+
+        // 4) Delete each matching operational activity
+        for (const op of toDelete) {
+          if (op.idOperationalActivity) {
+            const p = this.operationalActivityService.deleteById(op.idOperationalActivity).toPromise();
+            deletePromises.push(p.then(() => {}).catch(err => { console.error('Error deleting operational activity', err); }));
+          }
+        }
+      }
+
+      await Promise.all(deletePromises);
+      // Optionally refresh formulations or notify user
+      if (deletePromises.length > 0) {
+        this.toastr.info(`${deletePromises.length} actividades operativas relacionadas eliminadas.`, 'Información');
+      }
+    } catch (err) {
+      console.error('Error removing related operational activities:', err);
+      this.toastr.error('Error al eliminar actividades operativas relacionadas.', 'Error');
+    }
+  }
+
+  // Create OperationalActivity entries in formulations of type=5 and modification>0
+  // matching by name and activityFamily of the created ActivityDetail
+  async createRelatedOperationalActivities(createdActivity: ActivityDetail): Promise<void> {
+    try {
+      // 1) Get all formulations and filter by formulationType.idFormulationType === 5 and modification > 0
+      const formulations = await this.formulationService.getAll().toPromise() as Formulation[] | undefined;
+      const formArray: Formulation[] = Array.isArray(formulations) ? formulations : [];
+      // Only consider formulations of type 5 that are modifications and belong to the currently selected year
+      const targetFormulations = formArray.filter(f =>
+        f.formulationType &&
+        f.formulationType.idFormulationType === 5 &&
+        (f.modification ?? 0) > 0 &&
+        f.year === this.selectedYear
+      );
+
+      if (targetFormulations.length === 0) {
+        // No target formulations found; nothing to create
+        return;
+      }
+
+  const createPromises: Promise<any>[] = [];
+
+      for (const form of targetFormulations) {
+        if (!form.idFormulation) continue;
+
+        // Search existing operational activities for that formulation to avoid duplicates
+        const ops = await this.operationalActivityService.searchByFormulation(form.idFormulation).toPromise() as OperationalActivity[] | undefined;
+        const opsArray: OperationalActivity[] = Array.isArray(ops) ? ops : [];
+
+        // Check if an operational activity with same name and family already exists
+        const exists = opsArray.some(op => {
+          const sameName = op.name?.trim() === createdActivity.name?.trim();
+          const sameFamily = (op.activityFamily?.idActivityFamily ?? null) === (createdActivity.activityFamily?.idActivityFamily ?? null);
+          return sameName && sameFamily;
+        });
+
+        if (!exists) {
+          // Build minimal OperationalActivity payload required by backend
+          const newOp: OperationalActivity = {
+            correlativeCode: '',
+            name: createdActivity.name || '',
+            active: createdActivity.active ?? true,
+            strategicAction: createdActivity.strategicAction,
+            formulation: { idFormulation: form.idFormulation } as Formulation,
+            measurementUnit: createdActivity.measurementUnit || '',
+            description: createdActivity.description || '',
+            activityFamily: createdActivity.activityFamily,
+            goods: 0,
+            remuneration: 0,
+            services: 0
+          } as OperationalActivity;
+
+          const pPromise = this.operationalActivityService.create(newOp).toPromise().then(res => res as OperationalActivity);
+          createPromises.push(pPromise);
+        }
+      }
+
+      const results = await Promise.all(createPromises.map(p => p.catch(err => ({ error: err } as any))));
+      const createdCount = results.filter(r => r && !(r as any).error).length;
+      if (createdCount > 0) {
+        this.toastr.info(`${createdCount} actividades operativas relacionadas creadas.`, 'Información');
+      }
+    } catch (err) {
+      console.error('Error creating related operational activities:', err);
+      this.toastr.error('Error al crear actividades operativas relacionadas.', 'Error');
     }
   }
 
@@ -804,26 +995,65 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
     const newFamily: ActivityFamily = {
       idActivityFamily: this.newFamilyCounter--,
       name: '',
-      description: '', // Empty description by default
+      description: '',
       active: true,
-      type: 'sociales' // Default type set to 'sociales'
+      type: 'sociales',
+      parentActivityFamily: undefined
     };
-
     this.activityFamilies = [...this.activityFamilies, newFamily];
+    this.splitFamiliesByHierarchy();
     this.editingFamilyRowKeys[newFamily.idActivityFamily as any] = true;
-
-    // Navigate to the last page if the new family would be on a new page
     setTimeout(() => {
       if (this.familiesTable) {
         const totalRecords = this.activityFamilies.length;
         const rowsPerPage = this.familiesTable.rows || 5;
         const lastPage = Math.ceil(totalRecords / rowsPerPage) - 1;
-        
         if (this.familiesTable.first !== lastPage * rowsPerPage) {
           this.familiesTable.first = lastPage * rowsPerPage;
         }
       }
     }, 100);
+  }
+
+  openAddSubFamilyModal(parentFamily: ActivityFamily) {
+    this.parentFamilyForSub = parentFamily;
+    this.newSubFamilyName = '';
+    this.showAddSubFamilyModal = true;
+  }
+
+  confirmAddSubFamily() {
+    if (!this.parentFamilyForSub || !this.newSubFamilyName.trim()) return;
+    const newSubFamily: ActivityFamily = {
+      idActivityFamily: undefined,
+      name: this.newSubFamilyName.trim(),
+      description: '',
+      active: true,
+      type: 'sociales',
+      parentActivityFamily: this.parentFamilyForSub // <-- este es el campo correcto
+    };
+    const { idActivityFamily, ...subFamilyForCreation } = newSubFamily;
+    this.activityFamilyService.create(subFamilyForCreation as ActivityFamily).subscribe({
+      next: (createdSubFamily) => {
+        if (createdSubFamily) {
+          this.activityFamilies = [...this.activityFamilies, createdSubFamily];
+          this.splitFamiliesByHierarchy();
+          this.editingFamilyRowKeys[createdSubFamily.idActivityFamily as any] = true;
+        }
+        this.toastr.success('Subunidad operativa creada correctamente.', 'Éxito');
+        this.showAddSubFamilyModal = false;
+        this.parentFamilyForSub = null;
+        this.newSubFamilyName = '';
+      },
+      error: (err) => {
+        this.toastr.error('Error al crear la subunidad operativa.', 'Error');
+        console.error('Error al crear la subunidad operativa:', err);
+      }
+    });
+  }
+
+  splitFamiliesByHierarchy() {
+  this.parentFamilies = this.activityFamilies.filter(f => f.parentActivityFamily === null);
+  this.childFamilies = this.activityFamilies.filter(f => f.parentActivityFamily !== null);
   }
 
   onFamilyRowEditInit(family: ActivityFamily) {
@@ -931,6 +1161,8 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
           if (this.familyToDeleteIndex !== null) {
             this.activityFamilies.splice(this.familyToDeleteIndex, 1);
             this.activityFamilies = [...this.activityFamilies];
+            this.splitFamiliesByHierarchy(); // refresca la jerarquía
+            this.groupActivitiesByFamily(); // refresca agrupación de actividades
           }
           this.toastr.success('Unidad operativa eliminada correctamente.', 'Éxito');
           this.cancelDeleteFamily();
@@ -959,7 +1191,14 @@ export class AdmMaestroGcpamypcdTablaComponent implements OnInit {
   }
 
   getActivitiesForFamily(familyName: string): ActivityDetail[] {
-    return this.groupedActivitiesByFamily[familyName] || [];
+    // Ahora por familyId
+    const family = this.activityFamilies.find(f => f.name === familyName);
+    if (!family) return [];
+    return this.groupedActivitiesByFamily[family.idActivityFamily!] || [];
+  }
+
+  getActivitiesForFamilyId(familyId: number): ActivityDetail[] {
+    return this.groupedActivitiesByFamily[familyId] || [];
   }
 
   hasNewActivities(): boolean {

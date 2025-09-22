@@ -21,7 +21,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CheckboxModule } from 'primeng/checkbox';
 import { FileUploadModule } from 'primeng/fileupload';
-import * as ExcelJS from 'exceljs';
+import { Workbook } from 'exceljs';
 import { forkJoin, Observable } from 'rxjs';
 
 import { ActivityDetail } from '../../../models/logic/activityDetail.model';
@@ -1071,7 +1071,7 @@ export class AdmMaestroGcpsTablaComponent implements OnInit {
           console.log('Archivo leído, procesando con ExcelJS...');
           
           const buffer = e.target?.result as ArrayBuffer;
-          const workbook = new ExcelJS.Workbook();
+          const workbook = new Workbook();
           await workbook.xlsx.load(buffer);
 
           const worksheet = workbook.getWorksheet(1);

@@ -1,0 +1,114 @@
+<div class="selector-bar grid align-items-center">
+  <div class="selector-group col-12 lg:col-4">
+    <label class="selector-label">Órgano Desconcentrado:</label>
+    <p-select *ngIf="isSingleDependency; else multipleDeps" [options]="dependencyOptions"
+      [(ngModel)]="selectedDependency" [disabled]="true" class="selector-select" optionLabel="label" optionValue="value"
+      (onChange)="onDependencyChange()"></p-select>
+    <ng-template #multipleDeps>
+      <p-select [options]="dependencyOptions" [(ngModel)]="selectedDependency" (onChange)="onDependencyChange()"
+        placeholder="Seleccione" class="selector-select" optionLabel="label" optionValue="value" [filter]="true"
+        filterBy="label"></p-select>
+    </ng-template>
+  </div>
+
+  <div class="selector-group col-4 lg:col-1">
+    <label class="selector-label">Año:</label>
+    <p-select [options]="optionsAno" [(ngModel)]="selectedAno" (onChange)="onAnoChange()"
+      [disabled]="!selectedDependency" placeholder="Seleccione" class="selector-select" optionLabel="label"
+      optionValue="value"></p-select>
+  </div>
+
+  <div class="selector-group col-8 lg:col-3" *ngIf="formulationExists && foundFormulations.length > 0">
+    <label class="selector-label">Etapa:</label>
+    <p-select [options]="modificationOptions" [(ngModel)]="selectedModificationOption"
+      (onChange)="onModificationChange()" placeholder="Seleccione una modificación" class="selector-select"
+      optionLabel="label" [disabled]="foundFormulations.length <= 1"></p-select>
+  </div>
+
+  <div class="selector-group col-6 lg:col-2" *ngIf="
+      formulationExists &&
+      quarterLabel &&
+      selectedModificationOption?.value !== 1
+    ">
+    <label class="selector-label">A partir de:</label>
+    <input pInputText [(ngModel)]="quarterLabel" [disabled]="true" class="selector-select" />
+  </div>
+
+  <div class="selector-group col-6 lg:col-2" *ngIf="formulationExists && currentFormulationStateLabel">
+    <label class="selector-label">Estado:</label>
+    <input pInputText [(ngModel)]="currentFormulationStateLabel" [disabled]="true" class="selector-select" />
+  </div>
+
+  <div class="col-12 lg:col-12 flex flex-wrap align-items-center justify-content-end gap-2 file-actions">
+    <i *ngIf="isLoadingFileMetadata" class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
+
+    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto" *ngIf="!isLoadingFileMetadata && hasSupportFile">
+      <button pButton type="button" icon="pi pi-eye" label="Ver sustento"
+        class="selector p-button-success w-full sm:w-auto" (click)="viewFile()" [disabled]="!hasSupportFile"></button>
+      <p-fileUpload *ngIf="activeFormulation?.formulationState?.idFormulationState !== 2 && 
+          activeFormulation?.formulationState?.idFormulationState !== 4 && 
+          activeFormulation?.active" #fileUpdate mode="basic" chooseLabel="Actualizar sustento" [auto]="true"
+        [customUpload]="true" (onSelect)="onFileUpdate($event)" [disabled]="fileUploading"
+        chooseIcon="pi pi-cloud-upload" class="w-full sm:w-auto" pTooltip="Tamaño máximo: 5 MB" tooltipPosition="top"></p-fileUpload>
+    </div>
+
+    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto" *ngIf="!isLoadingFileMetadata && formulationExists && !hasSupportFile &&
+           activeFormulation?.formulationState?.idFormulationState !== 2 &&
+           activeFormulation?.formulationState?.idFormulationState !== 4 &&
+           activeFormulation?.active">
+      <p-fileUpload #fileUpload mode="basic" chooseLabel="Subir sustento" [auto]="true" [customUpload]="true"
+        (onSelect)="onFileSelect($event)" [disabled]="fileUploading" chooseIcon="pi pi-cloud-upload"
+        class="w-full sm:w-auto" pTooltip="Tamaño máximo: 5 MB" tooltipPosition="top"></p-fileUpload>
+    </div>
+
+    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
+      *ngIf="formulationExists && canChangeState && activeFormulation?.active">
+      <button type="button" pButton class="selector w-full sm:w-auto" label="Cambiar estado" icon="pi pi-pencil"
+        (click)="showChangeStateModal = true" [disabled]="!idFormulation"></button>
+    </div>
+
+    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
+      *ngIf="formulationExists && selectedModificationOption && hasActivities">
+      <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
+      <p-select [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
+        class="selector-select mr-2 w-full sm:w-auto" optionLabel="label" optionValue="value"></p-select>
+      <button pButton type="button" icon="pi pi-download" label="Reporte"
+        class="selector p-button-info mr-2 w-full sm:w-auto" (click)="downloadOcR1()"
+        [disabled]="isDownloadingR1"></button>
+      <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download"
+        label="Reporte simplificado" class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
+        [disabled]="isDownloadingR2"></button>
+    </div>
+  </div>
+
+</div>
+
+<p-dialog header="Documento de Sustento" [(visible)]="showDocumentViewer" [modal]="true"
+  [style]="{ width: '90vw', height: '90vh' }" [resizable]="true" (onHide)="onDocumentViewerHide()"
+  class="document-viewer-dialog" draggable="false">
+  <div class="document-content" style="height: 100%; width: 100%;">
+    <iframe [src]="documentUrl | safeUrl" style="width: 100%; height: 100%; border: none;"></iframe>
+  </div>
+</p-dialog>
+
+<p-dialog header="Cambiar Estado de Formulación" [(visible)]="showChangeStateModal" [modal]="true" [resizable]="true"
+  class="dialog-header-state" draggable="false">
+  <div class="p-fluid">
+    <div class="p-field mt-5">
+      <label for="state" class="mr-5">Estado Actual:</label>
+      <input pInputText id="currentState" [ngModel]="currentFormulationStateLabel" [disabled]="true" />
+    </div>
+    <div class="p-field mt-3">
+      <label for="newState" class="mr-5">Nuevo Estado:</label>
+      <p-select id="newState" [options]="formulationStateOptions" [(ngModel)]="selectedFormulationState"
+        placeholder="Seleccione un nuevo estado" optionLabel="name" optionValue="idFormulationState"
+        appendTo="body"></p-select>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
+      (click)="showChangeStateModal = false" class="cancel-button"></button>
+    <button pButton label="Guardar" icon="pi pi-check" (click)="changeFormulationState()"
+      [disabled]="!selectedFormulationState" class="add-button"></button>
+  </ng-template>
+</p-dialog>

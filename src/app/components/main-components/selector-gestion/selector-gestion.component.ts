@@ -1,4 +1,4 @@
-// selector-sociales.component.ts
+// selector.component.ts
 
 import { Component, EventEmitter, OnInit, Output, inject, ViewChild, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -7,10 +7,10 @@ import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
 import { ToastrService } from 'ngx-toastr';
 import { AnimationOptions } from 'ngx-lottie';
-import { LottieComponent } from 'ngx-lottie';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { FileUploadModule } from 'primeng/fileupload';
+import { TooltipModule } from 'primeng/tooltip';
 import { FileUpload } from 'primeng/fileupload'; // Importante para ViewChild
 
 import { AuthService } from '../../../core/services/authentication/auth.service';
@@ -19,7 +19,6 @@ import { FormulationService } from '../../../core/services/logic/formulation.ser
 import { StrategicObjectiveService } from '../../../core/services/logic/strategic-objective.service';
 import { FormulationStateService } from '../../../core/services/logic/formulation-state.service';
 import { FormulationSupportFileService } from '../../../core/services/logic/formulation-support-file.service';
-import { OcReportService } from '../../../core/services/logic/oc-report.service';
 
 import { Formulation } from '../../../models/logic/formulation.model';
 import { Dependency } from '../../../models/logic/dependency.model';
@@ -27,9 +26,10 @@ import { FormulationState } from '../../../models/logic/formulationState.model';
 import { FormulationSupportFile } from '../../../models/logic/formulationSupportFile.model';
 
 import { SafeUrlPipe } from '../../../safe-url.pipe';
+import { OcReportService } from '../../../core/services/logic/oc-report.service';
 
 @Component({
-  selector: 'app-selector-salud',
+  selector: 'app-selector-gestion',
   standalone: true,
   imports: [
     CommonModule,
@@ -39,15 +39,16 @@ import { SafeUrlPipe } from '../../../safe-url.pipe';
     InputTextModule,
     DialogModule,
     FileUploadModule,
-    LottieComponent,
+    TooltipModule,
     SafeUrlPipe
   ],
-  templateUrl: './selector-salud.component.html',
-  styleUrls: ['./selector-salud.component.scss'],
+  templateUrl: './selector-gestion.component.html',
+  styleUrls: ['./selector-gestion.component.scss'],
 })
-export class SelectorSaludComponent implements OnInit {
+export class SelectorGestionComponent implements OnInit {
 
   @Input() hasActivities: boolean = false;
+  @Input() formulationType: number = 2; // Tipo de formulación a filtrar (1 por defecto para compatibilidad)
 
   @Output() buscar = new EventEmitter<{
     ano: string | null;
@@ -58,9 +59,7 @@ export class SelectorSaludComponent implements OnInit {
   @Output() cambioDependencia = new EventEmitter<string | null>();
 
   @Output() formulationSelected = new EventEmitter<Formulation>();
-  @Output() formulationUpdated = new EventEmitter<Formulation>(); 
-  
-  private toastr = inject(ToastrService);
+  @Output() formulationUpdated = new EventEmitter<Formulation>(); private toastr = inject(ToastrService);
 
   @Output() activitiesCountChanged = new EventEmitter<number>();
 
@@ -74,7 +73,6 @@ export class SelectorSaludComponent implements OnInit {
   private authService = inject(AuthService);
   private formulationStateService = inject(FormulationStateService);
   private fileService = inject(FormulationSupportFileService);
-  private ocReportService = inject(OcReportService);
 
   @ViewChild('fileUpload') fileUploadRef!: FileUpload;
 
@@ -84,6 +82,67 @@ export class SelectorSaludComponent implements OnInit {
   idFormulation: number | null = null;
   public activeFormulation: Formulation | null = null;
   public isLoadingFileMetadata: boolean = false;
+
+  // Opciones de formato para descarga de reportes
+  downloadFormatOptions = [
+    { label: 'Excel', value: 'excel' },
+    { label: 'PDF', value: 'pdf' },
+    { label: 'Word', value: 'word' }
+  ];
+  selectedDownloadFormat: string = 'excel';
+  isDownloadingR1 = false;
+  isDownloadingR2 = false;
+
+  // Inyección del servicio de reportes OC
+  private ocReportService = inject(OcReportService);
+
+  // Descargar OC R1
+  downloadOcR1(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    this.isDownloadingR1 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    this.ocReportService.downloadOcR1Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR1 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR1 = false;
+        }
+      });
+  }
+
+  // Descargar OC R2
+  downloadOcR2(): void {
+    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
+      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
+      return;
+    }
+    this.isDownloadingR2 = true;
+    const depId = Number(this.selectedDependency);
+    const year = Number(this.selectedAno);
+    const modification = this.selectedModificationOption.value;
+    this.ocReportService.downloadOcR2Report(depId, year, modification, this.selectedDownloadFormat)
+      .subscribe({
+        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
+          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
+          this.ocReportService.downloadFile(response.body!, filename);
+          this.isDownloadingR2 = false;
+        },
+        error: (err: any) => {
+          this.toastr.error('Error al descargar el reporte.', 'Error');
+          this.isDownloadingR2 = false;
+        }
+      });
+  }
 
   isSingleDependency = false;
   formulationExists = false;
@@ -103,6 +162,7 @@ export class SelectorSaludComponent implements OnInit {
   };
 
   isAdmin: boolean = false;
+  canChangeState: boolean = false;
 
   showChangeStateModal: boolean = false;
   formulationStateOptions: FormulationState[] = [];
@@ -117,38 +177,28 @@ export class SelectorSaludComponent implements OnInit {
   showDocumentViewer = false;
   documentUrl: any = '';
 
-  // Opciones de formato para descarga de reportes
-  downloadFormatOptions = [
-    { label: 'Excel', value: 'excel' },
-    { label: 'PDF', value: 'pdf' },
-    { label: 'Word', value: 'word' }
-  ];
-  selectedDownloadFormat: string = 'excel';
-  isDownloadingR1 = false;
-  isDownloadingR2 = false;
-
   canSeeEvaluacionComponent(): boolean {
     return this.authService.hasRole(this.allowedRolesForEvaluacion);
   }
 
   ngOnInit(): void {
     this.isAdmin = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO']);
+    this.canChangeState = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO', 'UPLANEAMIENTO']);
     this.loadDependencies();
     this.loadFormulationStates();
   }
 
-  // Cargar dependencias filtradas por tipo 2 y social = true
+  // Ahora primero carga dependencias, y luego años según la dependencia seleccionada
+
   loadDependencies(): void {
     this.dependencyService.getAll().subscribe((dependencies) => {
       let filteredDependencies: Dependency[];
 
-      // Filtrar por tipo de dependencia 2 y social = true
-      const socialDependencies = dependencies.filter(dep => 
-        dep.dependencyType?.idDependencyType === 2 && dep.ospe == false
-      );
+      // Filtrar por tipo de dependencia
+      const type1Dependencies = dependencies.filter(dep => dep.dependencyType?.idDependencyType === 2 && dep.ospe === false && dep.idDependency !== 116);
 
       if (this.isAdmin) {
-        filteredDependencies = socialDependencies;
+        filteredDependencies = type1Dependencies;
       } else {
         const dependencyIds: number[] = JSON.parse(
           localStorage.getItem('dependencies') || '[]'
@@ -160,16 +210,18 @@ export class SelectorSaludComponent implements OnInit {
           );
           return;
         }
-        filteredDependencies = socialDependencies.filter((dep) =>
+        filteredDependencies = type1Dependencies.filter((dep) =>
           dependencyIds.includes(dep.idDependency!)
         );
       }
 
-      // Ordenar dependencias por nombre
-      filteredDependencies.sort((a, b) => a.name.localeCompare(b.name));
-
       this.isSingleDependency = filteredDependencies.length === 1;
 
+      // Ordenar dependencias por nombre ASC (ignorando tildes)
+      filteredDependencies.sort((a, b) => {
+        const normalize = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return normalize(a.name).localeCompare(normalize(b.name));
+      });
       this.dependencyOptions = filteredDependencies.map((dep) => ({
         label: dep.name,
         value: dep.idDependency!.toString(),
@@ -187,54 +239,50 @@ export class SelectorSaludComponent implements OnInit {
   }
 
   // Nuevo método: cuando cambia la dependencia, carga los años válidos
-  onDependencyChange(): void {
-    // Limpiar solo las opciones de año, pero mantener el año seleccionado
-    this.optionsAno = [];
-    this.formulationExists = false;
-    this.idFormulation = null;
-    this.foundFormulations = [];
-    this.modificationOptions = [];
-    this.selectedModificationOption = null;
-    this.quarterLabel = null;
-    this.currentFormulationStateLabel = null;
-    this.activeFormulation = null;
-    this.hasSupportFile = false;
-    this.supportFileMetadata = null;
-    this.selectedFormulationState = null;
-    this.checkingFormulation = false;
+onDependencyChange(): void {
+  // Limpiar todo inmediatamente al cambiar órgano
+  this.optionsAno = [];
+  this.selectedAno = null;
+  this.formulationExists = false;
+  this.idFormulation = null;
+  this.foundFormulations = [];
+  this.modificationOptions = [];
+  this.selectedModificationOption = null;
+  this.quarterLabel = null;
+  this.currentFormulationStateLabel = null;
+  this.activeFormulation = null;
+  this.hasSupportFile = false;
+  this.supportFileMetadata = null;
+  this.selectedFormulationState = null;
+  this.checkingFormulation = false;
+  
+  // Emitir null para limpiar la tabla inmediatamente
+  this.formulationSelected.emit(undefined);
+  this.cambioDependencia.emit(this.selectedDependency);
 
-    // Emitir cambio de dependencia sin emitir formulación
-    this.cambioDependencia.emit(this.selectedDependency);
-
-    if (!this.selectedDependency) return;
-
-    const depId = Number(this.selectedDependency);
-    this.strategicObjectiveService.getMinMaxYears().subscribe({
-      next: (range) => {
-        if (range && range.minYear && range.maxYear) {
-          this.optionsAno = [];
-          for (let year = range.maxYear; year >= range.minYear; year--) {
-            this.optionsAno.push({ label: year.toString(), value: year.toString() });
-          }
+  if (!this.selectedDependency) return;
+  
+  const depId = Number(this.selectedDependency);
+  this.strategicObjectiveService.getMinMaxYears().subscribe({
+    next: (range) => {
+      if (range && range.minYear && range.maxYear) {
+        this.optionsAno = [];
+        for (let year = range.maxYear; year >= range.minYear; year--) {
+          this.optionsAno.push({ label: year.toString(), value: year.toString() });
         }
-        // Si ya hay un año seleccionado, verificar formulación automáticamente
-        if (this.selectedAno) {
-          this.verificarFormulacion();
-        }
-      },
-      error: (err) => {
-        console.error('Error al cargar rango de años:', err);
-        this.toastr.error('Error al cargar los años disponibles.', 'Error');
-      },
-    });
-  }
-
-  // Cuando cambia el año, verifica la formulación automáticamente
+      }
+    },
+    error: (err) => {
+      console.error('Error al cargar rango de años:', err);
+      this.toastr.error('Error al cargar los años disponibles.', 'Error');
+    },
+  });
+}
+  // Cuando cambia el año, busca formulaciones
   onAnoChange(): void {
     // Emitir el cambio de año inmediatamente
     this.cambioAno.emit(this.selectedAno);
 
-    // Verificar formulación automáticamente si ambos valores están seleccionados
     if (this.selectedAno && this.selectedDependency) {
       this.verificarFormulacion();
     }
@@ -270,18 +318,16 @@ export class SelectorSaludComponent implements OnInit {
 
     if (!this.selectedAno || !this.selectedDependency) {
       return;
-    } 
-    
-    this.checkingFormulation = true;
+    } this.checkingFormulation = true;
 
     const year = Number(this.selectedAno);
     const depId = Number(this.selectedDependency);
 
     this.formulationService.searchByDependencyAndYear(depId, year).subscribe({
       next: (formulations) => {
-        // Filtrar por tipo de formulación 5 (prestaciones sociales)
-        const socialFormulations = formulations.filter(f => f.formulationType?.idFormulationType === 3);
-        this.foundFormulations = socialFormulations;
+        // Filtrar por tipo de formulación usando el input
+        const filteredFormulations = formulations.filter(f => f.formulationType?.idFormulationType === this.formulationType);
+        this.foundFormulations = filteredFormulations;
         this.formulationExists = this.foundFormulations.length > 0;
 
         if (this.formulationExists) {
@@ -354,13 +400,6 @@ export class SelectorSaludComponent implements OnInit {
           this.hasSupportFile = false;
           this.supportFileMetadata = null;
         }
-        
-        // Emitir eventos cuando se selecciona una formulación válida
-        this.buscar.emit({
-          ano: this.selectedAno,
-          dependencia: this.selectedDependency,
-          idFormulation: this.idFormulation
-        });
         this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.idFormulation = null;
@@ -413,11 +452,11 @@ export class SelectorSaludComponent implements OnInit {
 
   onFileUpdate(event: any) {
     const file = event.files[0];
-    // Limitar tamaño a 49MB
-    const maxSize = 49 * 1024 * 1024; // 49MB en bytes
+    // Limitar tamaño a 5MB
+    const maxSize = 5.1 * 1024 * 1024; // 5.1MB en bytes
     if (file) {
       if (file.size > maxSize) {
-        this.toastr.error('El archivo supera el límite de 49MB.', 'Error de tamaño');
+        this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
         if (this.fileUploadRef) {
           this.fileUploadRef.clear();
         }
@@ -554,12 +593,6 @@ export class SelectorSaludComponent implements OnInit {
 
     if (this.formulationExists) {
       if (this.idFormulation && this.activeFormulation) {
-        // Emitir evento buscar para componentes que lo escuchan
-        this.buscar.emit({
-          ano: this.selectedAno,
-          dependencia: this.selectedDependency,
-          idFormulation: this.idFormulation
-        });
         this.formulationSelected.emit(this.activeFormulation);
       } else {
         this.toastr.warning(
@@ -570,11 +603,9 @@ export class SelectorSaludComponent implements OnInit {
       return;
     }
 
-    // Crear nueva formulación de tipo 3 (prestaciones sociales)
     const nuevaFormulacion: Formulation = {
       year: Number(this.selectedAno),
       dependency: { idDependency: Number(this.selectedDependency) } as Dependency,
-      formulationType: { idFormulationType: 3 } as any, // Tipo 3 para prestaciones sociales
       formulationState: { idFormulationState: 1 } as FormulationState,
       active: true,
       modification: 1,
@@ -591,26 +622,19 @@ export class SelectorSaludComponent implements OnInit {
         this.showSuccessAnimation = true;
         setTimeout(() => {
           this.showSuccessAnimation = false;
-          this.toastr.success('Formulación de prestaciones sociales iniciada correctamente.', 'Éxito');
-          if (this.activeFormulation) {
-            // Emitir evento buscar para componentes que lo escuchan
-            this.buscar.emit({
-              ano: this.selectedAno,
-              dependencia: this.selectedDependency,
-              idFormulation: this.activeFormulation.idFormulation || null
-            });
+          this.toastr.success('Formulación iniciada correctamente.', 'Éxito');
+          if (this.activeFormulation)
             this.formulationSelected.emit(this.activeFormulation);
-          }
         }, 2500);
       },
       error: (err) => {
-        this.toastr.error('Error al crear la formulación de prestaciones sociales.', 'Error');
-        console.error('Error creating social formulation:', err);
+        this.toastr.error('Error al crear la formulación.', 'Error');
+        console.error('Error creating formulation:', err);
       },
     });
   }
 
-  // selector-sociales.component.ts
+  // selector.component.ts
 
   changeFormulationState(): void {
     if (!this.idFormulation || !this.selectedFormulationState || !this.activeFormulation) {
@@ -627,17 +651,22 @@ export class SelectorSaludComponent implements OnInit {
       return;
     }
 
-    const formulationToUpdate: Formulation = {
-      ...this.activeFormulation,
-      formulationState: selectedState,
-    };
-
-    this.formulationService.update(formulationToUpdate).subscribe({
+    // Usar el nuevo endpoint específico para cambiar estado
+    this.formulationService.changeFormulationState(this.idFormulation, this.selectedFormulationState).subscribe({
       next: (updatedEntity) => {
+        console.log('Formulación actualizada recibida:', updatedEntity);
+        console.log('FormulationState objeto:', updatedEntity.formulationState);
         this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
         this.showChangeStateModal = false;
         this.activeFormulation = updatedEntity;
-        this.currentFormulationStateLabel = updatedEntity.formulationState?.name ?? null;
+        
+        // En lugar de usar name directamente, buscar en el array de estados disponibles
+        const currentState = this.formulationStateOptions.find(
+          state => state.idFormulationState === updatedEntity.formulationState?.idFormulationState
+        );
+        this.currentFormulationStateLabel = currentState?.name ?? null;
+        console.log('Estado encontrado en array:', currentState);
+        console.log('Nuevo estado label:', this.currentFormulationStateLabel);
         // Sincronizar el estado seleccionado con el de la formulación activa
         this.selectedFormulationState = updatedEntity.formulationState?.idFormulationState ?? null;
         // También actualiza la formulación en la lista `foundFormulations`
@@ -652,56 +681,5 @@ export class SelectorSaludComponent implements OnInit {
         console.error('Error updating formulation state:', err);
       },
     });
-  }
-
-  // Métodos para descarga de reportes (igual que selector normal)
-  downloadOcR1(): void {
-    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
-      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
-      return;
-    }
-    
-    this.isDownloadingR1 = true;
-    const depId = Number(this.selectedDependency);
-    const year = Number(this.selectedAno);
-    const modification = this.selectedModificationOption.value;
-    
-    this.ocReportService.downloadOdSociales1Report(depId, year, modification, this.selectedDownloadFormat)
-      .subscribe({
-        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
-          this.ocReportService.downloadFile(response.body!, filename);
-          this.isDownloadingR1 = false;
-        },
-        error: (err: any) => {
-          this.toastr.error('Error al descargar el reporte.', 'Error');
-          this.isDownloadingR1 = false;
-        }
-      });
-  }
-
-  downloadOcR2(): void {
-    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
-      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
-      return;
-    }
-    
-    this.isDownloadingR2 = true;
-    const depId = Number(this.selectedDependency);
-    const year = Number(this.selectedAno);
-    const modification = this.selectedModificationOption.value;
-    
-    this.ocReportService.downloadOdSociales2Report(depId, year, modification, this.selectedDownloadFormat)
-      .subscribe({
-        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
-          this.ocReportService.downloadFile(response.body!, filename);
-          this.isDownloadingR2 = false;
-        },
-        error: (err: any) => {
-          this.toastr.error('Error al descargar el reporte.', 'Error');
-          this.isDownloadingR2 = false;
-        }
-      });
   }
 }

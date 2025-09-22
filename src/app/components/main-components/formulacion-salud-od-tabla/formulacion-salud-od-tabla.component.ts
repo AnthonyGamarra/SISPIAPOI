@@ -87,6 +87,34 @@ interface ConsolidatedHealthRow {
   ]
 })
 export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
+  // View mode: internal string but expose boolean getters for template-safe checks
+  private _viewMode: string = 'trimestral';
+
+  // Template-friendly getters to avoid strict template literal comparison errors
+  get isTrimestral(): boolean {
+    return this._viewMode === 'trimestral';
+  }
+
+  get isMensual(): boolean {
+    return this._viewMode === 'mensual';
+  }
+
+  // Expose a method to set view mode (used by template click handlers)
+  setViewMode(mode: 'trimestral' | 'mensual') {
+    this._viewMode = mode;
+  }
+
+  // Monthly grouped data (similar shape as consolidated rows but with months)
+  groupedHealthDataNivelIMensual: any[] = [];
+  groupedHealthDataNivelIIMensual: any[] = [];
+  groupedHealthDataNivelIIIMensual: any[] = [];
+
+  // Calcula el total de presupuesto para un grupo de datos
+  // Totales por nivel y general
+  totalPresupuestoNivelI = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
+  totalPresupuestoNivelII = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
+  totalPresupuestoNivelIII = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
+  totalPresupuestoGeneral = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
 
   @Output() activitiesCountChanged = new EventEmitter<number>();
   @Input() mostrar = false;
@@ -127,6 +155,9 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
   }
 
   ngOnInit() {
+    // Al iniciar, el loader debe estar en false
+    this.loading = false;
+    // Ya no se carga datos aquí, solo en ngOnChanges
     console.log('FormulacionSaludOdTablaComponent - ngOnInit iniciado');
     console.log('Inputs recibidos:', {
       mostrar: this.mostrar,
@@ -135,19 +166,44 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       idDependency: this.idDependency,
       currentFormulation: this.currentFormulation
     });
-    this.loadHealthData();
   }
 
   ngOnChanges(changes: SimpleChanges) {
     console.log('FormulacionSaludOdTablaComponent - ngOnChanges:', changes);
-    // Solo mostrar loader y recargar datos si el año cambia
-    if (changes['ano'] && !changes['ano'].firstChange) {
+    console.log('Inputs actuales:', {
+      mostrar: this.mostrar,
+      ano: this.ano,
+      idFormulation: this.idFormulation,
+      idDependency: this.idDependency,
+      currentFormulation: this.currentFormulation
+    });
+    // Solo cargar datos si hay una formulación válida
+    const formulationId = this.idFormulation || this.currentFormulation?.idFormulation;
+    if (formulationId) {
+      console.log('Disparando loadHealthData con idFormulation:', formulationId);
+      this.loadHealthData();
+    } else if (this.ano && this.idDependency) {
+      // Si hay año y dependencia seleccionados, pero no hay formulación, mostrar loader esperando búsqueda
+      console.log('Esperando formulación para año y dependencia, mostrando loader');
       this.loading = true;
-      this.loadHealthData();
-    }
-    // Si cambia la formulación, recargar datos pero sin mostrar loader
-    else if (changes['idFormulation'] || changes['currentFormulation']) {
-      this.loadHealthData();
+      this.healthData = [];
+      this.originalHealthData = [];
+      this.groupedHealthDataNivelI = [];
+      this.groupedHealthDataNivelII = [];
+      this.groupedHealthDataNivelIII = [];
+      this.totalRecords = 0;
+      this.activitiesCountChanged.emit(0);
+    } else {
+      // Estado inicial, no mostrar loader
+      console.log('No hay idFormulation ni selección completa, limpiando datos y ocultando loader');
+      this.loading = false;
+      this.healthData = [];
+      this.originalHealthData = [];
+      this.groupedHealthDataNivelI = [];
+      this.groupedHealthDataNivelII = [];
+      this.groupedHealthDataNivelIII = [];
+      this.totalRecords = 0;
+      this.activitiesCountChanged.emit(0);
     }
   }
 
@@ -156,11 +212,11 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     this.loading = true;
     // Obtener el ID de formulación desde idFormulation o desde currentFormulation
     const formulationId = this.idFormulation || this.currentFormulation?.idFormulation;
-    
+
     console.log('loadHealthData iniciado con idFormulation:', this.idFormulation);
     console.log('currentFormulation:', this.currentFormulation);
     console.log('formulationId final:', formulationId);
-    
+
     if (!formulationId) {
       console.warn('No se puede cargar datos sin ID de formulación');
       this.healthData = [];
@@ -171,14 +227,13 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       return;
     }
 
-    console.log('Iniciando carga de datos para formulación:', formulationId);
-    this.loading = true;
-    
+    console.log('Llamando getHealthOperationalActivitySummary con idFormulation:', formulationId);
     this.healthOperationalActivityService.getHealthOperationalActivitySummary(formulationId).subscribe({
       next: (data: HealthOperationalActivitySummaryDTO[]) => {
         // Procesamiento de datos también es parte del loading
         setTimeout(() => {
           if (data && data.length > 0) {
+            console.log('Datos recibidos de getHealthOperationalActivitySummary:', data);
             this.originalHealthData = this.transformHealthDataForTable(data);
             this.healthData = [...this.originalHealthData];
             this.totalRecords = this.healthData.length;
@@ -192,7 +247,7 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
             console.log('Datos agrupados Nivel II:', this.groupedHealthDataNivelII);
             console.log('Datos agrupados Nivel III:', this.groupedHealthDataNivelIII);
           } else {
-            console.warn('No se recibieron datos del endpoint summary. Intentando búsqueda por formulación...');
+            console.warn('No se recibieron datos de getHealthOperationalActivitySummary');
             // Intentar buscar actividades operacionales directamente
             this.searchOperationalActivities(formulationId);
             return;
@@ -210,7 +265,6 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
           statusText: error.statusText,
           url: error.url
         });
-        
         // Intentar búsqueda alternativa por formulación
         console.log('Intentando búsqueda alternativa por formulación...');
         this.loading = false;
@@ -223,7 +277,7 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
   private searchOperationalActivities(formulationId: number) {
     this.loading = true;
     console.log('Buscando actividades operacionales por formulación:', formulationId);
-    
+
     this.healthOperationalActivityService.searchByFormulation(formulationId).subscribe({
       next: (activities) => {
         setTimeout(() => {
@@ -283,14 +337,14 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       measurementUnit: activity.measurementUnit || '',
       codCenSes: activity.codCenSes || '',
       desCenSes: activity.desCenSes || '',
-      
+
       // Goals by quarter - sumar valores de todas las actividades si es necesario
       goalQ1: activity.goalQ1 || 0,
       goalQ2: activity.goalQ2 || 0,
       goalQ3: activity.goalQ3 || 0,
       goalQ4: activity.goalQ4 || 0,
       goalTotal: (activity.goalQ1 || 0) + (activity.goalQ2 || 0) + (activity.goalQ3 || 0) + (activity.goalQ4 || 0),
-      
+
       // Budget by quarter
       budgetQ1: activity.budgetQ1 || 0,
       budgetQ2: activity.budgetQ2 || 0,
@@ -331,9 +385,51 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     }));
   }
 
+  // Convert consolidated quarterly row to monthly breakdown by evenly splitting each trimestre across 3 months
+  private toMonthlyConsolidatedRows(consolidated: ConsolidatedHealthRow[]): any[] {
+    return consolidated.map(row => {
+      // Start with zeroed months
+      const meses = Array.from({ length: 12 }, () => ({ metas: 0, presupuesto: 0 }));
+
+      // Map trimestre to months: T1 -> M1,M2,M3 ; T2 -> M4-6 ; T3 -> M7-9 ; T4 -> M10-12
+      const metas = [row.metas.trimestre1, row.metas.trimestre2, row.metas.trimestre3, row.metas.trimestre4];
+      const presup = [row.presupuesto.trimestre1, row.presupuesto.trimestre2, row.presupuesto.trimestre3, row.presupuesto.trimestre4];
+
+      metas.forEach((mVal, tIdx) => {
+        const perMonth = mVal / 3;
+        for (let i = 0; i < 3; i++) {
+          const monthIndex = tIdx * 3 + i;
+          meses[monthIndex].metas += perMonth;
+        }
+      });
+
+      presup.forEach((pVal, tIdx) => {
+        const perMonth = pVal / 3;
+        for (let i = 0; i < 3; i++) {
+          const monthIndex = tIdx * 3 + i;
+          meses[monthIndex].presupuesto += perMonth;
+        }
+      });
+
+      // monthly totals
+      const metasMensual = meses.map(m => m.metas);
+      const presupuestoMensual = meses.map(m => m.presupuesto);
+
+      return {
+        id: row.id,
+        familia: row.familia,
+        unidadMedida: row.unidadMedida,
+        meses: meses, // each entry has metas and presupuesto
+        metasMensual,
+        presupuestoMensual,
+        detalles: row.detalles
+      };
+    });
+  }
+
   // Procesar datos por nivel y consolidar por familia
   private processDataByLevel() {
-  // Ya no se usa, agrupación por familia ahora se hace en groupByFamily
+    // Ya no se usa, agrupación por familia ahora se hace en groupByFamily
   }
 
   // Métodos para calcular totales por familia (para el footer de grupos)
@@ -343,28 +439,65 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     const familias = Array.from(new Set(data.map(item => item.familia)));
     return familias.map(familia => {
       const detalles = data.filter(item => item.familia === familia);
-      // Calcular totales de metas y presupuesto por trimestre y total
+
+      // Merge detalles by trimmed activity name (accionEstrategica.nombre)
+      const mergedMap: { [trimmedName: string]: HealthTableRow } = {};
+
+      detalles.forEach(item => {
+        const rawName = item.accionEstrategica?.nombre || '';
+        const nameKey = rawName.trim();
+        if (!nameKey) {
+          // If no name, push as-is with a unique key
+          const uniqueKey = `__empty_${Math.random().toString(36).slice(2, 9)}`;
+          mergedMap[uniqueKey] = { ...item };
+          return;
+        }
+
+        if (!mergedMap[nameKey]) {
+          // Initialize entry (clone to avoid mutating original)
+          mergedMap[nameKey] = { ...item, metas: { ...item.metas }, presupuesto: { ...item.presupuesto } };
+        } else {
+          // Sum metas and presupuesto
+          mergedMap[nameKey].metas.trimestre1 += item.metas.trimestre1;
+          mergedMap[nameKey].metas.trimestre2 += item.metas.trimestre2;
+          mergedMap[nameKey].metas.trimestre3 += item.metas.trimestre3;
+          mergedMap[nameKey].metas.trimestre4 += item.metas.trimestre4;
+          mergedMap[nameKey].metas.total += item.metas.total;
+
+          mergedMap[nameKey].presupuesto.trimestre1 += item.presupuesto.trimestre1;
+          mergedMap[nameKey].presupuesto.trimestre2 += item.presupuesto.trimestre2;
+          mergedMap[nameKey].presupuesto.trimestre3 += item.presupuesto.trimestre3;
+          mergedMap[nameKey].presupuesto.trimestre4 += item.presupuesto.trimestre4;
+          mergedMap[nameKey].presupuesto.total += item.presupuesto.total;
+        }
+      });
+
+      const mergedDetalles = Object.values(mergedMap);
+
+      // Calcular totales de metas y presupuesto por trimestre y total a partir de mergedDetalles
       const metas = {
-        trimestre1: detalles.reduce((sum, item) => sum + item.metas.trimestre1, 0),
-        trimestre2: detalles.reduce((sum, item) => sum + item.metas.trimestre2, 0),
-        trimestre3: detalles.reduce((sum, item) => sum + item.metas.trimestre3, 0),
-        trimestre4: detalles.reduce((sum, item) => sum + item.metas.trimestre4, 0),
-        total: detalles.reduce((sum, item) => sum + item.metas.total, 0)
+        trimestre1: mergedDetalles.reduce((sum, item) => sum + item.metas.trimestre1, 0),
+        trimestre2: mergedDetalles.reduce((sum, item) => sum + item.metas.trimestre2, 0),
+        trimestre3: mergedDetalles.reduce((sum, item) => sum + item.metas.trimestre3, 0),
+        trimestre4: mergedDetalles.reduce((sum, item) => sum + item.metas.trimestre4, 0),
+        total: mergedDetalles.reduce((sum, item) => sum + item.metas.total, 0)
       };
+
       const presupuesto = {
-        trimestre1: detalles.reduce((sum, item) => sum + item.presupuesto.trimestre1, 0),
-        trimestre2: detalles.reduce((sum, item) => sum + item.presupuesto.trimestre2, 0),
-        trimestre3: detalles.reduce((sum, item) => sum + item.presupuesto.trimestre3, 0),
-        trimestre4: detalles.reduce((sum, item) => sum + item.presupuesto.trimestre4, 0),
-        total: detalles.reduce((sum, item) => sum + item.presupuesto.total, 0)
+        trimestre1: mergedDetalles.reduce((sum, item) => sum + item.presupuesto.trimestre1, 0),
+        trimestre2: mergedDetalles.reduce((sum, item) => sum + item.presupuesto.trimestre2, 0),
+        trimestre3: mergedDetalles.reduce((sum, item) => sum + item.presupuesto.trimestre3, 0),
+        trimestre4: mergedDetalles.reduce((sum, item) => sum + item.presupuesto.trimestre4, 0),
+        total: mergedDetalles.reduce((sum, item) => sum + item.presupuesto.total, 0)
       };
+
       return {
         id: familia,
         familia,
-        unidadMedida: detalles[0]?.unidadMedida || '',
+        unidadMedida: mergedDetalles[0]?.unidadMedida || '',
         metas,
         presupuesto,
-        detalles
+        detalles: mergedDetalles
       };
     });
   }
@@ -386,18 +519,48 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       this.healthData = filteredData;
 
       // Reagrupar por nivel
-      this.groupedHealthDataNivelI = this.groupByFamily(this.healthData.filter(item => {
+      const nivelIData = this.healthData.filter(item => {
         const nivel = item.nivelAtencion.toLowerCase();
         return (nivel.includes('nivel i') || nivel === 'i');
-      }));
-      this.groupedHealthDataNivelII = this.groupByFamily(this.healthData.filter(item => {
+      });
+      const nivelIIData = this.healthData.filter(item => {
         const nivel = item.nivelAtencion.toLowerCase();
         return (nivel.includes('nivel ii') || nivel === 'ii');
-      }));
-      this.groupedHealthDataNivelIII = this.groupByFamily(this.healthData.filter(item => {
+      });
+      const nivelIIIData = this.healthData.filter(item => {
         const nivel = item.nivelAtencion.toLowerCase();
         return (nivel.includes('nivel iii') || nivel === 'iii');
-      }));
+      });
+      this.groupedHealthDataNivelI = this.groupByFamily(nivelIData);
+      this.groupedHealthDataNivelII = this.groupByFamily(nivelIIData);
+      this.groupedHealthDataNivelIII = this.groupByFamily(nivelIIIData);
+
+      // Also prepare monthly grouped data
+      this.groupedHealthDataNivelIMensual = this.toMonthlyConsolidatedRows(this.groupedHealthDataNivelI);
+      this.groupedHealthDataNivelIIMensual = this.toMonthlyConsolidatedRows(this.groupedHealthDataNivelII);
+      this.groupedHealthDataNivelIIIMensual = this.toMonthlyConsolidatedRows(this.groupedHealthDataNivelIII);
+
+      // Compute mensual aggregates for footers
+      this.totalMetasNivelI = this.computeTotalMetas(this.groupedHealthDataNivelIMensual);
+      this.totalMetasNivelII = this.computeTotalMetas(this.groupedHealthDataNivelIIMensual);
+      this.totalMetasNivelIII = this.computeTotalMetas(this.groupedHealthDataNivelIIIMensual);
+
+      this.totalPresupuestoMensualNivelI = this.computeMonthlyPresupuestoTotals(this.groupedHealthDataNivelIMensual);
+      this.totalPresupuestoMensualNivelII = this.computeMonthlyPresupuestoTotals(this.groupedHealthDataNivelIIMensual);
+      this.totalPresupuestoMensualNivelIII = this.computeMonthlyPresupuestoTotals(this.groupedHealthDataNivelIIIMensual);
+
+      // Calcular totales por nivel
+      this.totalPresupuestoNivelI = this.calcularTotalPresupuesto(this.groupedHealthDataNivelI);
+      this.totalPresupuestoNivelII = this.calcularTotalPresupuesto(this.groupedHealthDataNivelII);
+      this.totalPresupuestoNivelIII = this.calcularTotalPresupuesto(this.groupedHealthDataNivelIII);
+      // Calcular total general
+      this.totalPresupuestoGeneral = {
+        t1: this.totalPresupuestoNivelI.t1 + this.totalPresupuestoNivelII.t1 + this.totalPresupuestoNivelIII.t1,
+        t2: this.totalPresupuestoNivelI.t2 + this.totalPresupuestoNivelII.t2 + this.totalPresupuestoNivelIII.t2,
+        t3: this.totalPresupuestoNivelI.t3 + this.totalPresupuestoNivelII.t3 + this.totalPresupuestoNivelIII.t3,
+        t4: this.totalPresupuestoNivelI.t4 + this.totalPresupuestoNivelII.t4 + this.totalPresupuestoNivelIII.t4,
+        total: this.totalPresupuestoNivelI.total + this.totalPresupuestoNivelII.total + this.totalPresupuestoNivelIII.total
+      };
 
       // Emitir el conteo actualizado
       this.activitiesCountChanged.emit(this.healthData.length);
@@ -405,6 +568,17 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       this.filtering = false;
       this.cdr.detectChanges();
     }, 100); // Simular un pequeño delay para el loader
+  }
+
+  // Calcula el total de presupuesto para un grupo de datos
+  private calcularTotalPresupuesto(grupo: ConsolidatedHealthRow[]): { t1: number, t2: number, t3: number, t4: number, total: number } {
+    return {
+      t1: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre1, 0),
+      t2: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre2, 0),
+      t3: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre3, 0),
+      t4: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre4, 0),
+      total: grupo.reduce((sum, row) => sum + row.presupuesto.total, 0)
+    };
   }
 
   // Método para limpiar el filtro
@@ -462,5 +636,91 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
   onPageChange(event: any) {
     this.first = event.first;
     this.rows = event.rows;
+  }
+
+  // Helpers for mensual view
+  sumMesMetas(row: any): number {
+    if (!row || !row.meses) return 0;
+    return row.meses.reduce((sum: number, m: any) => sum + (m.metas || 0), 0);
+  }
+
+  sumMesPresupuesto(row: any): number {
+    if (!row || !row.meses) return 0;
+    return row.meses.reduce((sum: number, m: any) => sum + (m.presupuesto || 0), 0);
+  }
+
+  // Compute monthly metas value for a detail row given month index 0..11
+  monthlyMetaForDetail(detail: any, monthIndex: number): number {
+    if (!detail || !detail.metas) return 0;
+    const t1 = detail.metas.trimestre1 || 0;
+    const t2 = detail.metas.trimestre2 || 0;
+    const t3 = detail.metas.trimestre3 || 0;
+    const t4 = detail.metas.trimestre4 || 0;
+    if (monthIndex >= 0 && monthIndex < 3) return t1 / 3;
+    if (monthIndex >= 3 && monthIndex < 6) return t2 / 3;
+    if (monthIndex >= 6 && monthIndex < 9) return t3 / 3;
+    if (monthIndex >= 9 && monthIndex < 12) return t4 / 3;
+    return 0;
+  }
+
+  monthlyBudgetForDetail(detail: any, monthIndex: number): number {
+    if (!detail || !detail.presupuesto) return 0;
+    const p1 = detail.presupuesto.trimestre1 || 0;
+    const p2 = detail.presupuesto.trimestre2 || 0;
+    const p3 = detail.presupuesto.trimestre3 || 0;
+    const p4 = detail.presupuesto.trimestre4 || 0;
+    if (monthIndex >= 0 && monthIndex < 3) return p1 / 3;
+    if (monthIndex >= 3 && monthIndex < 6) return p2 / 3;
+    if (monthIndex >= 6 && monthIndex < 9) return p3 / 3;
+    if (monthIndex >= 9 && monthIndex < 12) return p4 / 3;
+    return 0;
+  }
+
+  // Total presupuesto for a specific month across all levels
+  monthlyTotalForMonth(monthIndex: number): number {
+    const all = ([] as any[]).concat(this.groupedHealthDataNivelIMensual || [], this.groupedHealthDataNivelIIMensual || [], this.groupedHealthDataNivelIIIMensual || []);
+    return all.reduce((sum, row) => {
+      const val = row && row.meses && row.meses[monthIndex] ? (row.meses[monthIndex].presupuesto || 0) : 0;
+      return sum + val;
+    }, 0);
+  }
+
+  // Total presupuesto across all months and levels (grand total mensual)
+  monthlyTotalAll(): number {
+    const all = ([] as any[]).concat(this.groupedHealthDataNivelIMensual || [], this.groupedHealthDataNivelIIMensual || [], this.groupedHealthDataNivelIIIMensual || []);
+    return all.reduce((sum, row) => {
+      const rowSum = (row.meses || []).reduce((s: number, m: any) => s + (m.presupuesto || 0), 0);
+      return sum + rowSum;
+    }, 0);
+  }
+
+  // Utility to sum a numeric array (used by templates)
+  sumArray(arr: number[] | undefined): number {
+    if (!arr || !Array.isArray(arr)) return 0;
+    return arr.reduce((s: number, n: number) => s + (n || 0), 0);
+  }
+
+  // Precomputed aggregates for mensual footers
+  totalMetasNivelI: number = 0;
+  totalMetasNivelII: number = 0;
+  totalMetasNivelIII: number = 0;
+
+  totalPresupuestoMensualNivelI: number[] = Array(12).fill(0);
+  totalPresupuestoMensualNivelII: number[] = Array(12).fill(0);
+  totalPresupuestoMensualNivelIII: number[] = Array(12).fill(0);
+
+  // Helpers to compute aggregates for mensual view
+  private computeMonthlyPresupuestoTotals(groupedMensual: any[]): number[] {
+    const totals = Array(12).fill(0);
+    (groupedMensual || []).forEach(row => {
+      (row.meses || []).forEach((m: any, idx: number) => {
+        totals[idx] = (totals[idx] || 0) + (m.presupuesto || 0);
+      });
+    });
+    return totals;
+  }
+
+  private computeTotalMetas(groupedMensual: any[]): number {
+    return (groupedMensual || []).reduce((sum: number, row: any) => sum + this.sumMesMetas(row), 0);
   }
 }

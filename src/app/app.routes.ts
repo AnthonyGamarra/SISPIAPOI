@@ -21,6 +21,7 @@ import { FormulacionOoddSocialesComponent } from './pages/formulacion-oodd-socia
 import { AdminMaestroGcpsComponent } from './pages/admin-maestro-gcps/admin-maestro-gcps.component';
 import { AdminUsuariosComponent } from './pages/admin-usuarios/admin-usuarios.component';
 import { FormulacionOoddSaludComponent } from './pages/formulacion-oodd-salud/formulacion-oodd-salud.component';
+import { FormulacionGestionComponent } from './pages/formulacion-gestion/formulacion-gestion.component';
 
 export const routes: Routes = [
   {
@@ -45,6 +46,11 @@ export const routes: Routes = [
   {
     path: 'formulacion/formulacion-desconcentrado', // ✅ nueva ruta para el componente Formu1
     component: MenuFormulacionDesconcentradoComponent,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'formulacion/formulacion-desconcentrado/gestion', // ✅ nueva ruta para el componente Formu1
+    component: FormulacionGestionComponent,
     canActivate: [authGuard],
   },
   {

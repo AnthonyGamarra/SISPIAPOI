@@ -162,7 +162,7 @@ input[pInputText], textarea[pTextarea] {
 // Estilos para selects en modo edición
 :host ::ng-deep {
   .p-select {
-    width: 35% !important;
+    width: 100% !important;
     
     &.p-focus {
       border-color: #1976d2 !important;
@@ -177,12 +177,6 @@ input[pInputText], textarea[pTextarea] {
     .p-select-trigger {
       width: 24px;
     }
-  }
-
-  @media (max-width: 768px) {
-    .p-select {
-      width: 100% !important;
-    }    
   }
   
   .p-select-panel {

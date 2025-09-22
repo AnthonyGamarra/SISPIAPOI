@@ -25,12 +25,7 @@
         <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
           optionLabel="name" optionValue="value" />
       </div>
-      <button *ngIf="idDependency != null && +idDependency === 20" pButton
-        label="Programación de prestaciones económicas" icon="pi pi-calendar"
-        (click)="openPrestacionesEconomicasModal()" class="col-6 md:col-2 add-button ml-auto"
-        [disabled]="!currentFormulation || !ano">
-      </button>
-      <button *ngIf="idDependency != null && +idDependency === 22" pButton label="Programación de prestaciones sociales"
+      <button *ngIf="currentFormulation?.dependency?.social" pButton label="Programación de prestaciones sociales"
         icon="pi pi-calendar" (click)="openPrestacionesSocialesModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
@@ -474,13 +469,6 @@
       </button>
     </ng-template> -->
   </p-dialog>
-
-  <!-- Subcomponente para Prestaciones Económicas -->
-  <app-formulacion-ospes-tabla #ospesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
-    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions" [financialFunds]="financialFunds"
-    [managementCenters]="managementCenters" [costCenters]="costCenters" [measurementTypes]="measurementTypes"
-    [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
-  </app-formulacion-ospes-tabla>
 
   <!-- Subcomponente para Prestaciones Sociales -->
   <app-formulacion-sociales-tabla #socialesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
