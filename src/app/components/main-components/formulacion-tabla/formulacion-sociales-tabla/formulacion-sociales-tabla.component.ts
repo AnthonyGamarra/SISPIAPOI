@@ -2183,9 +2183,21 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
         if (!flatGroupedActivities[depName]) flatGroupedActivities[depName] = [];
         flatGroupedActivities[depName].push(act);
       });
-      // For export, derive dependency names from the source grouping so hidden/zero-only
-      // activities are included even when UI's dependencyNamesList is filtered.
-      const exportDependencyNames = Object.keys(flatGroupedActivities).sort((a, b) => a.localeCompare(b));
+      // For export, prefer the UI order held in `dependencyNamesList` when available.
+      // Include any dependencies present in the grouped map but missing from the UI list by
+      // appending them at the end (keeps them deterministic by sorting the remainder).
+      let exportDependencyNames: string[] = [];
+      const flatKeys = Object.keys(flatGroupedActivities || {});
+      if (this.dependencyNamesList && this.dependencyNamesList.length) {
+        // Start with the UI order, but only include keys that actually exist in flatGroupedActivities
+        const fromUI = this.dependencyNamesList.filter(d => flatKeys.includes(d));
+        // Append any remaining dependencies not present in the UI list (sorted for determinism)
+        const remaining = flatKeys.filter(d => !fromUI.includes(d)).sort((a, b) => a.localeCompare(b));
+        exportDependencyNames = [...fromUI, ...remaining];
+      } else {
+        // Fallback: deterministic sorted order when UI list is empty
+        exportDependencyNames = flatKeys.sort((a, b) => a.localeCompare(b));
+      }
       this.excelExportService.exportOperationalActivitiesToExcel(
         sourceActivities,
         flatGroupedActivities,

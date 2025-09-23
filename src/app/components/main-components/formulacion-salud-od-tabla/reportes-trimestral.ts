@@ -155,15 +155,15 @@ function splitTrimestreToMonths(value: number) {
 /**
  * Export mensual consolidated. Input consolidatedRows with metas and presupuesto per trimestre.
  */
-export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dependency: { name?: string } | null, formulation: { year?: string | number, modification?: number } | null, filename = 'reporte_mensual_consolidado.xlsx') {
+export async function exportTrimestralConsolidadoExcel(consolidatedRows: any[], dependency: { name?: string } | null, formulation: { year?: string | number, modification?: number } | null, filename = 'reporte_trimestral_consolidado.xlsx') {
   // Mostrar solo el name de la dependencia si existe (no el id)
   let depName = '';
   if (dependency && typeof dependency === 'object') {
     if ('name' in dependency) depName = String(dependency.name ?? '');
     else if ('dependency' in dependency && dependency.dependency && typeof dependency.dependency === 'object' && 'name' in dependency.dependency) depName = String((dependency.dependency as any).name ?? '');
   }
-  const monthsHeader = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
-  const headerRow = ['Familia', 'Unidad de medida', ...monthsHeader.map(m => m + ' Meta'), 'Total Metas', ...monthsHeader.map(m => m + ' Presupuesto S/.'), 'Total Presupuesto'];
+  const trimestreHeader = ['T1', 'T2', 'T3', 'T4'];
+  const headerRow = ['Familia', 'Unidad de medida', ...trimestreHeader.map(t => t + ' Meta'), 'Total Metas', ...trimestreHeader.map(t => t + ' Presupuesto S/.'), 'Total Presupuesto'];
 
   // Build workbook with one sheet per Nivel (I, II, III) when data exists
   // helper to convert 1-based column index to Excel letter (e.g., 1 -> A, 27 -> AA)
@@ -224,8 +224,8 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
     const rowsForLevel = groups[lvlKey];
     if (!rowsForLevel || rowsForLevel.length === 0) continue; // only create sheet if data exists
 
-    const sheetName = `Consolidado Mensual - Nivel ${lvlKey}`;
-    const worksheet = workbook.addWorksheet(sheetName);
+  const sheetName = uniqueSheetName(workbook, `Consolidado Trim. - Nivel ${lvlKey}`);
+  const worksheet = workbook.addWorksheet(sheetName);
 
     let rowIdx = 1;
     // Title and subtitles
@@ -263,21 +263,16 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
 
     // Add data rows
     rowsForLevel.forEach(r => {
-      const metasMonths: number[] = [];
-      const presupMonths: number[] = [];
-      [r.metas?.trimestre1, r.metas?.trimestre2, r.metas?.trimestre3, r.metas?.trimestre4].forEach(t => {
-        metasMonths.push(...splitTrimestreToMonths(t || 0));
-      });
-      [r.presupuesto?.trimestre1, r.presupuesto?.trimestre2, r.presupuesto?.trimestre3, r.presupuesto?.trimestre4].forEach(t => {
-        presupMonths.push(...splitTrimestreToMonths(t || 0));
-      });
+      // For trimestral export we use trimestre values directly
+      const metasTrimestral = [r.metas?.trimestre1 || 0, r.metas?.trimestre2 || 0, r.metas?.trimestre3 || 0, r.metas?.trimestre4 || 0];
+      const presupTrimestral = [r.presupuesto?.trimestre1 || 0, r.presupuesto?.trimestre2 || 0, r.presupuesto?.trimestre3 || 0, r.presupuesto?.trimestre4 || 0];
       worksheet.addRow([
         r.familia || '',
         'Atenciones',
-        ...metasMonths,
-        r.metas?.total ?? 0,
-        ...presupMonths,
-        r.presupuesto?.total ?? 0
+        ...metasTrimestral,
+        r.metas?.total ?? metasTrimestral.reduce((s:number,n:number)=>s+n,0),
+        ...presupTrimestral,
+        r.presupuesto?.total ?? presupTrimestral.reduce((s:number,n:number)=>s+n,0)
       ]);
     });
 
@@ -285,15 +280,17 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
     worksheet.columns = [
       { width: 30 }, // Familia
       { width: 16.5 }, // Unidad de medida
-      ...Array(12).fill({ width: 11.5 }), // Metas meses
+      ...Array(4).fill({ width: 14 }), // Metas trimestres
       { width: 14 }, // Total Metas
-      ...Array(12).fill({ width: 18.5 }), // Presupuesto meses
+      ...Array(4).fill({ width: 18.5 }), // Presupuesto trimestres
       { width: 19 } // Total Presupuesto
     ];
 
     // Apply borders and numeric formats
+    // Apply borders and numeric formats for new column layout
+    const totalCols = 2 + 4 + 1 + 4 + 1; // familia + unidad + 4 metas + total + 4 presup + total
     for (let r = 1; r <= worksheet.rowCount; r++) {
-      for (let c = 1; c <= 28; c++) {
+      for (let c = 1; c <= totalCols; c++) {
         const cell = worksheet.getRow(r).getCell(c);
         cell.border = {
           top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -301,7 +298,8 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
           bottom: { style: 'thin', color: { argb: 'FF000000' } },
           right: { style: 'thin', color: { argb: 'FF000000' } }
         };
-        if (c >= 16 && c <= 28 && r > rowIdx + 1) {
+        // presupuesto columns: after (2+4+1) => start at colIndex = 8 to 11 (4 cols) and final total
+        if (c >= (2 + 4 + 1) + 1 && c <= (2 + 4 + 1) + 4 && r > rowIdx + 1) {
           cell.numFmt = '#,##0.00';
         }
       }
@@ -310,7 +308,7 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
 
   // If workbook has no sheets (no data), still create a minimal sheet
   if (workbook.worksheets.length === 0) {
-    const worksheet = workbook.addWorksheet('Consolidado Mensual');
+    const worksheet = workbook.addWorksheet(uniqueSheetName(workbook, 'Consolidado Trim.'));
     worksheet.addRow([depName]);
     worksheet.addRow(['Año:', formulation?.year || '', 'Modificatoria:', getModificationLabel(formulation?.modification ?? 1)]);
     worksheet.addRow([]);
@@ -331,7 +329,7 @@ export async function exportMensualConsolidadoExcel(consolidatedRows: any[], dep
 /**
  * Export mensual detallado. details: same shape as detail rows; we'll compute monthly breakdown per detail.
  */
-export async function exportMensualDetalladoExcel(details: any[], dependency: { name?: string } | null, formulation: { year?: string | number, modification?: number } | null, filename = 'reporte_mensual_detallado.xlsx') {
+export async function exportTrimestralDetalladoExcel(details: any[], dependency: { name?: string } | null, formulation: { year?: string | number, modification?: number } | null, filename = 'reporte_trimestral_detallado.xlsx') {
   // Mostrar solo el name de la dependencia si existe (no el id)
   let depName = '';
   if (dependency && typeof dependency === 'object') {
@@ -358,19 +356,18 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
     groups['I'] = details.slice();
   }
 
-  const monthsHeader = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+  const trimestreHeader = ['T1', 'T2', 'T3', 'T4'];
   // NOTE: removed Nivel, Objetivo, Accion columns as requested
   // Added 'Nombre de actividad' after 'Familia'
-  const headerRow = ['Familia', 'Nombre de actividad', 'Unidad de medida', 'Centro', ...monthsHeader.map(m => m + ' Meta'), 'Total Metas', ...monthsHeader.map(m => m + ' Presupuesto S/.'), 'Total Presupuesto'];
+  const headerRow = ['Familia', 'Nombre de actividad', 'Unidad de medida', 'Centro', ...trimestreHeader.map(t => t + ' Meta'), 'Total Metas', ...trimestreHeader.map(t => t + ' Presupuesto S/.'), 'Total Presupuesto'];
 
   const workbook = new ExcelJS.Workbook();
 
   for (const lvlKey of ['I', 'II', 'III']) {
     const rows = groups[lvlKey];
     if (!rows || rows.length === 0) continue;
-
-    const sheetName = `Detallado Mensual - Nivel ${lvlKey}`;
-    const worksheet = workbook.addWorksheet(sheetName);
+  const sheetName = uniqueSheetName(workbook, `Detallado Trimestral - Nivel ${lvlKey}`);
+  const worksheet = workbook.addWorksheet(sheetName);
 
     let rowIdx = 1;
     if (depName) {
@@ -403,30 +400,24 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
     const familias = Array.from(new Set(rows.map((x: any) => x.familia || '')));
     for (const fam of familias) {
       const familyRows = rows.filter((x: any) => (x.familia || '') === fam);
-      // compute numeric sums to use as fallback result for formulas
-      const metasSum = Array(12).fill(0);
-      const presupSum = Array(12).fill(0);
+      // compute numeric sums to use as fallback result for formulas (4 trimesters)
+      const metasSum = Array(4).fill(0);
+      const presupSum = Array(4).fill(0);
       familyRows.forEach((r: any) => {
-        const mMonths: number[] = [];
-        const pMonths: number[] = [];
-        [r.metas?.trimestre1, r.metas?.trimestre2, r.metas?.trimestre3, r.metas?.trimestre4].forEach((t: any) => {
-          mMonths.push(...splitTrimestreToMonths(t || 0));
-        });
-        [r.presupuesto?.trimestre1, r.presupuesto?.trimestre2, r.presupuesto?.trimestre3, r.presupuesto?.trimestre4].forEach((t: any) => {
-          pMonths.push(...splitTrimestreToMonths(t || 0));
-        });
-        for (let i = 0; i < 12; i++) {
-          metasSum[i] += (mMonths[i] || 0);
-          presupSum[i] += (pMonths[i] || 0);
+        // use trimestre values directly for summaries
+        const mVals = [r.metas?.trimestre1 || 0, r.metas?.trimestre2 || 0, r.metas?.trimestre3 || 0, r.metas?.trimestre4 || 0];
+        const pVals = [r.presupuesto?.trimestre1 || 0, r.presupuesto?.trimestre2 || 0, r.presupuesto?.trimestre3 || 0, r.presupuesto?.trimestre4 || 0];
+        for (let i = 0; i < 4; i++) {
+          metasSum[i] += (mVals[i] || 0);
+          presupSum[i] += (pVals[i] || 0);
         }
       });
 
       // Insert summary row first (as requested). We'll fill formulas after adding detail rows.
       const emptyValues: any[] = [];
       // build placeholder row matching header length (30 columns)
-      const totalCols = 30;
+      const totalCols = 2 + 1 + 1 + 4 + 1 + 4 + 1; // familia, nombre, unidad, centro, 4 metas, total metas, 4 presup, total presup
       for (let i = 1; i <= totalCols; i++) {
-        // textual columns: 1..4 -> '', numeric columns -> 0
         if (i >= 5) emptyValues.push(0);
         else emptyValues.push('');
       }
@@ -438,25 +429,19 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
 
       const summaryRowIndex = summaryRow.number;
 
-      // Add detail rows
+      // Add detail rows — use 4 trimestre values instead of monthly breakdown
       for (const r of familyRows) {
-        const metasMonths: number[] = [];
-        const presupMonths: number[] = [];
-        [r.metas?.trimestre1, r.metas?.trimestre2, r.metas?.trimestre3, r.metas?.trimestre4].forEach((t: any) => {
-          metasMonths.push(...splitTrimestreToMonths(t || 0));
-        });
-        [r.presupuesto?.trimestre1, r.presupuesto?.trimestre2, r.presupuesto?.trimestre3, r.presupuesto?.trimestre4].forEach((t: any) => {
-          presupMonths.push(...splitTrimestreToMonths(t || 0));
-        });
+        const metasT = [r.metas?.trimestre1 || 0, r.metas?.trimestre2 || 0, r.metas?.trimestre3 || 0, r.metas?.trimestre4 || 0];
+        const presupT = [r.presupuesto?.trimestre1 || 0, r.presupuesto?.trimestre2 || 0, r.presupuesto?.trimestre3 || 0, r.presupuesto?.trimestre4 || 0];
         const detailRow = worksheet.addRow([
           r.familia || '',
           r.accionEstrategica?.nombre || '',
           r.unidadMedida || '',
           r.desCenSes || '',
-          ...metasMonths,
-          r.metas?.total ?? 0,
-          ...presupMonths,
-          r.presupuesto?.total ?? 0
+          ...metasT,
+          r.metas?.total ?? metasT.reduce((s:number,n:number)=>s+n,0),
+          ...presupT,
+          r.presupuesto?.total ?? presupT.reduce((s:number,n:number)=>s+n,0)
         ]);
         (detailRow as any).outlineLevel = 1;
       }
@@ -464,28 +449,27 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
       // After adding detail rows, set formulas in the summary row to sum the detail rows below
       const firstDetailRow = summaryRowIndex + 1;
       const lastDetailRow = summaryRowIndex + familyRows.length;
-      // metas months columns: 5..16
-      for (let i = 0; i < 12; i++) {
+      // metas trimestres columns: 5..8
+      for (let i = 0; i < 4; i++) {
         const col = 5 + i;
         const colL = colLetter(col);
         const cell = summaryRow.getCell(col);
         const formula = `SUM(${colL}${firstDetailRow}:${colL}${lastDetailRow})`;
         cell.value = { formula, result: metasSum[i] };
       }
-      // total metas column 17
-      const colTotalMetas = 17;
+      // total metas column (after metas) -> col 9
+      const colTotalMetas = 5 + 4;
       summaryRow.getCell(colTotalMetas).value = { formula: `SUM(${colLetter(colTotalMetas)}${firstDetailRow}:${colLetter(colTotalMetas)}${lastDetailRow})`, result: metasSum.reduce((s: number, n: number) => s + n, 0) };
-      // presupuesto months columns: 18..29
-      for (let i = 0; i < 12; i++) {
-        const col = 18 + i;
+      // presupuesto trimestres columns: after total metas -> cols 10..13
+      for (let i = 0; i < 4; i++) {
+        const col = colTotalMetas + 1 + i;
         const colL = colLetter(col);
         const cell = summaryRow.getCell(col);
         cell.value = { formula: `SUM(${colL}${firstDetailRow}:${colL}${lastDetailRow})`, result: presupSum[i] };
-        // format as number with 2 decimals
         cell.numFmt = '#,##0.00';
       }
-      // total presupuesto column 30
-      const colTotalPresup = 30;
+      // total presupuesto column -> last column
+      const colTotalPresup = colTotalMetas + 1 + 4;
       summaryRow.getCell(colTotalPresup).value = { formula: `SUM(${colLetter(colTotalPresup)}${firstDetailRow}:${colLetter(colTotalPresup)}${lastDetailRow})`, result: presupSum.reduce((s: number, n: number) => s + n, 0) };
       summaryRow.getCell(colTotalPresup).numFmt = '#,##0.00';
     }
@@ -495,14 +479,14 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
       { width: 40 }, // Nombre de actividad
       { width: 35 }, // Unidad de medida
       { width: 27 }, // Centro
-      ...Array(12).fill({ width: 11.5 }),
-      { width: 14 },
-      ...Array(12).fill({ width: 18.5 }),
-      { width: 19 }
+      ...Array(4).fill({ width: 11.5 }), // metas trimestrales
+      { width: 14 }, // total metas
+      ...Array(4).fill({ width: 18.5 }), // presupuesto trimestral
+      { width: 19 } // total presupuesto
     ];
-
+    const totalColsGlobal = 14; // 4 fixed + 4 metas + 1 total metas + 4 presup + 1 total presup
     for (let r = 1; r <= worksheet.rowCount; r++) {
-      for (let c = 1; c <= 30; c++) {
+      for (let c = 1; c <= totalColsGlobal; c++) {
         const cell = worksheet.getRow(r).getCell(c);
         cell.border = {
           top: { style: 'thin', color: { argb: 'FF000000' } },
@@ -510,8 +494,8 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
           bottom: { style: 'thin', color: { argb: 'FF000000' } },
           right: { style: 'thin', color: { argb: 'FF000000' } }
         };
-        // metas columns: 5..16, total metas:17, presupuesto:18..29, total presupuesto:30
-        if (c >= 18 && c <= 30 && r > rowIdx + 1) {
+        // presupuesto columns: 10..14 (including total presupuesto)
+        if (c >= 10 && c <= 14 && r > rowIdx + 1) {
           cell.numFmt = '#,##0.00';
         }
       }
@@ -520,7 +504,7 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
 
   // If no sheets created, create minimal
   if (workbook.worksheets.length === 0) {
-    const worksheet = workbook.addWorksheet('Detallado Mensual');
+    const worksheet = workbook.addWorksheet(uniqueSheetName(workbook, 'Detallado Trimestral'));
     worksheet.addRow([depName]);
     worksheet.addRow(['Año:', formulation?.year || '', 'Modificatoria:', getModificationLabel(formulation?.modification ?? 1)]);
     worksheet.addRow([]);
@@ -536,4 +520,15 @@ export async function exportMensualDetalladoExcel(details: any[], dependency: { 
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 100);
+}
+
+// Ensure a worksheet name is unique within a workbook by appending suffixes if needed
+function uniqueSheetName(workbook: any, base: string) {
+  let name = base || 'Sheet';
+  let i = 1;
+  while (workbook.getWorksheet(name)) {
+    i++;
+    name = `${base} (${i})`;
+  }
+  return name;
 }

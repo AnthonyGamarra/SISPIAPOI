@@ -14,7 +14,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { HealthOperationalActivityService } from '../../../core/services/logic/health-operational-activity.service';
 import { HealthOperationalActivitySummaryDTO } from '../../../models/logic/health-operational-activity-summary.dto';
 import { Formulation } from '../../../models/logic/formulation.model';
-import { exportTrimestralConsolidadoExcel, exportTrimestralDetalladoExcel } from './reportes-trimestrales';
+import { exportTrimestralConsolidadoExcel, exportTrimestralDetalladoExcel } from './reportes-trimestral';
 import { exportMensualConsolidadoExcel, exportMensualDetalladoExcel } from './reportes-mensuales';
 
 // Definir interface para la tabla original
@@ -748,7 +748,7 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
     else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
 
-    exportTrimestralConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_consolidado_${nivel}.xls`);
+    exportTrimestralConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_consolidado_${nivel}.xlsx`);
   }
 
   exportTrimestralDetalladoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
@@ -759,7 +759,7 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
 
     const details = rows.flatMap(r => r.detalles || []);
-    exportTrimestralDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_detallado_${nivel}.xls`);
+    exportTrimestralDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `trimestral_detallado_${nivel}.xlsx`);
   }
 
   exportMensualConsolidadoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
@@ -769,7 +769,7 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     else if (nivel === 'III') rows = this.groupedHealthDataNivelIII;
     else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
 
-    exportMensualConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_consolidado_${nivel}.xls`);
+    exportMensualConsolidadoExcel(rows, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_consolidado_${nivel}.xlsx`);
   }
 
   exportMensualDetalladoNivel(nivel: 'I' | 'II' | 'III' | 'ALL' = 'ALL') {
@@ -780,6 +780,6 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     else rows = [...this.groupedHealthDataNivelI, ...this.groupedHealthDataNivelII, ...this.groupedHealthDataNivelIII];
 
     const details = rows.flatMap(r => r.detalles || []);
-    exportMensualDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_detallado_${nivel}.xls`);
+    exportMensualDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_detallado_${nivel}.xlsx`);
   }
 }

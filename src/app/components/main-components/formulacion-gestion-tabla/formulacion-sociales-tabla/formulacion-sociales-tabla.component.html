@@ -131,7 +131,7 @@
   <p-table [value]="getOrderedActivitiesForDependencyAndFamily(dependencyName, familyName)" [size]="selectedSize" 
           stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" 
           scrollHeight="400px" columnResizeMode="expand" dataKey="idOperationalActivity" 
-          [paginator]="true" [rows]="5" [rowHover]="true" [lazy]="false">
+           [rowHover]="true" [lazy]="false">
 
         <ng-template pTemplate="header">
           <tr class="cabecera">
@@ -617,8 +617,8 @@
 
         <ng-template pTemplate="header">
           <tr class="cabecera">
-            <th style="min-width: 200px; max-width: 200px;" rowspan="2">Prestación social</th>
-            <th style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
+            <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Prestación social</th>
+            <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
             <th colspan="12">Metas Mensuales Consolidadas</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
             <th colspan="12">Presupuesto Mensual Consolidado S/.</th>
@@ -656,8 +656,8 @@
 
         <ng-template pTemplate="body" let-consolidatedItem>
           <tr>
-            <td>{{ consolidatedItem?.name }}</td>
-            <td>{{ consolidatedItem?.measurementUnit }}</td>
+            <td pFrozenColumn>{{ consolidatedItem?.name }}</td>
+            <td pFrozenColumn>{{ consolidatedItem?.measurementUnit }}</td>
 
             <!-- Metas Consolidadas (enero - diciembre) -->
             <td class="montos">{{ (consolidatedItem?.consolidatedGoals?.[0] || 0) | number:'1.0-0' }}</td>

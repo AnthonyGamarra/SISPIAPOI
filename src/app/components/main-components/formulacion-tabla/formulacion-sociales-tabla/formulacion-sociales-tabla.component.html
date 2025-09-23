@@ -144,7 +144,7 @@
         <!-- Tabla optimizada para cada familia dentro de la dependencia -->
         <p-table [value]="getOrderedActivitiesForDependencyAndFamily(dependencyName, familyName)" [size]="selectedSize"
           stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="400px"
-          columnResizeMode="expand" dataKey="idOperationalActivity" [paginator]="true" [rows]="5" [rowHover]="true"
+          columnResizeMode="expand" dataKey="idOperationalActivity"  [rowHover]="true"
           [lazy]="false">
 
           <ng-template pTemplate="header">

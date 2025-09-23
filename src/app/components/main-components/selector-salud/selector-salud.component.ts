@@ -144,7 +144,7 @@ export class SelectorSaludComponent implements OnInit {
 
       // Filtrar por tipo de dependencia 2 y social = true
       const socialDependencies = dependencies.filter(dep => 
-        dep.dependencyType?.idDependencyType === 2 && dep.ospe == false
+        dep.dependencyType?.idDependencyType === 2 && dep.ospe == false && dep.idDependency !== 116
       );
 
       if (this.isAdmin) {

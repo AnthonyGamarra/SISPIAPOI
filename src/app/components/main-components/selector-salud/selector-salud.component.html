@@ -81,7 +81,7 @@
         (click)="showChangeStateModal = true" [disabled]="!idFormulation"></button>
     </div>
 
-    <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
+    <!-- <div class="flex flex-column sm:flex-row gap-2 w-full sm:w-auto"
       *ngIf="formulationExists && selectedModificationOption && hasActivities">
       <label class="selector-label mr-2 mt-2 sm:mb-0">Descargar reporte:</label>
       <p-select [options]="downloadFormatOptions" [(ngModel)]="selectedDownloadFormat" placeholder="Formato"
@@ -92,7 +92,7 @@
       <button *ngIf="formulationExists && isAdmin" pButton type="button" icon="pi pi-download" label="Reporte simplificado"
         class="selector p-button-warning w-full sm:w-auto" (click)="downloadOcR2()"
         [disabled]="isDownloadingR2"></button>
-    </div>
+    </div> -->
   </div>
 
 
