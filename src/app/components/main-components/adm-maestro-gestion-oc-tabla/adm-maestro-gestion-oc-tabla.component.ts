@@ -19,6 +19,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TextareaModule } from 'primeng/textarea';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { forkJoin, Observable } from 'rxjs';
+import { ExpenseConceptService } from '../../../core/services/logic/expense-concept.service';
+import { ExpenseConcept } from '../../../models/logic/expenseConcept.model';
 
 import { ActivityDetail } from '../../../models/logic/activityDetail.model';
 import { StrategicAction } from '../../../models/logic/strategicAction.model';
@@ -104,12 +106,20 @@ export class AdmMaestroGestionOcTablaComponent implements OnInit {
   activityToDelete: ActivityDetail | null = null;
   activityToDeleteIndex: number | null = null;
 
+  // Expense concepts section
+  expenseConcepts: ExpenseConcept[] = [];
+  allExpenseConcepts: ExpenseConcept[] = [];
+  clonedExpenseConcepts: { [s: string]: ExpenseConcept } = {};
+  editingExpenseRowKeys: { [s: string]: boolean } = {};
+  newExpenseCounter = -1;
+
   constructor(
     private activityDetailService: ActivityDetailService,
     private strategicActionService: StrategicActionService,
     private strategicObjectiveService: StrategicObjectiveService,
     private goalService: GoalService,
     private formulationTypeService: FormulationTypeService,
+  private expenseConceptService: ExpenseConceptService,
     private toastr: ToastrService,
     private messageService: MessageService,
     private confirmationService: ConfirmationService
@@ -117,6 +127,7 @@ export class AdmMaestroGestionOcTablaComponent implements OnInit {
 
   ngOnInit() {
     this.loadYearsAndData();
+  this.loadExpenseConcepts();
   }
 
   loadYearsAndData() {
@@ -227,6 +238,97 @@ export class AdmMaestroGestionOcTablaComponent implements OnInit {
         console.error('Error loading activity details:', error);
         this.toastr.error('Error al cargar las actividades de gestión', 'Error');
         this.loading = false;
+      }
+    });
+  }
+
+  // ExpenseConcepts methods
+  loadExpenseConcepts() {
+    this.expenseConceptService.getAll().subscribe({
+      next: (data) => {
+        this.allExpenseConcepts = data || [];
+        this.expenseConcepts = [...this.allExpenseConcepts];
+      },
+      error: (err) => {
+  this.toastr.error('No se pudieron cargar los conceptos de gasto.', 'Error');
+      }
+    });
+  }
+
+  onExpenseRowEditInit(concept: ExpenseConcept) {
+    this.clonedExpenseConcepts[concept.idExpenseConcept as any] = { ...concept } as ExpenseConcept;
+  }
+
+  onExpenseRowEditSave(concept: ExpenseConcept) {
+    if (!concept.name || !concept.name.trim()) {
+  this.toastr.warning('El nombre es obligatorio.', 'Validación');
+      return;
+    }
+
+    if (concept.idExpenseConcept && concept.idExpenseConcept > 0) {
+      this.expenseConceptService.update(concept.idExpenseConcept, concept).subscribe({
+        next: () => {
+          this.toastr.success('Concepto actualizado.', 'Guardado');
+          delete this.editingExpenseRowKeys[concept.idExpenseConcept as any];
+          delete this.clonedExpenseConcepts[concept.idExpenseConcept as any];
+          this.loadExpenseConcepts();
+        },
+        error: () => this.toastr.error('No se pudo actualizar.', 'Error')
+      });
+    } else {
+      // create: don't send temporary negative id to backend
+      const tempId = concept.idExpenseConcept as any;
+      const payload: ExpenseConcept = { ...concept } as ExpenseConcept;
+      if (payload.idExpenseConcept && payload.idExpenseConcept <= 0) {
+        delete (payload as any).idExpenseConcept;
+      }
+
+      this.expenseConceptService.create(payload).subscribe({
+        next: (created) => {
+          this.toastr.success('Concepto creado.', 'Creado');
+          // remove editing key for the temporary row
+          delete this.editingExpenseRowKeys[tempId];
+          // reload list to include created item (with real id)
+          this.loadExpenseConcepts();
+        },
+        error: () => this.toastr.error('No se pudo crear.', 'Error')
+      });
+    }
+  }
+
+  onExpenseRowEditCancel(concept: ExpenseConcept, index: number) {
+    if (concept.idExpenseConcept && concept.idExpenseConcept > 0) {
+      const original = this.clonedExpenseConcepts[concept.idExpenseConcept as any];
+      if (original) {
+        const i = this.expenseConcepts.findIndex(c => c.idExpenseConcept === original.idExpenseConcept);
+        if (i > -1) this.expenseConcepts[i] = original;
+      }
+    } else {
+      // remove new unsaved
+      this.expenseConcepts.splice(index, 1);
+    }
+    delete this.editingExpenseRowKeys[concept.idExpenseConcept as any];
+    delete this.clonedExpenseConcepts[concept.idExpenseConcept as any];
+  }
+
+  addNewExpenseConcept() {
+    const newConcept: ExpenseConcept = { idExpenseConcept: this.newExpenseCounter--, name: '', active: true } as any;
+    this.expenseConcepts = [...this.expenseConcepts, newConcept];
+    this.editingExpenseRowKeys[newConcept.idExpenseConcept as any] = true;
+  }
+
+  deleteExpenseConcept(index: number, concept: ExpenseConcept) {
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de eliminar este concepto?',
+      accept: () => {
+        if (concept.idExpenseConcept && concept.idExpenseConcept > 0) {
+          this.expenseConceptService.delete(concept.idExpenseConcept).subscribe({
+            next: () => { this.messageService.add({severity:'success', summary:'Eliminado', detail:'Concepto eliminado.'}); this.loadExpenseConcepts(); },
+            error: () => this.toastr.error('No se pudo eliminar.', 'Error')
+          });
+        } else {
+          this.expenseConcepts.splice(index, 1);
+        }
       }
     });
   }

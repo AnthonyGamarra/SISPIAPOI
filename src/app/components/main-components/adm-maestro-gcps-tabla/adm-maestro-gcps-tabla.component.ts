@@ -68,6 +68,19 @@ import { ImportTemplateService, ImportResult } from './middleware/import-templat
 })
 export class AdmMaestroGcpsTablaComponent implements OnInit {
 
+  // Expose a modal flag and simple open/close API so parent components can open this as a modal
+  displayModal: boolean = false;
+
+  openModal(): void {
+    this.displayModal = true;
+    // Ensure data reflects current selection/year
+    this.loadYearsAndData();
+  }
+
+  closeModal(): void {
+    this.displayModal = false;
+  }
+
   // ViewChild references for tables
   @ViewChildren('activitiesTable') activitiesTables!: QueryList<Table>;
 

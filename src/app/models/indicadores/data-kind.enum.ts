@@ -1,0 +1,5 @@
+export enum DataKind {
+  HISTORIC = 'HISTORIC',
+  PROJECTION = 'PROJECTION',
+  ACTUAL = 'ACTUAL'
+}

@@ -1,8 +1,8 @@
 <!-- Modal de Prestaciones Económicas -->
-<p-dialog header="Programación de Prestaciones Económicas" [(visible)]="displayModal" 
-  [modal]="true" [style]="{ width: '95vw', height: '90vh' }" [maximizable]="true" 
-  [breakpoints]="{ '960px': '95vw', '640px': '95vw' }" [draggable]="false" [resizable]="true">
-  
+<p-dialog header="Programación de Prestaciones Económicas" [(visible)]="displayModal" [modal]="true"
+  [style]="{ width: '95vw', height: '90vh' }" [maximizable]="true" [breakpoints]="{ '960px': '95vw', '640px': '95vw' }"
+  [draggable]="false" [resizable]="true">
+
   <!-- Información de la Formulación -->
   <div *ngIf="currentFormulation && !isLoading" class="m-4 p-3 bg-blue-100 border border-blue-200 rounded-lg">
     <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
@@ -13,9 +13,11 @@
           <span class="text-sm text-blue-700 font-semibold">{{ currentFormulation.year }}</span>
         </div>
         <div class="flex align-items-center gap-2">
-          <i [class]="currentFormulation.active ? 'pi pi-check-circle text-green-600' : 'pi pi-times-circle text-red-600'"></i>
+          <i
+            [class]="currentFormulation.active ? 'pi pi-check-circle text-green-600' : 'pi pi-times-circle text-red-600'"></i>
           <span class="text-sm font-medium text-blue-800">Activo:</span>
-          <span [class]="currentFormulation.active ? 'text-sm text-green-700 font-semibold' : 'text-sm text-red-700 font-semibold'">
+          <span
+            [class]="currentFormulation.active ? 'text-sm text-green-700 font-semibold' : 'text-sm text-red-700 font-semibold'">
             {{ currentFormulation.active ? 'Sí' : 'No' }}
           </span>
         </div>
@@ -49,9 +51,11 @@
     <!-- Controles de Sustento (vinculado a la formulación de la dependencia con menor id) -->
     <div class="mt-3 p-2 flex align-items-center gap-3">
       <div class="flex align-items-center gap-2 ml-auto">
-        <p-fileUpload #supportFileUpload mode="basic" [chooseLabel]="supportFileMetadata ? 'Actualizar sustento' : 'Subir sustento'" [auto]="true" [customUpload]="true"
-          (onSelect)="onSupportFileSelect($event)" (onUpload)="onSupportFileSelect($event)" (onBeforeSend)="$event"
-          [disabled]="fileUploadingSupport" chooseIcon="pi pi-upload" pTooltip="Máx. 5MB, solo PDF" tooltipPosition="top"></p-fileUpload>
+        <p-fileUpload #supportFileUpload mode="basic"
+          [chooseLabel]="supportFileMetadata ? 'Actualizar sustento' : 'Subir sustento'" [auto]="true"
+          [customUpload]="true" (onSelect)="onSupportFileSelect($event)" (onUpload)="onSupportFileSelect($event)"
+          (onBeforeSend)="$event" [disabled]="fileUploadingSupport" chooseIcon="pi pi-upload"
+          pTooltip="Máx. 5MB, solo PDF" tooltipPosition="top"></p-fileUpload>
 
         <button pButton type="button" icon="pi pi-eye" class="p-button-text p-button-sm" (click)="viewSupportFile()"
           [disabled]="!supportFileMetadata" pTooltip="Ver sustento"></button>
@@ -60,7 +64,7 @@
           (click)="deleteSupportFile()" pTooltip="Eliminar sustento"></button>
       </div>
     </div>
-    
+
     <!-- Mensaje de advertencia si la formulación no permite edición -->
     <div *ngIf="!isFormulationEditable()" class="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
       <div class="flex align-items-center gap-2">
@@ -71,11 +75,12 @@
       </div>
     </div>
     <div class="my-3">
-      <p-select *ngIf="!showConsolidatedView" class="py-1" [options]="dependencyOptions" [(ngModel)]="selectedDependencyFilter" filter="true"
-        filterPlaceholder="Buscar dependencia" placeholder="Filtrar dependencia" appendTo="body" [showClear]="true"></p-select>
+      <p-select *ngIf="!showConsolidatedView" class="py-1" [options]="dependencyOptions"
+        [(ngModel)]="selectedDependencyFilter" filter="true" filterPlaceholder="Buscar dependencia"
+        placeholder="Filtrar dependencia" appendTo="body" [showClear]="true"></p-select>
     </div>
   </div>
-  
+
   <!-- Spinner de carga -->
   <div *ngIf="isLoading" class="text-center p-6">
     <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
@@ -92,70 +97,64 @@
     <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-between gap-3">
       <!-- Controles de Vista -->
       <div class="flex flex-column md:flex-row md:align-items-center gap-2 md:gap-3">
-        <label for="showConsolidated" class="text-sm md:text-base text-gray-800 font-medium">Vista:</label>
+        <label for="showConsolidated" class="text-sm md:text-base text-blue-900 font-medium">Vista:</label>
         <div class="flex align-items-center gap-4">
           <div class="flex align-items-center gap-2">
-            <input type="radio" id="showDetailed" name="viewType" [value]="false" 
-                   [(ngModel)]="showConsolidatedView" class="form-radio">
-            <label for="showDetailed" class="text-sm md:text-base text-gray-800">Detallada</label>
+            <input type="radio" id="showDetailed" name="viewType" [value]="false" [(ngModel)]="showConsolidatedView"
+              class="form-radio">
+            <label for="showDetailed" class="text-sm md:text-base text-blue-700">Detallada</label>
           </div>
           <div class="flex align-items-center gap-2">
-            <input type="radio" id="showConsolidated" name="viewType" [value]="true" 
-                   [(ngModel)]="showConsolidatedView" class="form-radio">
-            <label for="showConsolidated" class="text-sm md:text-base text-gray-800">Consolidada</label>
-          </div>
-        </div>
-        <!-- Control de vista temporal -->
-        <div class="flex align-items-center gap-4 ml-4">
-          <div class="flex align-items-center gap-2">
-            <input type="radio" id="showMonthly" name="timeViewType" [value]="false" 
-                   [(ngModel)]="showQuarterlyView" class="form-radio">
-            <label for="showMonthly" class="text-sm md:text-base text-gray-800">Mensual</label>
-          </div>
-          <div class="flex align-items-center gap-2">
-            <input type="radio" id="showQuarterly" name="timeViewType" [value]="true" 
-                   [(ngModel)]="showQuarterlyView" class="form-radio">
-            <label for="showQuarterly" class="text-sm md:text-base text-gray-800">Trimestral</label>
+            <input type="radio" id="showConsolidated" name="viewType" [value]="true" [(ngModel)]="showConsolidatedView"
+              class="form-radio">
+            <label for="showConsolidated" class="text-sm md:text-base text-blue-700">Consolidada</label>
           </div>
         </div>
       </div>
-      
+
       <!-- Botones de Excel -->
       <div class="flex flex-column md:flex-row align-items-stretch md:align-items-center gap-2 w-full md:w-auto">
-        <button pButton type="button" 
-                [label]="showConsolidatedView ? 'Exportar Consolidado' : 'Exportar Detallado'" 
-                icon="pi pi-file-excel" 
-                class="p-button-primary p-button-sm w-full md:w-auto"
-                (click)="exportToExcel()"
-                [disabled]="isLoading"
-                [pTooltip]="showConsolidatedView ? 'Exportar vista consolidada a Excel' : 'Exportar vista detallada a Excel'">
+        <button pButton type="button" [label]="showConsolidatedView ? 'Exportar Consolidado' : 'Exportar Detallado'"
+          icon="pi pi-file-excel" class="p-button-primary p-button-sm w-full md:w-auto" (click)="exportToExcel()"
+          [disabled]="isLoading"
+          [pTooltip]="showConsolidatedView ? 'Exportar vista consolidada a Excel' : 'Exportar vista detallada a Excel'">
         </button>
-        
-        <button *ngIf="isFormulationEditable()" pButton type="button" 
-                [label]="'Importar Excel'" 
-                icon="pi pi-upload" 
-                class="p-button-primary p-button-sm w-full md:w-auto"
-                (click)="openImportModal()"
-                [disabled]="isLoading"
-                pTooltip="Importar actividades desde archivo Excel">
+
+        <button *ngIf="isFormulationEditable()" pButton type="button" [label]="'Importar Excel'" icon="pi pi-upload"
+          class="p-button-primary p-button-sm w-full md:w-auto" (click)="openImportModal()" [disabled]="isLoading"
+          pTooltip="Importar actividades desde archivo Excel">
         </button>
+      </div>
+    </div>
+    <!-- Control de vista temporal -->
+    <div class="flex align-items-center gap-3">
+      <label class="text-sm md:text-base text-blue-900 font-medium">Periodicidad:</label>
+      <div class="flex align-items-center gap-2">
+        <input type="radio" id="showMonthly" name="timeViewType" [value]="false" [(ngModel)]="showQuarterlyView"
+          class="form-radio">
+        <label for="showMonthly" class="text-sm md:text-base text-blue-700">Mensual</label>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <input type="radio" id="showQuarterly" name="timeViewType" [value]="true" [(ngModel)]="showQuarterlyView"
+          class="form-radio">
+        <label for="showQuarterly" class="text-sm md:text-base text-blue-700">Trimestral</label>
       </div>
     </div>
   </div>
 
   <!-- Tablas de prestaciones económicas agrupadas por dependencia (Vista Detallada) -->
-  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && !showConsolidatedView" class="tables-container m-4">
+  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && !showConsolidatedView"
+    class="tables-container m-4">
     <div *ngFor="let dependencyName of getFilteredDependencyNames()" class="dependency-section mb-4">
       <!-- Título de la dependencia -->
       <h3 class="dependency-title text-xl font-bold mb-4 p-3 bg-blue-100 rounded-lg border-l-4 border-blue-500">
         {{ dependencyName }}
       </h3>
-      
+
       <!-- Tabla optimizada para cada dependencia -->
-      <p-table [value]="groupedActivitiesByDependency[dependencyName]" [size]="selectedSize" 
-        stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" 
-        scrollHeight="400px" columnResizeMode="expand" dataKey="idOperationalActivity" 
-         [rowHover]="true" [lazy]="false">
+      <p-table [value]="groupedActivitiesByDependency[dependencyName]" [size]="selectedSize" stripedRows showGridlines
+        [resizableColumns]="true" [scrollable]="true" scrollHeight="400px" columnResizeMode="expand"
+        dataKey="idOperationalActivity" [rowHover]="true" [lazy]="false">
 
         <ng-template pTemplate="header">
           <tr class="cabecera">
@@ -163,9 +162,11 @@
             <th style="min-width: 200px; max-width: 200px;" rowspan="2">Acción estratégica</th> -->
             <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
             <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
-            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}
+            </th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} S/.</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual'
+              }} S/.</th>
             <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
             <!-- <th style="min-width: 300px; max-width: 300px;" rowspan="2">Detalle</th> -->
             <th *ngIf="!showQuarterlyView" style="min-width: 180px; max-width: 180px;" rowspan="2">Acciones</th>
@@ -231,28 +232,23 @@
             </td> -->
 
             <!-- El código SAP se oculta como solicitaste -->
-            
+
             <td pFrozenColumn>
               <ng-container *ngIf="!isEditing(activity)">
                 <div class="activity-name">{{ activity?.name }}</div>
               </ng-container>
               <ng-container *ngIf="isEditing(activity)">
-                <textarea rows="1" pTextarea
-                  disabled
-                  [value]="editingActivity?.name || ''"
-                  (input)="updateActivityName($any($event.target).value)"
-                  style="width: 100%; resize: none"></textarea>
+                <textarea rows="1" pTextarea disabled [value]="editingActivity?.name || ''"
+                  (input)="updateActivityName($any($event.target).value)" style="width: 100%; resize: none"></textarea>
               </ng-container>
             </td>
-            
+
             <td pFrozenColumn>
               <ng-container *ngIf="!isEditing(activity)">
                 {{ activity?.measurementUnit }}
               </ng-container>
               <ng-container *ngIf="isEditing(activity)">
-                <input type="text" pInputText
-                  disabled
-                  [value]="editingActivity?.measurementUnit || ''"
+                <input type="text" pInputText disabled [value]="editingActivity?.measurementUnit || ''"
                   (input)="updateMeasurementUnit($any($event.target).value)" />
               </ng-container>
             </td>
@@ -266,10 +262,8 @@
                 <ng-container *ngIf="isEditing(activity)">
                   <input type="number" pInputText min="0" step="0.01"
                     [value]="editingActivity?.monthlyGoals?.[0]?.value || 0"
-                    (input)="updateMonthlyGoal(0, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(0)"
-                    [class]="!isMonthEditable(0) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                    (input)="updateMonthlyGoal(0, $any($event.target).value)" [disabled]="!isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(1)">
@@ -279,10 +273,8 @@
                 <ng-container *ngIf="isEditing(activity)">
                   <input type="number" pInputText min="0" step="0.01"
                     [value]="editingActivity?.monthlyGoals?.[1]?.value || 0"
-                    (input)="updateMonthlyGoal(1, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(1)"
-                    [class]="!isMonthEditable(1) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                    (input)="updateMonthlyGoal(1, $any($event.target).value)" [disabled]="!isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(2)">
@@ -292,10 +284,8 @@
                 <ng-container *ngIf="isEditing(activity)">
                   <input type="number" pInputText min="0" step="0.01"
                     [value]="editingActivity?.monthlyGoals?.[2]?.value || 0"
-                    (input)="updateMonthlyGoal(2, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(2)"
-                    [class]="!isMonthEditable(2) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                    (input)="updateMonthlyGoal(2, $any($event.target).value)" [disabled]="!isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(3)">
@@ -303,12 +293,9 @@
                   {{ activity?.monthlyGoals?.[3]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[3]?.value || 0"
-                    (input)="updateMonthlyGoal(3, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(3)"
-                    [class]="!isMonthEditable(3) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[3]?.value || 0"
+                    (input)="updateMonthlyGoal(3, $any($event.target).value)" [disabled]="!isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(4)">
@@ -316,12 +303,9 @@
                   {{ activity?.monthlyGoals?.[4]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[4]?.value || 0"
-                    (input)="updateMonthlyGoal(4, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(4)"
-                    [class]="!isMonthEditable(4) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[4]?.value || 0"
+                    (input)="updateMonthlyGoal(4, $any($event.target).value)" [disabled]="!isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(5)">
@@ -329,12 +313,9 @@
                   {{ activity?.monthlyGoals?.[5]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[5]?.value || 0"
-                    (input)="updateMonthlyGoal(5, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(5)"
-                    [class]="!isMonthEditable(5) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[5]?.value || 0"
+                    (input)="updateMonthlyGoal(5, $any($event.target).value)" [disabled]="!isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(6)">
@@ -342,12 +323,9 @@
                   {{ activity?.monthlyGoals?.[6]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[6]?.value || 0"
-                    (input)="updateMonthlyGoal(6, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(6)"
-                    [class]="!isMonthEditable(6) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[6]?.value || 0"
+                    (input)="updateMonthlyGoal(6, $any($event.target).value)" [disabled]="!isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(7)">
@@ -355,12 +333,9 @@
                   {{ activity?.monthlyGoals?.[7]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[7]?.value || 0"
-                    (input)="updateMonthlyGoal(7, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(7)"
-                    [class]="!isMonthEditable(7) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[7]?.value || 0"
+                    (input)="updateMonthlyGoal(7, $any($event.target).value)" [disabled]="!isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(8)">
@@ -368,12 +343,9 @@
                   {{ activity?.monthlyGoals?.[8]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[8]?.value || 0"
-                    (input)="updateMonthlyGoal(8, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(8)"
-                    [class]="!isMonthEditable(8) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[8]?.value || 0"
+                    (input)="updateMonthlyGoal(8, $any($event.target).value)" [disabled]="!isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(9)">
@@ -381,12 +353,9 @@
                   {{ activity?.monthlyGoals?.[9]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[9]?.value || 0"
-                    (input)="updateMonthlyGoal(9, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(9)"
-                    [class]="!isMonthEditable(9) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[9]?.value || 0"
+                    (input)="updateMonthlyGoal(9, $any($event.target).value)" [disabled]="!isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(10)">
@@ -394,12 +363,9 @@
                   {{ activity?.monthlyGoals?.[10]?.value || 0 }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyGoals?.[10]?.value || 0"
-                    (input)="updateMonthlyGoal(10, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(10)"
-                    [class]="!isMonthEditable(10) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyGoals?.[10]?.value || 0"
+                    (input)="updateMonthlyGoal(10, $any($event.target).value)" [disabled]="!isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(11)">
@@ -409,10 +375,8 @@
                 <ng-container *ngIf="isEditing(activity)">
                   <input type="number" pInputText min="0" step="0.01"
                     [value]="editingActivity?.monthlyGoals?.[11]?.value || 0"
-                    (input)="updateMonthlyGoal(11, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(11)"
-                    [class]="!isMonthEditable(11) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                    (input)="updateMonthlyGoal(11, $any($event.target).value)" [disabled]="!isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
             </ng-container>
@@ -440,12 +404,9 @@
                   {{ activity?.monthlyBudgets?.[0]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[0]?.value || 0"
-                    (input)="updateMonthlyBudget(0, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(0)"
-                    [class]="!isMonthEditable(0) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[0]?.value || 0"
+                    (input)="updateMonthlyBudget(0, $any($event.target).value)" [disabled]="!isMonthEditable(0)"
+                    [class]="!isMonthEditable(0) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(1)">
@@ -453,12 +414,9 @@
                   {{ activity?.monthlyBudgets?.[1]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[1]?.value || 0"
-                    (input)="updateMonthlyBudget(1, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(1)"
-                    [class]="!isMonthEditable(1) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[1]?.value || 0"
+                    (input)="updateMonthlyBudget(1, $any($event.target).value)" [disabled]="!isMonthEditable(1)"
+                    [class]="!isMonthEditable(1) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(2)">
@@ -466,12 +424,9 @@
                   {{ activity?.monthlyBudgets?.[2]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[2]?.value || 0"
-                    (input)="updateMonthlyBudget(2, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(2)"
-                    [class]="!isMonthEditable(2) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[2]?.value || 0"
+                    (input)="updateMonthlyBudget(2, $any($event.target).value)" [disabled]="!isMonthEditable(2)"
+                    [class]="!isMonthEditable(2) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(3)">
@@ -479,12 +434,9 @@
                   {{ activity?.monthlyBudgets?.[3]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[3]?.value || 0"
-                    (input)="updateMonthlyBudget(3, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(3)"
-                    [class]="!isMonthEditable(3) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[3]?.value || 0"
+                    (input)="updateMonthlyBudget(3, $any($event.target).value)" [disabled]="!isMonthEditable(3)"
+                    [class]="!isMonthEditable(3) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(4)">
@@ -492,12 +444,9 @@
                   {{ activity?.monthlyBudgets?.[4]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[4]?.value || 0"
-                    (input)="updateMonthlyBudget(4, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(4)"
-                    [class]="!isMonthEditable(4) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[4]?.value || 0"
+                    (input)="updateMonthlyBudget(4, $any($event.target).value)" [disabled]="!isMonthEditable(4)"
+                    [class]="!isMonthEditable(4) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(5)">
@@ -505,12 +454,9 @@
                   {{ activity?.monthlyBudgets?.[5]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[5]?.value || 0"
-                    (input)="updateMonthlyBudget(5, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(5)"
-                    [class]="!isMonthEditable(5) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[5]?.value || 0"
+                    (input)="updateMonthlyBudget(5, $any($event.target).value)" [disabled]="!isMonthEditable(5)"
+                    [class]="!isMonthEditable(5) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(6)">
@@ -518,12 +464,9 @@
                   {{ activity?.monthlyBudgets?.[6]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[6]?.value || 0"
-                    (input)="updateMonthlyBudget(6, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(6)"
-                    [class]="!isMonthEditable(6) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[6]?.value || 0"
+                    (input)="updateMonthlyBudget(6, $any($event.target).value)" [disabled]="!isMonthEditable(6)"
+                    [class]="!isMonthEditable(6) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(7)">
@@ -531,12 +474,9 @@
                   {{ activity?.monthlyBudgets?.[7]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[7]?.value || 0"
-                    (input)="updateMonthlyBudget(7, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(7)"
-                    [class]="!isMonthEditable(7) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[7]?.value || 0"
+                    (input)="updateMonthlyBudget(7, $any($event.target).value)" [disabled]="!isMonthEditable(7)"
+                    [class]="!isMonthEditable(7) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(8)">
@@ -544,12 +484,9 @@
                   {{ activity?.monthlyBudgets?.[8]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[8]?.value || 0"
-                    (input)="updateMonthlyBudget(8, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(8)"
-                    [class]="!isMonthEditable(8) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[8]?.value || 0"
+                    (input)="updateMonthlyBudget(8, $any($event.target).value)" [disabled]="!isMonthEditable(8)"
+                    [class]="!isMonthEditable(8) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(9)">
@@ -557,12 +494,9 @@
                   {{ activity?.monthlyBudgets?.[9]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[9]?.value || 0"
-                    (input)="updateMonthlyBudget(9, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(9)"
-                    [class]="!isMonthEditable(9) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[9]?.value || 0"
+                    (input)="updateMonthlyBudget(9, $any($event.target).value)" [disabled]="!isMonthEditable(9)"
+                    [class]="!isMonthEditable(9) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(10)">
@@ -570,12 +504,9 @@
                   {{ activity?.monthlyBudgets?.[10]?.value | number:'1.2-2' }}
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
-                  <input type="number" pInputText 
-                    [value]="editingActivity?.monthlyBudgets?.[10]?.value || 0"
-                    (input)="updateMonthlyBudget(10, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(10)"
-                    [class]="!isMonthEditable(10) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                  <input type="number" pInputText [value]="editingActivity?.monthlyBudgets?.[10]?.value || 0"
+                    (input)="updateMonthlyBudget(10, $any($event.target).value)" [disabled]="!isMonthEditable(10)"
+                    [class]="!isMonthEditable(10) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
               <td class="montos" [ngClass]="getMonthEditableClass(11)">
@@ -585,10 +516,8 @@
                 <ng-container *ngIf="isEditing(activity)">
                   <input type="number" pInputText min="0" step="0.01"
                     [value]="editingActivity?.monthlyBudgets?.[11]?.value || 0"
-                    (input)="updateMonthlyBudget(11, $any($event.target).value)"
-                    [disabled]="!isMonthEditable(11)"
-                    [class]="!isMonthEditable(11) ? 'locked-input' : ''"
-                    style="min-width: 150px;" />
+                    (input)="updateMonthlyBudget(11, $any($event.target).value)" [disabled]="!isMonthEditable(11)"
+                    [class]="!isMonthEditable(11) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
             </ng-container>
@@ -628,18 +557,21 @@
                   <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text p-button-sm"
                     [pTooltip]="'Ver detalles mensuales'" (click)="viewMonthlyDetails(activity)">
                   </button>
-                  <button *ngIf="isFormulationEditable()" pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm"
-                    [pTooltip]="'Editar actividad'" (click)="editActivity(activity)">
+                  <button *ngIf="isFormulationEditable()" pButton icon="pi pi-pencil"
+                    class="p-button-rounded p-button-text p-button-sm" [pTooltip]="'Editar actividad'"
+                    (click)="editActivity(activity)">
                   </button>
-                  <button *ngIf="isFormulationEditable()" pButton icon="pi pi-trash" class="p-button-rounded p-button-text p-button-sm p-button-danger"
-                    [pTooltip]="'Eliminar actividad'" (click)="deleteActivity(activity)">
+                  <button *ngIf="isFormulationEditable()" pButton icon="pi pi-trash"
+                    class="p-button-rounded p-button-text p-button-sm p-button-danger" [pTooltip]="'Eliminar actividad'"
+                    (click)="deleteActivity(activity)">
                   </button>
                 </ng-container>
                 <ng-container *ngIf="isEditing(activity)">
                   <button pButton icon="pi pi-check" class="p-button-rounded p-button-text p-button-sm p-button-success"
                     [pTooltip]="'Guardar cambios'" (click)="saveActivity()">
                   </button>
-                  <button pButton icon="pi pi-times" class="p-button-rounded p-button-text p-button-sm p-button-secondary"
+                  <button pButton icon="pi pi-times"
+                    class="p-button-rounded p-button-text p-button-sm p-button-secondary"
                     [pTooltip]="'Cancelar edición'" (click)="cancelEdit()">
                   </button>
                 </ng-container>
@@ -652,15 +584,15 @@
   </div>
 
   <!-- Tabla Consolidada -->
-  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && showConsolidatedView" class="consolidated-container m-4">
+  <div *ngIf="!isLoading && prestacionesEconomicasActivities.length > 0 && showConsolidatedView"
+    class="consolidated-container m-4">
     <h3 class="dependency-title text-xl font-bold mb-4 p-3 bg-green-100 rounded-lg border-l-4 border-green-500">
       Vista Consolidada
     </h3>
-    
-    <p-table [value]="consolidatedActivities" [size]="selectedSize" 
-      stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" 
-      scrollHeight="500px" columnResizeMode="expand" dataKey="groupKey" 
-      [paginator]="false" [rowHover]="true" [lazy]="false">
+
+    <p-table [value]="consolidatedActivities" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
+      [scrollable]="true" scrollHeight="500px" columnResizeMode="expand" dataKey="groupKey" [paginator]="false"
+      [rowHover]="true" [lazy]="false">
 
       <ng-template pTemplate="header">
         <tr class="cabecera">
@@ -669,9 +601,11 @@
           <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Subsidio</th>
           <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
           <!-- <th style="min-width: 180px; max-width: 180px;" rowspan="2">Actividades</th> -->
-          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }} Consolidadas</th>
+          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}
+            Consolidadas</th>
           <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} Consolidado S/.</th>
+          <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }}
+            Consolidado S/.</th>
           <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
         </tr>
         <tr class="cabecera">
@@ -798,20 +732,22 @@
 </p-dialog>
 
 <!-- Visor de documento de sustento -->
-<p-dialog header="Sustento" [(visible)]="showDocumentViewer" [modal]="true" [style]="{ width: '80vw', height: '80vh' }" appendTo="body" [draggable]="false" [resizable]="true" (onHide)="onDocumentViewerHide()">
+<p-dialog header="Sustento" [(visible)]="showDocumentViewer" [modal]="true" [style]="{ width: '80vw', height: '80vh' }"
+  appendTo="body" [draggable]="false" [resizable]="true" (onHide)="onDocumentViewerHide()">
   <div *ngIf="documentUrl" style="height:100%;">
     <iframe [src]="documentUrl | safeUrl" width="100%" height="100%" style="border: none;"></iframe>
   </div>
   <ng-template pTemplate="footer">
-    <button pButton label="Cerrar" icon="pi pi-times" (click)="showDocumentViewer=false" class="p-button-secondary"></button>
+    <button pButton label="Cerrar" icon="pi pi-times" (click)="showDocumentViewer=false"
+      class="p-button-secondary"></button>
   </ng-template>
 </p-dialog>
 
 <!-- Modal para detalles mensuales -->
-<p-dialog header="Detalles Mensuales de la Actividad" [(visible)]="showMonthlyDetailsModal" 
-  [modal]="true" [style]="{ width: '90vw', height: '80vh' }" [maximizable]="true" 
-  [breakpoints]="{ '960px': '90vw', '640px': '90vw' }" [draggable]="false" [resizable]="true">
-  
+<p-dialog header="Detalles Mensuales de la Actividad" [(visible)]="showMonthlyDetailsModal" [modal]="true"
+  [style]="{ width: '90vw', height: '80vh' }" [maximizable]="true" [breakpoints]="{ '960px': '90vw', '640px': '90vw' }"
+  [draggable]="false" [resizable]="true">
+
   <div *ngIf="selectedActivityForDetails" class="monthly-details-container">
     <!-- Información de la actividad -->
     <div class="activity-info mb-4 p-4 bg-gray-100 rounded">
@@ -819,7 +755,7 @@
       <p><strong>Código:</strong> {{ selectedActivityForDetails.sapCode }}</p>
       <p><strong>Unidad de medida:</strong> {{ selectedActivityForDetails.measurementUnit }}</p>
     </div>
-    
+
     <!-- Tabla de detalles mensuales -->
     <p-table [value]="[selectedActivityForDetails]" [scrollable]="true" scrollHeight="400px">
       <ng-template pTemplate="header">
@@ -829,7 +765,7 @@
           <th style="min-width: 180px;">Presupuesto S/.</th>
         </tr>
       </ng-template>
-      
+
       <ng-template pTemplate="body" let-activity>
         <ng-container *ngFor="let goal of activity.monthlyGoals; let i = index">
           <tr>
@@ -843,17 +779,16 @@
   </div>
 
   <ng-template pTemplate="footer">
-    <button pButton label="Cerrar" icon="pi pi-times" (click)="closeMonthlyDetailsModal()" 
-      class="cancel-button">
+    <button pButton label="Cerrar" icon="pi pi-times" (click)="closeMonthlyDetailsModal()" class="cancel-button">
     </button>
   </ng-template>
 </p-dialog>
 
 <!-- Modal de Importación de Excel -->
-<p-dialog header="Importar Actividades desde Excel" [(visible)]="showImportModal" 
-  [modal]="true" [style]="{ width: '70vw', height: 'auto' }" [maximizable]="false" 
-  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }" [draggable]="false" [resizable]="true">
-  
+<p-dialog header="Importar Actividades desde Excel" [(visible)]="showImportModal" [modal]="true"
+  [style]="{ width: '70vw', height: 'auto' }" [maximizable]="false" [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [draggable]="false" [resizable]="true">
+
   <!-- Spinner de carga para importación -->
   <div *ngIf="isImporting" class="text-center p-6">
     <p-progressSpinner [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
@@ -865,13 +800,14 @@
     <h4 class="text-lg font-semibold mb-3">1. Seleccionar archivo Excel</h4>
     <p class="text-sm text-gray-600 mb-3">
       Seleccione un archivo Excel (.xlsx) generado por la función "Exportar" de este sistema.
-      El archivo debe contener la estructura correcta de {{ showConsolidatedView ? 'actividades consolidadas' : 'actividades detalladas' }}.
+      El archivo debe contener la estructura correcta de {{ showConsolidatedView ? 'actividades consolidadas' :
+      'actividades detalladas' }}.
     </p>
 
     <p-fileUpload #fileUpload mode="basic" chooseLabel="Seleccionar archivo" [auto]="true" [customUpload]="true"
-        (onSelect)="onFileSelected($event)" [disabled]="fileUploading" chooseIcon="pi pi-cloud-upload"
-        class="w-full sm:w-auto"></p-fileUpload>
-  
+      (onSelect)="onFileSelected($event)" [disabled]="fileUploading" chooseIcon="pi pi-cloud-upload"
+      class="w-full sm:w-auto"></p-fileUpload>
+
   </div>
 
   <!-- Errores y advertencias -->
@@ -902,7 +838,7 @@
   <!-- Vista previa de datos a importar -->
   <div *ngIf="!isImporting && importPreviewData.length > 0" class="mb-4 mx-5">
     <h4 class="text-lg font-semibold mb-3">2. Vista previa de datos a importar</h4>
-    
+
     <div class="overflow-auto max-h-96 border border-gray-200 rounded-lg">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -913,7 +849,8 @@
             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               {{ showConsolidatedView ? 'Unidad' : 'Subsidio' }}
             </th>
-            <th *ngIf="!showConsolidatedView" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th *ngIf="!showConsolidatedView"
+              class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Unidad de Medida
             </th>
             <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -945,18 +882,15 @@
               {{ item.totalBudgets | number:'1.2-2' }}
             </td>
             <td class="px-3 py-2 text-center">
-              <button pButton type="button" 
-                      icon="pi pi-trash" 
-                      class="p-button-danger p-button-sm"
-                      (click)="removeImportPreviewItem(i)"
-                      pTooltip="Eliminar de la importación">
+              <button pButton type="button" icon="pi pi-trash" class="p-button-danger p-button-sm"
+                (click)="removeImportPreviewItem(i)" pTooltip="Eliminar de la importación">
               </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-    
+
     <div class="mt-3 text-sm text-gray-600">
       Total de actividades a importar: <span class="font-semibold">{{ importPreviewData.length }}</span>
     </div>
@@ -965,17 +899,11 @@
   <!-- Footer del modal -->
   <ng-template pTemplate="footer">
     <div class="flex justify-between items-center gap-5">
-      <button pButton label="Cancelar" icon="pi pi-times" 
-              (click)="closeImportModal()" 
-              class="p-button-secondary">
+      <button pButton label="Cancelar" icon="pi pi-times" (click)="closeImportModal()" class="p-button-secondary">
       </button>
-      
-      <button pButton 
-              [label]="'Confirmar Importación'" 
-              icon="pi pi-check" 
-              (click)="confirmImport()"
-              [disabled]="importPreviewData.length === 0 || importErrors.length > 0 || isImporting"
-              class="p-button-primary">
+
+      <button pButton [label]="'Confirmar Importación'" icon="pi pi-check" (click)="confirmImport()"
+        [disabled]="importPreviewData.length === 0 || importErrors.length > 0 || isImporting" class="p-button-primary">
       </button>
     </div>
   </ng-template>

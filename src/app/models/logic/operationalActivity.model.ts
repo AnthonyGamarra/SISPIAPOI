@@ -12,6 +12,7 @@ import { ExecutedMonthlyGoal } from "./executedMonthlyGoal.model";
 import { ActivityFamily } from "./activityFamily.model";
 import { MonthlyBudget } from "./monthlyBudget.model";
 import { ExecutedMonthlyBudget } from "./executedMonthlyBudget.model";
+import { ExpenseConcept } from "./expenseConcept.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
@@ -38,6 +39,7 @@ export interface OperationalActivity {
   services: number;
   description: string;
   activityFamily?: ActivityFamily;
+  expenseConcept?: ExpenseConcept;
   
   // Health-specific properties (for HealthOperationalActivity)
   agrupFonafe?: string;

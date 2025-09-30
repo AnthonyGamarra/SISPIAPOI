@@ -51,6 +51,7 @@ import { MonthlyBudget } from '../../../models/logic/monthlyBudget.model';
 
 import { forkJoin, Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { AdmMaestroGcpsTablaComponent } from "../adm-maestro-gcps-tabla/adm-maestro-gcps-tabla.component";
 
 interface Accion {
   id?: number;
@@ -78,8 +79,9 @@ interface Accion {
     TooltipModule,
     ProgressSpinnerModule,
     FormulacionOspesTablaComponent,
-    FormulacionSocialesTablaComponent
-  ]
+    FormulacionSocialesTablaComponent,
+    AdmMaestroGcpsTablaComponent
+]
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {
 
@@ -508,6 +510,7 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   @ViewChild('dataTable') table!: Table;
   @ViewChild('ospesTabla') ospesTabla!: FormulacionOspesTablaComponent;
   @ViewChild('socialesTabla') socialesTabla!: FormulacionSocialesTablaComponent;
+  @ViewChild('gcpsTabla') gcpsTabla!: AdmMaestroGcpsTablaComponent;
   
   // Método para notificar cambios en actividades a los modales
   private notifyActivityChangesToModal(): void {
@@ -1011,6 +1014,20 @@ export class FormulacionTablaComponent implements OnInit, OnChanges {
   openPrestacionesEconomicasModal(): void {
     if (this.ospesTabla) {
       this.ospesTabla.openModal();
+    }
+  }
+
+  // --- Prestaciones Salud Modal Methods ---
+  openPrestacionesSaludModal(): void {
+    if (this.gcpsTabla) {
+      // If the health master component exposes a modal, call it. Otherwise try to set a public flag.
+      const anyComp: any = this.gcpsTabla as any;
+      if (typeof anyComp.openModal === 'function') {
+        anyComp.openModal();
+      } else {
+        // try toggle a public display flag if exists
+        if (anyComp.displayModal !== undefined) anyComp.displayModal = true;
+      }
     }
   }
 

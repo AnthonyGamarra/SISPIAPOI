@@ -65,32 +65,21 @@
     <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-between gap-3">
       <!-- Controles de Vista -->
       <div class="flex flex-column md:flex-row md:align-items-center gap-2 md:gap-3">
-        <label for="showConsolidated" class="text-sm md:text-base text-gray-800 font-medium">Vista:</label>
-        <div class="flex align-items-center gap-4">
+        <label for="showConsolidated" class="text-sm md:text-base text-blue-900 font-medium">Vista:</label>
+        <div class="flex align-items-center gap-3">
           <div class="flex align-items-center gap-2">
             <input type="radio" id="showDetailed" name="viewType" [value]="false" [(ngModel)]="showConsolidatedView"
               class="form-radio">
-            <label for="showDetailed" class="text-sm md:text-base text-gray-800">Detallada</label>
+            <label for="showDetailed" class="text-sm md:text-base text-blue-700">Detallada</label>
           </div>
           <div class="flex align-items-center gap-2">
             <input type="radio" id="showConsolidated" name="viewType" [value]="true" [(ngModel)]="showConsolidatedView"
               class="form-radio">
-            <label for="showConsolidated" class="text-sm md:text-base text-gray-800">Consolidada</label>
+            <label for="showConsolidated" class="text-sm md:text-base text-blue-700">Consolidada</label>
           </div>
         </div>
         <!-- Control de vista temporal -->
-        <div class="flex align-items-center gap-4 ml-4">
-          <div class="flex align-items-center gap-2">
-            <input type="radio" id="showMonthly" name="timeViewType" [value]="false" 
-                   [(ngModel)]="showQuarterlyView" class="form-radio">
-            <label for="showMonthly" class="text-sm md:text-base text-gray-800">Mensual</label>
-          </div>
-          <div class="flex align-items-center gap-2">
-            <input type="radio" id="showQuarterly" name="timeViewType" [value]="true" 
-                   [(ngModel)]="showQuarterlyView" class="form-radio">
-            <label for="showQuarterly" class="text-sm md:text-base text-gray-800">Trimestral</label>
-          </div>
-        </div>
+
       </div>
 
       <!-- Botones de Excel -->
@@ -107,10 +96,23 @@
         </button>
       </div>
     </div>
+    <div class="flex align-items-center gap-3">
+      <label class="text-sm md:text-base text-blue-900 font-medium">Periodicidad:</label>
+      <div class="flex align-items-center gap-2">
+        <input type="radio" id="showMonthly" name="timeViewType" [value]="false" [(ngModel)]="showQuarterlyView"
+          class="form-radio">
+        <label for="showMonthly" class="text-sm md:text-base text-blue-700">Mensual</label>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <input type="radio" id="showQuarterly" name="timeViewType" [value]="true" [(ngModel)]="showQuarterlyView"
+          class="form-radio">
+        <label for="showQuarterly" class="text-sm md:text-base text-blue-700">Trimestral</label>
+      </div>
+    </div>
     <div class="my-3">
-      <p-select *ngIf="!showConsolidatedView" class="py-1" [options]="dependencyOptions" [(ngModel)]="selectedDependencyFilter" filter="true"
-        filterPlaceholder="Buscar dependencia" placeholder="Filtrar dependencia" appendTo="body"
-        [showClear]="true"></p-select>
+      <p-select *ngIf="!showConsolidatedView" class="py-1" [options]="dependencyOptions"
+        [(ngModel)]="selectedDependencyFilter" filter="true" filterPlaceholder="Buscar dependencia"
+        placeholder="Filtrar dependencia" appendTo="body" [showClear]="true"></p-select>
     </div>
   </div>
 
@@ -122,7 +124,8 @@
 
   <!-- Mensaje cuando no hay actividades -->
   <div *ngIf="!isLoading && prestacionesEconomicasActivities.length === 0" class="text-center p-6">
-    <h3 class="text-lg font-semibold text-gray-600">No hay actividades de prestaciones sociales registradas (Exportar plantilla y cargar actividades desde el Excel)</h3>
+    <h3 class="text-lg font-semibold text-gray-600">No hay actividades de prestaciones sociales registradas (Exportar
+      plantilla y cargar actividades desde el Excel)</h3>
   </div>
 
   <!-- Tablas de prestaciones sociales agrupadas por dependencia y familia (Vista Detallada) -->
@@ -144,8 +147,7 @@
         <!-- Tabla optimizada para cada familia dentro de la dependencia -->
         <p-table [value]="getOrderedActivitiesForDependencyAndFamily(dependencyName, familyName)" [size]="selectedSize"
           stripedRows showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="400px"
-          columnResizeMode="expand" dataKey="idOperationalActivity"  [rowHover]="true"
-          [lazy]="false">
+          columnResizeMode="expand" dataKey="idOperationalActivity" [rowHover]="true" [lazy]="false">
 
           <ng-template pTemplate="header">
             <tr class="cabecera">
@@ -153,47 +155,73 @@
             <th style="min-width: 200px; max-width: 200px;" rowspan="2">Acción estratégica</th> -->
               <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Prestación social</th>
               <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
-              <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}</th>
+              <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales'
+                }}</th>
               <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-              <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} S/.</th>
+              <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' :
+                'Mensual' }} S/.</th>
               <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
               <!-- <th style="min-width: 300px; max-width: 300px;" rowspan="2">Detalle</th> -->
               <th *ngIf="!showQuarterlyView" style="min-width: 180px; max-width: 180px;" rowspan="2">Acciones</th>
             </tr>
             <tr class="cabecera">
               <!-- Metas Mensuales/Trimestrales -->
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
-              
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Septiembre</th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Noviembre</th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Diciembre</th>
+
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
-              
+
               <!-- Presupuesto Mensual/Trimestral -->
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-              <th *ngIf="!showQuarterlyView" class="min-width: 180px; max-width: 180px;" class="montos-cabecera">Agosto</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
-              
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio
+              </th>
+              <th *ngIf="!showQuarterlyView" class="min-width: 180px; max-width: 180px;" class="montos-cabecera">Agosto
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Septiembre</th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre
+              </th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Noviembre</th>
+              <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+                Diciembre</th>
+
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
               <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
@@ -363,7 +391,7 @@
                     [class]="!isMonthEditable(11) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
-              
+
               <!-- Metas Trimestrales -->
               <td *ngIf="showQuarterlyView" class="montos">
                 <ng-container *ngIf="!isEditing(activity)">
@@ -530,7 +558,7 @@
                     [class]="!isMonthEditable(11) ? 'locked-input' : ''" style="min-width: 150px;" />
                 </ng-container>
               </td>
-              
+
               <!-- Presupuesto Trimestral -->
               <td *ngIf="showQuarterlyView" class="montos">
                 <ng-container *ngIf="!isEditing(activity)">
@@ -645,45 +673,69 @@
           <tr class="cabecera">
             <th pFrozenColumn style="min-width: 200px; max-width: 200px;" rowspan="2">Prestación social</th>
             <th pFrozenColumn style="min-width: 100px; max-width: 100px;" rowspan="2">Unidad de medida</th>
-            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }} Consolidadas</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Metas {{ showQuarterlyView ? 'Trimestrales' : 'Mensuales' }}
+              Consolidadas</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Total Metas</th>
-            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual' }} Consolidado S/.</th>
+            <th [attr.colspan]="showQuarterlyView ? 4 : 12">Presupuesto {{ showQuarterlyView ? 'Trimestral' : 'Mensual'
+              }} Consolidado S/.</th>
             <th style="min-width: 180px; max-width: 180px;" rowspan="2">Total Presupuesto</th>
           </tr>
           <tr class="cabecera">
             <!-- Metas Mensuales/Trimestrales Consolidadas -->
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril
+            </th>
             <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
-            
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+              Septiembre</th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre
+            </th>
+
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">IV</th>
-            
+
             <!-- Presupuesto Mensual/Trimestral Consolidado -->
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril</th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Enero
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Febrero
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Marzo
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Abril
+            </th>
             <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Mayo</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Septiembre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre</th>
-            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre</th>
-            
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Junio
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Julio
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Agosto
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">
+              Septiembre</th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Octubre
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Noviembre
+            </th>
+            <th *ngIf="!showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">Diciembre
+            </th>
+
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">I</th>
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">II</th>
             <th *ngIf="showQuarterlyView" class="montos-cabecera" style="min-width: 180px; max-width: 180px;">III</th>
@@ -697,23 +749,39 @@
             <td pFrozenColumn>{{ consolidatedItem?.measurementUnit }}</td>
 
             <!-- Metas Consolidadas (enero - diciembre) o Trimestrales -->
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[0] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[1] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[2] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[3] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[4] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[5] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[6] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[7] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[8] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[9] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[10] || 0) | number:'1.0-0' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[11] || 0) | number:'1.0-0' }}</td>
-            
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 1) | number:'1.0-0' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 2) | number:'1.0-0' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 3) | number:'1.0-0' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 4) | number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[0] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[1] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[2] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[3] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[4] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[5] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[6] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[7] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[8] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[9] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[10] || 0) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedGoals?.[11] || 0) |
+              number:'1.0-0' }}</td>
+
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 1) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 2) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 3) |
+              number:'1.0-0' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyGoals(consolidatedItem, 4) |
+              number:'1.0-0' }}</td>
 
             <!-- Total de Metas Consolidadas -->
             <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">
@@ -721,23 +789,39 @@
             </td>
 
             <!-- Presupuesto Consolidado (enero - diciembre) o Trimestral -->
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[0] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[1] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[2] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[3] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[4] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[5] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[6] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[7] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[8] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[9] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[10] || 0) | number:'1.2-2' }}</td>
-            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[11] || 0) | number:'1.2-2' }}</td>
-            
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 1) | number:'1.2-2' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 2) | number:'1.2-2' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 3) | number:'1.2-2' }}</td>
-            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 4) | number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[0] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[1] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[2] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[3] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[4] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[5] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[6] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[7] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[8] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[9] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[10] || 0) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="!showQuarterlyView" class="montos">{{ (consolidatedItem?.consolidatedBudgets?.[11] || 0) |
+              number:'1.2-2' }}</td>
+
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 1) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 2) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 3) |
+              number:'1.2-2' }}</td>
+            <td *ngIf="showQuarterlyView" class="montos">{{ getConsolidatedQuarterlyBudgets(consolidatedItem, 4) |
+              number:'1.2-2' }}</td>
 
             <!-- Total de Presupuesto Consolidado -->
             <td class="montos" style="background-color: #f8f9fa; font-weight: bold;">

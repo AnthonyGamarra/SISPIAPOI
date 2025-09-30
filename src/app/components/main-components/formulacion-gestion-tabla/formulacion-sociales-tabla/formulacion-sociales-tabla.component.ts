@@ -1284,13 +1284,28 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     
     const startMonth = (quarter - 1) * 3 + 1;
     const endMonth = quarter * 3;
-    
+
+    // Determinar measurementType desde la familia (usar parent si existe)
+    const fam = activity.activityFamily;
+    let parentFam: any = fam;
+    if (fam && (fam as any).parentActivityFamily) {
+      parentFam = (fam as any).parentActivityFamily;
+    }
+    const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
+
+    // Si measurementTypeId === 2 o 3 => tomar solo el valor del último mes del trimestre
+    if (measurementTypeId === 2 || measurementTypeId === 3) {
+      const last = activity.monthlyGoals.find(g => g.goalOrder === endMonth);
+      return last?.value || 0;
+    }
+
+    // Por defecto (measurementTypeId === 1 o desconocido) sumar los meses del trimestre
     let total = 0;
     for (let month = startMonth; month <= endMonth; month++) {
       const goal = activity.monthlyGoals.find(g => g.goalOrder === month);
       total += goal?.value || 0;
     }
-    
+
     return total;
   }
 
@@ -1301,13 +1316,28 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     
     const startMonth = (quarter - 1) * 3 + 1;
     const endMonth = quarter * 3;
-    
+
+    // Determinar measurementType desde la familia (usar parent si existe)
+    const fam = activity.activityFamily;
+    let parentFam: any = fam;
+    if (fam && (fam as any).parentActivityFamily) {
+      parentFam = (fam as any).parentActivityFamily;
+    }
+    const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
+
+    // Si measurementTypeId === 2 o 3 => tomar solo el valor del último mes del trimestre
+    if (measurementTypeId === 2 || measurementTypeId === 3) {
+      const last = activity.monthlyBudgets.find(b => b.budgetOrder === endMonth);
+      return last?.value || 0;
+    }
+
+    // Por defecto (measurementTypeId === 1 o desconocido) sumar los meses del trimestre
     let total = 0;
     for (let month = startMonth; month <= endMonth; month++) {
       const budget = activity.monthlyBudgets.find(b => b.budgetOrder === month);
       total += budget?.value || 0;
     }
-    
+
     return total;
   }
 
@@ -1318,12 +1348,26 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     
     const startMonth = (quarter - 1) * 3;
     const endMonth = quarter * 3 - 1;
-    
+
+    // Determinar measurementType desde la familia incluida en el consolidado
+    const fam = consolidatedItem.activityFamily;
+    let parentFam: any = fam;
+    if (fam && fam.parentActivityFamily) {
+      parentFam = fam.parentActivityFamily;
+    }
+    const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
+
+    // Si measurementTypeId === 2 o 3 => tomar solo el valor del último mes del trimestre
+    if (measurementTypeId === 2 || measurementTypeId === 3) {
+      return consolidatedItem.consolidatedGoals[endMonth] || 0;
+    }
+
+    // Por defecto sumar los meses del trimestre
     let total = 0;
     for (let month = startMonth; month <= endMonth; month++) {
       total += consolidatedItem.consolidatedGoals[month] || 0;
     }
-    
+
     return total;
   }
 
@@ -1334,12 +1378,26 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
     
     const startMonth = (quarter - 1) * 3;
     const endMonth = quarter * 3 - 1;
-    
+
+    // Determinar measurementType desde la familia incluida en el consolidado
+    const fam = consolidatedItem.activityFamily;
+    let parentFam: any = fam;
+    if (fam && fam.parentActivityFamily) {
+      parentFam = fam.parentActivityFamily;
+    }
+    const measurementTypeId = parentFam?.measurementType?.idMeasurementType;
+
+    // Si measurementTypeId === 2 o 3 => tomar solo el valor del último mes del trimestre
+    if (measurementTypeId === 2 || measurementTypeId === 3) {
+      return consolidatedItem.consolidatedBudgets[endMonth] || 0;
+    }
+
+    // Por defecto sumar los meses del trimestre
     let total = 0;
     for (let month = startMonth; month <= endMonth; month++) {
       total += consolidatedItem.consolidatedBudgets[month] || 0;
     }
-    
+
     return total;
   }
 

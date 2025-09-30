@@ -339,18 +339,8 @@ export class EvaluacionTablaComponent implements OnChanges {
       this.toastr.error('Debe seleccionar un Objetivo Estratégico y una Acción Estratégica.', 'Error de validación');
       return false;
     }
-    if (!product.financialFund?.idFinancialFund) {
-      this.toastr.error('Debe seleccionar un Fondo financiero.', 'Error de validación');
-      return false;
-    }
-    if (!product.managementCenter?.idManagementCenter) {
-      this.toastr.error('Debe seleccionar un Centro gestor.', 'Error de validación');
-      return false;
-    }
-    if (!product.costCenter?.idCostCenter) {
-      this.toastr.error('Debe seleccionar un Centro de costos.', 'Error de validación');
-      return false;
-    }
+  // financialFund / managementCenter / costCenter validations removed
+  // These fields were replaced by expenseConcept and are optional now.
     if (!product.measurementType?.idMeasurementType) {
       this.toastr.error('Debe seleccionar un Tipo de medida.', 'Error de validación');
       return false;

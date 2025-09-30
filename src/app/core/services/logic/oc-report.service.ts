@@ -58,6 +58,37 @@ export class OcReportService {
     });
   }
 
+  getOgR1Data(dependencyId: number, year: number, modification: number): Observable<OcR1ReportDTO[]> {
+    const params = new HttpParams()
+      .set('dependencyId', dependencyId.toString())
+      .set('year', year.toString())
+      .set('modification', modification.toString());
+
+    return this.http.get<OcR1ReportDTO[]>(`${this.BASE_URL}/og-r1`, { params });
+  }
+
+  /**
+   * Descarga el reporte OC R1 en el formato especificado
+   * @param dependencyId ID de la dependencia
+   * @param year Año del reporte
+   * @param modification Número de modificación
+   * @param format Formato del reporte ('excel', 'pdf', 'word'/'docx')
+   * @returns Observable con la respuesta HTTP que contiene el archivo
+   */
+  downloadOgR1Report(dependencyId: number, year: number, modification: number, format: string = 'excel'): Observable<HttpResponse<Blob>> {
+    const params = new HttpParams()
+      .set('dependencyId', dependencyId.toString())
+      .set('year', year.toString())
+      .set('modification', modification.toString())
+      .set('format', format);
+
+    return this.http.get(`${this.BASE_URL}/og-r1/download`, {
+      params,
+      responseType: 'blob',
+      observe: 'response'
+    });
+  }
+
   /**
    * Descarga el reporte OC R2 en el formato especificado
    * @param dependencyId ID de la dependencia

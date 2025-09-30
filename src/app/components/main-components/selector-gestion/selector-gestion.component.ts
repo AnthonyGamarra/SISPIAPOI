@@ -97,7 +97,7 @@ export class SelectorGestionComponent implements OnInit {
   private ocReportService = inject(OcReportService);
 
   // Descargar OC R1
-  downloadOcR1(): void {
+  downloadOgR1(): void {
     if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
       this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
       return;
@@ -106,40 +106,16 @@ export class SelectorGestionComponent implements OnInit {
     const depId = Number(this.selectedDependency);
     const year = Number(this.selectedAno);
     const modification = this.selectedModificationOption.value;
-    this.ocReportService.downloadOcR1Report(depId, year, modification, this.selectedDownloadFormat)
+    this.ocReportService.downloadOgR1Report(depId, year, modification, this.selectedDownloadFormat)
       .subscribe({
         next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r1-report');
+          const filename = this.ocReportService.extractFilename(response, 'og-r1-report');
           this.ocReportService.downloadFile(response.body!, filename);
           this.isDownloadingR1 = false;
         },
         error: (err: any) => {
           this.toastr.error('Error al descargar el reporte.', 'Error');
           this.isDownloadingR1 = false;
-        }
-      });
-  }
-
-  // Descargar OC R2
-  downloadOcR2(): void {
-    if (!this.selectedDependency || !this.selectedAno || !this.selectedModificationOption) {
-      this.toastr.warning('Seleccione dependencia, año y etapa.', 'Descarga inválida');
-      return;
-    }
-    this.isDownloadingR2 = true;
-    const depId = Number(this.selectedDependency);
-    const year = Number(this.selectedAno);
-    const modification = this.selectedModificationOption.value;
-    this.ocReportService.downloadOcR2Report(depId, year, modification, this.selectedDownloadFormat)
-      .subscribe({
-        next: (response: import('@angular/common/http').HttpResponse<Blob>) => {
-          const filename = this.ocReportService.extractFilename(response, 'oc-r2-report');
-          this.ocReportService.downloadFile(response.body!, filename);
-          this.isDownloadingR2 = false;
-        },
-        error: (err: any) => {
-          this.toastr.error('Error al descargar el reporte.', 'Error');
-          this.isDownloadingR2 = false;
         }
       });
   }

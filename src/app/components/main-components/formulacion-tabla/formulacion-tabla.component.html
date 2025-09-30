@@ -30,6 +30,11 @@
         (click)="openPrestacionesEconomicasModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
       </button>
+      <button *ngIf="idDependency != null && +idDependency === 21" pButton
+        label="Programación de prestaciones de salud" icon="pi pi-calendar"
+        (click)="openPrestacionesSaludModal()" class="col-6 md:col-2 add-button ml-auto"
+        [disabled]="!currentFormulation || !ano">
+      </button>
       <button *ngIf="idDependency != null && +idDependency === 22" pButton label="Programación de prestaciones sociales"
         icon="pi pi-calendar" (click)="openPrestacionesSocialesModal()" class="col-6 md:col-2 add-button ml-auto"
         [disabled]="!currentFormulation || !ano">
@@ -438,6 +443,7 @@
         class="mx-3 add-button"></button>
     </ng-template>
   </p-dialog>
+
   <p-dialog header="Confirmar Eliminación" [(visible)]="showDeleteConfirmation" [modal]="true"
     [style]="{ width: '30vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
     [resizable]="false" [baseZIndex]="10000" draggable="false">
@@ -488,3 +494,5 @@
     [managementCenters]="managementCenters" [costCenters]="costCenters" [measurementTypes]="measurementTypes"
     [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
   </app-formulacion-sociales-tabla>
+
+  <app-adm-maestro-gcps-tabla #gcpsTabla></app-adm-maestro-gcps-tabla>

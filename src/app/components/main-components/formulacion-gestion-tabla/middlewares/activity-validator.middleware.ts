@@ -23,18 +23,8 @@ export class ActivityValidatorMiddleware {
       this.toastr.error('Debe seleccionar un Objetivo Estratégico y una Acción Estratégica.', 'Error de validación');
       return false;
     }
-    if (!product.financialFund?.idFinancialFund) {
-      this.toastr.error('Debe seleccionar un Fondo financiero.', 'Error de validación');
-      return false;
-    }
-    if (!product.managementCenter?.idManagementCenter) {
-      this.toastr.error('Debe seleccionar un Centro gestor.', 'Error de validación');
-      return false;
-    }
-    if (!product.costCenter?.idCostCenter) {
-      this.toastr.error('Debe seleccionar un Centro de costos.', 'Error de validación');
-      return false;
-    }
+  // Removed validation for financialFund, managementCenter and costCenter
+  // These fields were replaced by expenseConcept and are no longer required here.
     if (!product.measurementType?.idMeasurementType) {
       this.toastr.error('Debe seleccionar un Tipo de medida.', 'Error de validación');
       return false;

@@ -49,7 +49,8 @@
     <div *ngIf="!isLoadingActivities && products.length > 0" class="table-container">
       <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true" columnResizeMode="expand"
         [scrollable]="true" columnResizeMode="expand" dataKey="idOperationalActivity"
-        editMode="row" [paginator]="true" [rows]="8" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+        editMode="row" [paginator]="false" [rowHover]="true" [editingRowKeys]="editingRowKeys"
+  [rowGroupMode]="isGrouping ? 'rowspan' : undefined" [groupRowsBy]="isGrouping ? '__groupKey' : undefined">
 
         <ng-template pTemplate="header" class="table-header" #header>
           <tr class="cabecera">
@@ -58,9 +59,7 @@
             <th style="min-width: 120px; max-width: 120px;" rowspan="2">Objetivo estratégico</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Acción estratégica</th>
 
-            <th style="min-width: 157px; max-width: 157px;" rowspan="2">Centro gestor</th>
-            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Centro de costos</th>
-            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Fondo financiero</th>
+            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Concepto de Gasto</th>
 
             <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>
             <th style="min-width: 320px; max-width: 320px;" rowspan="2">Nombre de actividad</th>
@@ -88,7 +87,7 @@
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" #body>
+                <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
           <tr [pEditableRow]="product">
 
             <td>
@@ -151,27 +150,11 @@
               </p-cellEditor>
             </td>
 
-            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
               <p-cellEditor>
                 <ng-template pTemplate="input">
-                  <p-select [options]="managementCenters" optionLabel="name" optionValue="idManagementCenter"
-                    [ngModel]="getManagementCenterId(product)" (ngModelChange)="setManagementCenterId(product, $event)"
-                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
-                    styleClass="multiline-select">
-                  </p-select>
-                </ng-template>
-                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
-                  {{ getManagementCenterName(product.managementCenter?.idManagementCenter) }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-
-            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <p-select [options]="costCenters" optionLabel="name" optionValue="idCostCenter"
-                    [ngModel]="getCostCenterId(product)" (ngModelChange)="setCostCenterId(product, $event)"
+                  <p-select [options]="expenseConcepts" optionLabel="name" optionValue="idExpenseConcept"
+                    [ngModel]="getExpenseConceptId(product)" (ngModelChange)="setExpenseConceptId(product, $event)"
                     [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
                     [disabled]="state === 2 || state === 4 || !active" appendTo="body"
                     [filter]="true" filterBy="name"
@@ -179,24 +162,7 @@
                   </p-select>
                 </ng-template>
                 <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
-                  {{ getCostCenterName(product.costCenter?.idCostCenter) }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-
-            <td style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <p-select [options]="financialFunds" optionLabel="name" optionValue="idFinancialFund"
-                    [ngModel]="getFinancialFundId(product)" (ngModelChange)="setFinancialFundId(product, $event)"
-                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
-                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
-                    [filter]="true" filterBy="name"
-                    styleClass="multiline-select">
-                  </p-select>
-                </ng-template>
-                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
-                  {{ getFinancialFundName(product.financialFund?.idFinancialFund) }}
+                  {{ getExpenseConceptName(product.expenseConcept?.idExpenseConcept) }}
                 </ng-template>
               </p-cellEditor>
             </td>
@@ -314,37 +280,40 @@
               </p-cellEditor>
             </td>
 
-            <td class="montos">
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.remuneration" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.remuneration | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
             </td>
 
-            <td class="montos">
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.goods" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.goods | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
             </td>
 
-            <td class="montos">
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
                   <input pInputText [(ngModel)]="product.services" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active || !product.active" />
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
                 </ng-template>
                 <ng-template pTemplate="output">{{ product.services | number:'1.2-2' }}</ng-template>
               </p-cellEditor>
             </td>
 
-            <td class="montos">
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input"><strong>{{ (product.goods + product.remuneration + product.services) |
                   number:'1.2-2' }}</strong></ng-template>
@@ -387,9 +356,7 @@
             <td></td> <!-- Acciones -->
             <td></td> <!-- Objetivo estratégico -->
             <td></td> <!-- Acción estratégica -->
-            <td></td> <!-- Centro gestor -->
-            <td></td> <!-- Centro de costos -->
-            <td></td> <!-- Fondo financiero -->
+            <td></td> <!-- Concepto de Gasto -->
             <td></td> <!-- Código de actividad -->
             <td></td> <!-- Nombre de actividad -->
             <td></td> <!-- Unidad de medida -->
@@ -472,7 +439,7 @@
 
   <!-- Subcomponente para Prestaciones Sociales -->
   <app-formulacion-sociales-tabla #socialesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
-    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions" [financialFunds]="financialFunds"
-    [managementCenters]="managementCenters" [costCenters]="costCenters" [measurementTypes]="measurementTypes"
+    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions"
+    [costCenters]="costCenters" [measurementTypes]="measurementTypes"
     [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
   </app-formulacion-sociales-tabla>
