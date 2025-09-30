@@ -51,7 +51,8 @@ import { MonthlyBudget } from '../../../models/logic/monthlyBudget.model';
 
 import { forkJoin, Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { AdmMaestroGcpsTablaComponent } from "../adm-maestro-gcps-tabla/adm-maestro-gcps-tabla.component";
+import { AdmMaestroGcpsTablaComponent } from "../adm-maestro-gcps-tabla-gcop/adm-maestro-gcps-tabla-gcop.component";
+import { FormulacionOoddSaludComponent } from "../../../pages/formulacion-oodd-salud/formulacion-oodd-salud.component";
 
 interface Accion {
   id?: number;
@@ -80,7 +81,7 @@ interface Accion {
     ProgressSpinnerModule,
     FormulacionOspesTablaComponent,
     FormulacionSocialesTablaComponent,
-    AdmMaestroGcpsTablaComponent
+    AdmMaestroGcpsTablaComponent,
 ]
 })
 export class FormulacionTablaComponent implements OnInit, OnChanges {

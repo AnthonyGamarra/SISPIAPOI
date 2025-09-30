@@ -22,4 +22,6 @@ export interface HealthOperationalActivitySummaryDTO {
   budgetQ3: number;
   budgetQ4: number;
   budgetTotal: number;
+
+  idDependency?: number;
 }
