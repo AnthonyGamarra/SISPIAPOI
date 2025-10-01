@@ -1,11 +1,36 @@
-<p-dialog [(visible)]="displayModal" header="Vista Previa de Importación" [modal]="true" [closable]="!importLoading"
+<p-dialog [(visible)]="displayModal" header="Prestaciones de salud" [modal]="true" [closable]="!importLoading"
   [style]="{ width: '95vw' }" [breakpoints]="{ '960px': '80vw', '640px': '80vw' }" [draggable]="false"
   [resizable]="true">
   <div class="mx-5">
     <div class="grid mt-3">
-      <h2 class="col-12 md:col-4 lg:col-4">
+      <h2 class="py-0 col-12 md:col-7 lg:col-7">
         Carga de actividades - {{ currentFormulationType?.name }}:
       </h2>
+      <!-- Support file controls for the formulation with the smallest id -->
+      <div *ngIf="!loading && totalRecords > 0" class="col-12 md:col-5 lg:col-5 flex justify-content-end items-center gap-2">
+        <!-- When uploading, hide 'Ver' and 'Actualizar' and show an uploading indicator -->
+        <ng-container *ngIf="!supportFileUploading">
+          <button pButton type="button" icon="pi pi-eye" label="Ver sustento" class="add-button"
+            (click)="viewSupportFile()" [disabled]="!supportFileMetadata"></button>
+
+          <!-- Show 'Subir sustento' only when there is no existing metadata AND formulation is not blocked -->
+          <p-fileUpload #supportUpload mode="basic" chooseLabel="Subir sustento" [auto]="true" [customUpload]="true"
+            (onSelect)="uploadSupportFile($event.files[0])" *ngIf="!supportFileMetadata && !isMinFormulationBlocked"
+            [disabled]="!selectedSupportFormulationId" chooseIcon="pi pi-cloud-upload"
+            class="p-button-sm"></p-fileUpload>
+
+          <!-- Show 'Actualizar' only when metadata exists AND formulation is not blocked -->
+          <p-fileUpload #supportUpdate mode="basic" chooseLabel="Actualizar sustento" [auto]="true"
+            [customUpload]="true" (onSelect)="updateSupportFile($event.files[0])"
+            *ngIf="supportFileMetadata && !isMinFormulationBlocked" chooseIcon="pi pi-cloud-upload"
+            class="p-button-sm"></p-fileUpload>
+        </ng-container>
+
+        <ng-container *ngIf="supportFileUploading">
+          <button pButton type="button" label="Subiendo..." icon="pi pi-spin pi-spinner" class="p-button-text"
+            disabled="true"></button>
+        </ng-container>
+      </div>
       <span class="col-5 md:col-1 lg:col-1 my-auto">
         <label class="block text-sm font-medium mb-1">Año:</label>
         <p-select [options]="years" [(ngModel)]="selectedYear" (onChange)="onYearChange()" placeholder="Seleccionar Año"
@@ -17,25 +42,57 @@
           [(ngModel)]="selectedModification" (onChange)="onModificationChange()" placeholder="Seleccionar Etapa"
           [showClear]="false"></p-select>
       </span>
-      <span class="col-12 md:col-5 lg:col-5 my-auto flex justify-content-end gap-2">
-        <button pButton label="Exportar Plantilla" icon="pi pi-download" class="add-button"
-          (click)="exportHealthActivityTemplate()" title="Descargar plantilla Excel para actividades de salud">
+      <span class="col-6 md:col-2 lg:col-2 my-auto"
+        *ngIf="minFormulationStateLabel || canChangeState || minFormulationYear">
+        <label class="block text-sm font-medium mb-1">Estado:</label>
+        <input pInputText [ngModel]="minFormulationStateLabel" [disabled]="true" class="mx-2" />
+      </span>
+      <span *ngIf="!loading && totalRecords > 0" class="col-12 md:col-7 lg:col-7 my-auto flex justify-content-end gap-2">
+        <button *ngIf="!isMinFormulationBlocked" pButton label="Exportar Plantilla" icon="pi pi-download"
+          class="add-button" (click)="exportHealthActivityTemplate()"
+          title="Descargar plantilla Excel para actividades de salud">
         </button>
-        <button pButton [label]="hasActiveFormulations() ? 'Actualizar datos' : 'Importar Plantilla'"
-          icon="pi pi-upload" class="add-button" (click)="onImportTemplateClick()"
+        <button *ngIf="!isMinFormulationBlocked" pButton
+          [label]="hasActiveFormulations() ? 'Actualizar datos' : 'Importar Plantilla'" icon="pi pi-upload"
+          class="add-button" (click)="onImportTemplateClick()"
           [title]="hasActiveFormulations() ? 'Actualizar actividades existentes desde plantilla Excel' : 'Importar actividades desde plantilla Excel'">
         </button>
         <!-- <button pButton *ngIf="hasActiveFormulations()" label="Crear nueva modificatoria" icon="pi pi-plus"
           class="add-button" (click)="onCreateNewModificationClick()"
           title="Crear nueva modificatoria a partir de una plantilla Excel">
         </button> -->
+        <!-- Change state button for min formulation -->
+        <button *ngIf="canChangeState && selectedSupportFormulationId" pButton type="button" label="Cambiar estado"
+          icon="pi pi-pencil" class="add-button" (click)="showChangeStateModal = true"></button>
       </span>
     </div>
+    <!-- Dialog para cambiar estado de la formulación mínima -->
+    <p-dialog header="Cambiar Estado de Formulación" [(visible)]="showChangeStateModal" [modal]="true"
+      [resizable]="true" class="dialog-header-state" draggable="false">
+      <div class="p-fluid">
+        <div class="p-field mt-5">
+          <label for="state" class="mr-5">Estado Actual:</label>
+          <input pInputText id="currentState" [ngModel]="minFormulationStateLabel" [disabled]="true" />
+        </div>
+        <div class="p-field mt-3">
+          <label for="newState" class="mr-5">Nuevo Estado:</label>
+          <p-select id="newState" [options]="formulationStateOptions" [(ngModel)]="selectedFormulationState"
+            placeholder="Seleccione un nuevo estado" optionLabel="name" optionValue="idFormulationState"
+            appendTo="body"></p-select>
+        </div>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton label="Cancelar" icon="pi pi-times" styleClass="p-button-text"
+          (click)="showChangeStateModal = false" class="cancel-button"></button>
+        <button pButton label="Guardar" icon="pi pi-check" (click)="changeFormulationState()"
+          [disabled]="!selectedFormulationState" class="add-button"></button>
+      </ng-template>
+    </p-dialog>
 
     <div class="formulacion-salud-od-tabla">
 
       <!-- Filtro por Dependencia -->
-      <div *ngIf="!loading && totalRecords > 0" class="filter-section mb-1 p-4 bg-gray-50 rounded-lg">
+      <div *ngIf="!loading && totalRecords > 0" class="filter-section mb-1 px-2 py-1 bg-gray-50 rounded-lg">
         <h4 class="text-md font-semibold text-gray-700 mb-2">Filtrar por Dependencia</h4>
         <div class="flex items-center gap-2">
           <p-select [options]="dependencyOptions" [(ngModel)]="idDependency" (onChange)="applyFilter()"
@@ -45,11 +102,11 @@
         </div>
       </div>
       <!-- Filtro por Centro Asistencial -->
-      <div *ngIf="!loading && totalRecords > 0" class="filter-section mb-1 p-4 bg-gray-50 rounded-lg">
+      <div *ngIf="!loading && totalRecords > 0" class="filter-section mb-1 px-2 py-1 bg-gray-50 rounded-lg">
         <h4 class="text-md font-semibold text-gray-700 mb-2">Filtrar por Centro Asistencial</h4>
         <div class="flex items-center gap-2">
           <p-select [options]="desCenSesOptions" [(ngModel)]="selectedDesCenSes" (onChange)="applyFilter()"
-            placeholder="Seleccionar Centro Asistencial" [filter]="true" class="flex-1"></p-select>
+            placeholder="Seleccionar Centro Asistencial" [filter]="true" class="flex-1" [disabled]="!idDependency"></p-select>
           <p-button label="Limpiar Filtro" icon="pi pi-times" (onClick)="clearFilter()" [disabled]="!selectedDesCenSes"
             styleClass="p-button-secondary"></p-button>
         </div>
@@ -967,6 +1024,23 @@
             </p-button>
           </div>
         </div>
+      </ng-template>
+    </p-dialog>
+
+    <!-- Support file viewer dialog -->
+    <p-dialog [(visible)]="showSupportFileViewer" header="Sustento" [modal]="true" [closable]="true"
+      (onHide)="closeSupportFileViewer()" [style]="{width: '80vw', height: '80vh'}" [draggable]="false"
+      [resizable]="true">
+      <div *ngIf="supportDocumentUrl" style="height:70vh;">
+        <!-- Use iframe for better in-dialog rendering of blob URLs (PDFs) -->
+        <iframe [src]="supportDocumentUrl | safeUrl" width="100%" height="100%" frameborder="0"></iframe>
+      </div>
+      <div *ngIf="!supportDocumentUrl" class="p-2">No se encontró documento para mostrar.</div>
+      <ng-template pTemplate="footer">
+        <p-button label="Cerrar" icon="pi pi-times" (onClick)="closeSupportFileViewer()"
+          class="p-button-text"></p-button>
+        <a *ngIf="supportDocumentUrl" [href]="supportDocumentUrl" target="_blank"
+          class="ml-2 p-button p-component p-button-outlined">Abrir en nueva pestaña</a>
       </ng-template>
     </p-dialog>
 

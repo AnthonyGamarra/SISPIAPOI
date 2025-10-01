@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -18,6 +18,8 @@ import { DependencyService } from '../../../../core/services/logic/dependency.se
 import { OperationalActivityService } from '../../../../core/services/logic/operational-activity.service';
 import { ExcelExportService } from '../middlewares/excel-export-social.service';
 import { ExcelImportService, ImportResult } from '../middlewares/excel-import-social.service';
+import { SafeUrlPipe } from '../../../../safe-url.pipe';
+import { FormulationSupportFileService } from '../../../../core/services/logic/formulation-support-file.service';
 import { AuthService } from '../../../../core/services/authentication/auth.service';
 
 import { Formulation } from '../../../../models/logic/formulation.model';
@@ -55,10 +57,27 @@ import { map } from 'rxjs/operators';
     InputTextModule,
     SelectModule,
     RadioButtonModule,
-    FileUploadModule
+    FileUploadModule,
+    SafeUrlPipe
   ]
 })
 export class FormulacionSocialesTablaComponent implements OnDestroy {
+  deleteSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      return;
+    }
+    const fileId = this.supportFileMetadata.idFormulationSupportFile;
+    this.fileUploadingSupport = true;
+  this.supportFileService.deleteById(fileId).subscribe({
+      next: () => {
+        this.fileUploadingSupport = false;
+        this.loadPrestacionesEconomicasData();
+      },
+      error: () => {
+        this.fileUploadingSupport = false;
+      }
+    });
+  }
   // Devuelve las actividades ordenadas por familia y dependencia usando el orden de ActivityDetail
   getOrderedActivitiesForDependencyAndFamily(dependencyName: string, familyName: string): OperationalActivity[] {
     const activities = this.getActivitiesForDependencyAndFamily(dependencyName, familyName);
@@ -91,6 +110,140 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
       if (idxB === -1) return -1;
       return idxA - idxB;
     });
+  }
+
+  // === SUSTENTO ===
+  @ViewChild('supportFileUpload') supportFileUploadRef!: any;
+  private supportFileService = inject(FormulationSupportFileService);
+  hasSupportFile: boolean = false;
+  supportFileMetadata: any = null;
+  fileUploadingSupport: boolean = false;
+  selectedSupportFormulationId: number | null = null;
+  showDocumentViewer: boolean = false;
+  documentUrl: any = '';
+
+  private loadSupportForMinDependencyFormulation(): void {
+    if (!this.prestacionesEconomicasFormulations?.length) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+    let minFormulation: any = null;
+    this.prestacionesEconomicasFormulations.forEach(f => {
+      if (f.dependency && f.dependency.idDependency !== undefined && f.dependency.idDependency !== null) {
+        if (!minFormulation || (f.dependency.idDependency < (minFormulation.dependency?.idDependency || Infinity))) {
+          minFormulation = f;
+        }
+      }
+    });
+    if (!minFormulation || !minFormulation.idFormulation) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+    this.selectedSupportFormulationId = minFormulation.idFormulation;
+    if (minFormulation.formulationSupportFile && minFormulation.formulationSupportFile.idFormulationSupportFile) {
+      this.hasSupportFile = true;
+      this.supportFileMetadata = minFormulation.formulationSupportFile;
+      return;
+    }
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+  }
+
+  onSupportFileSelect(event: any): void {
+    const file = event.files?.[0] || event.currentFiles?.[0];
+    if (!file || !this.selectedSupportFormulationId) {
+      this.toastr.warning('No se encontró formulación destino para subir el sustento.', 'Advertencia');
+      if (event.clear) event.clear();
+      return;
+    }
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      this.toastr.error('Solo se permite subir archivos PDF.', 'Tipo de archivo incorrecto');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    this.fileUploadingSupport = true;
+    if (this.supportFileMetadata && this.supportFileMetadata.idFormulationSupportFile) {
+      this.supportFileService.updateFile(this.selectedSupportFormulationId, file).subscribe({
+        next: () => {
+          this.toastr.success('Archivo de sustento actualizado correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error updating support file:', err);
+          this.toastr.error('Error al actualizar el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    } else {
+      this.supportFileService.uploadFile(file, this.selectedSupportFormulationId).subscribe({
+        next: () => {
+          this.toastr.success('Archivo de sustento subido correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error uploading support file:', err);
+          this.toastr.error('Error al subir el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    }
+  }
+
+  viewSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      return;
+    }
+    const fileId = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.getById(fileId).subscribe({
+      next: (fileDto: any) => {
+        if (fileDto && fileDto.file && fileDto.fileExtension) {
+          try {
+            const binaryString = window.atob(fileDto.file);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            const blob = new Blob([bytes.buffer], { type: fileDto.fileExtension });
+            const isPdf = fileDto.fileExtension === 'application/pdf' || fileDto.fileExtension === 'application/pdf; charset=utf-8';
+            if (isPdf) {
+              this.documentUrl = window.URL.createObjectURL(blob);
+              this.showDocumentViewer = true;
+            } else {
+              const fileName = fileDto.name || 'archivo';
+              const link = document.createElement('a');
+              link.href = window.URL.createObjectURL(blob);
+              link.download = fileName;
+              link.click();
+              window.URL.revokeObjectURL(link.href);
+            }
+          } catch (e) {}
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  onDocumentViewerHide(): void {
+    if (this.documentUrl) {
+      window.URL.revokeObjectURL(this.documentUrl);
+      this.documentUrl = '';
+    }
+    this.showDocumentViewer = false;
   }
   @Input() currentFormulation: Formulation | null = null;
   @Input() selectedSize: any = 'small';
@@ -448,6 +601,9 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
             }
 
             // Cargar actividades operativas para todas las formulaciones encontradas
+            // Antes de cargar actividades, actualizar la formulación destino para sustento
+            this.loadSupportForMinDependencyFormulation();
+
             const activityRequests: Observable<OperationalActivity[]>[] = this.prestacionesEconomicasFormulations.map(f => 
               this.operationalActivityService.searchByFormulation(f.idFormulation!)
             );
@@ -461,10 +617,9 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
                     f.idFormulation === activity.formulation?.idFormulation
                   );
                   const dependencyName = formulation?.dependency?.name || 'Sin dependencia';
-                  
                   // Crear objeto SIMPLE sin referencias profundas
                   const cleanActivity: OperationalActivity = {
-                    // IDs y propiedades básicas
+                    // ...existing code...
                     idOperationalActivity: activity.idOperationalActivity,
                     name: activity.name,
                     measurementUnit: activity.measurementUnit,
@@ -476,34 +631,26 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
                     remuneration: activity.remuneration,
                     services: activity.services,
                     activityFamily: activity.activityFamily,
-                    
-                    // Objetos relacionados SOLO con IDs y nombres - SIN referencias circulares
                     managementCenter: activity.managementCenter ? {
                       idManagementCenter: activity.managementCenter.idManagementCenter,
                       name: activity.managementCenter.name
                     } as ManagementCenter : undefined,
-                    
                     costCenter: activity.costCenter ? {
                       idCostCenter: activity.costCenter.idCostCenter,
                       name: activity.costCenter.name
                     } as CostCenter : undefined,
-                    
                     financialFund: activity.financialFund ? {
                       idFinancialFund: activity.financialFund.idFinancialFund,
                       name: activity.financialFund.name
                     } as FinancialFund : undefined,
-                    
                     priority: activity.priority ? {
                       idPriority: activity.priority.idPriority,
                       name: activity.priority.name
                     } as Priority : undefined,
-                    
                     measurementType: activity.measurementType ? {
                       idMeasurementType: activity.measurementType.idMeasurementType,
                       name: activity.measurementType.name
                     } as MeasurementType : undefined,
-                    
-                    // StrategicAction SIN referencias profundas
                     strategicAction: activity.strategicAction ? {
                       idStrategicAction: activity.strategicAction.idStrategicAction,
                       code: activity.strategicAction.code,
@@ -514,32 +661,21 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
                         code: activity.strategicAction.strategicObjective.code
                       } as StrategicObjective : undefined
                     } as StrategicAction : undefined,
-                    
-                    // Formulation SIMPLE
                     formulation: {
                       idFormulation: activity.formulation?.idFormulation,
                       dependency: {
                         name: dependencyName
                       }
                     } as Formulation,
-                    
-                    // Arrays NUEVOS sin referencias
                     monthlyGoals: this.createCleanMonthlyGoals(activity.monthlyGoals || []),
                     monthlyBudgets: this.createCleanMonthlyBudgets(activity.monthlyBudgets || [])
                   };
-                  
                   return cleanActivity;
                 });
-                // Guardar copia original (sin filtrar) para export
                 this.originalPrestacionesEconomicasActivities = mapped;
-                // Filtrar actividades vacías (todos los monthlyGoals y monthlyBudgets en 0) para la vista
                 this.prestacionesEconomicasActivities = mapped.filter(act => !this.isActivityEmpty(act));
-
-                // Do not finalize loading here; wait until ordering (activity details) is ready
                 this.activitiesLoaded = true;
-                // Try ordering now (orderOperationalActivities will handle missing details safely)
                 this.orderOperationalActivities();
-                // finalizeLoadingIfReady will be called from loadOrderedActivityDetailNames or here if details already loaded
                 this.finalizeLoadingIfReady();
               },
               error: (err) => {

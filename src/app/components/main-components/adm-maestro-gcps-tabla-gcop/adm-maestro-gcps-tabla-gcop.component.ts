@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef, ViewChildren, QueryList } from '@angular/core';
+import { ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -23,6 +24,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { FileUploadModule } from 'primeng/fileupload';
 import { Workbook } from 'exceljs';
 import { forkJoin, Observable } from 'rxjs';
+import { SafeUrlPipe } from '../../../safe-url.pipe';
 
 import { ActivityDetail } from '../../../models/logic/activityDetail.model';
 import { StrategicAction } from '../../../models/logic/strategicAction.model';
@@ -30,6 +32,7 @@ import { StrategicObjective } from '../../../models/logic/strategicObjective.mod
 import { FormulationType } from '../../../models/logic/formulationType.model';
 import { Formulation } from '../../../models/logic/formulation.model';
 import { Dependency } from '../../../models/logic/dependency.model';
+import { AuthService } from '../../../core/services/authentication/auth.service';
 
 import { ActivityDetailService } from '../../../core/services/logic/activity-detail.service';
 import { StrategicActionService } from '../../../core/services/logic/strategic-action.service';
@@ -38,8 +41,10 @@ import { FormulationTypeService } from '../../../core/services/logic/formulation
 import { FormulationService } from '../../../core/services/logic/formulation.service';
 import { DependencyService } from '../../../core/services/logic/dependency.service';
 import { ImportTemplateService, ImportResult } from './middleware/import-template';
+import { FormulationStateService } from '../../../core/services/logic/formulation-state.service';
 
 import { HealthOperationalActivityService } from '../../../core/services/logic/health-operational-activity.service';
+import { FormulationSupportFileService } from '../../../core/services/logic/formulation-support-file.service';
 import { HealthOperationalActivitySummaryDTO } from '../../../models/logic/health-operational-activity-summary.dto';
 
 
@@ -122,6 +127,8 @@ interface ConsolidatedHealthRow {
     ProgressSpinnerModule,
     CheckboxModule,
     FileUploadModule
+  ,
+  SafeUrlPipe
   ],
   templateUrl: './adm-maestro-gcps-tabla-gcop.component.html',
   styleUrl: './adm-maestro-gcps-tabla-gcop.component.scss',
@@ -201,6 +208,12 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
       idFormulation: this.idFormulation,
       idDependency: this.idDependency
     });
+    // Initialize permission flags
+    try {
+      this.canChangeState = this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO', 'UPLANEAMIENTO']);
+    } catch (e) {
+      this.canChangeState = false;
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -211,18 +224,15 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
       idFormulation: this.idFormulation,
       idDependency: this.idDependency
     });
-    // Solo cargar datos si hay una formulación válida
+    // Solo cargar datos automáticamente si hay una formulación válida.
+    // Nota: la carga basada en formulaciones de las dependencias se realiza únicamente al abrir el modal (openModal()).
     const formulationId = this.idFormulation; // do not rely on external currentFormulation
     if (formulationId) {
       console.log('Disparando loadHealthData con idFormulation:', formulationId);
       this.loadHealthData();
-    } else if (this.ano && this.idDependency) {
-      // Si hay año y dependencia seleccionados, cargar datos desde las formulaciones de las dependencias
-      console.log('No se proporcionó idFormulation: cargando datos desde formulaciones de dependencias');
-      this.loadHealthDataFromDependencies();
     } else {
-      // Estado inicial, no mostrar loader
-      console.log('No hay idFormulation ni selección completa, limpiando datos y ocultando loader');
+      // No disparar carga desde dependencias aquí; limpiar estado y esperar a que el modal solicite los resúmenes.
+      console.log('No idFormulation proporcionado — no se realizará carga automática. Use openModal() para cargar desde dependencias.');
       this.loading = false;
       this.healthData = [];
       this.originalHealthData = [];
@@ -243,9 +253,16 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
     console.log('loadHealthData iniciado con idFormulation:', this.idFormulation);
 
     if (!formulationId) {
-      console.warn('No se proporcionó idFormulation — se intentará cargar desde las formulaciones de dependencias');
-      this.loadHealthDataFromDependencies();
-      return;
+  console.warn('No se proporcionó idFormulation — no se realizará carga automática aquí. Use openModal() para cargar desde dependencias.');
+  this.loading = false;
+  this.originalHealthData = [];
+  this.healthData = [];
+  this.groupedHealthDataNivelI = [];
+  this.groupedHealthDataNivelII = [];
+  this.groupedHealthDataNivelIII = [];
+  this.totalRecords = 0;
+  this.activitiesCountChanged.emit(0);
+  return;
     }
 
     console.log('Llamando getHealthOperationalActivitySummary con idFormulation:', formulationId);
@@ -358,6 +375,23 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
               this.totalRecords = this.healthData.length;
               this.updateOptions();
               await this.applyFilter();
+              // Determine smallest chosen formulation id (if any) and load its support file metadata
+              try {
+                const chosenIds = chosenFormulationPerDependency.map(c => c.chosenFormulationId).filter(id => !!id) as number[];
+                if (chosenIds.length > 0) {
+                  const minId = Math.min(...chosenIds);
+                  this.selectedSupportFormulationId = minId;
+                  console.log('[GCOP TABLE] selectedSupportFormulationId set to', this.selectedSupportFormulationId);
+                  this.loadSupportFileMetadata(minId);
+                  this.loadMinFormulationMetadata();
+                } else {
+                  this.selectedSupportFormulationId = null;
+                  this.supportFileMetadata = null;
+                }
+              } catch (e) {
+                // ignore
+              }
+
               this.loading = false;
               this.activitiesCountChanged.emit(this.healthData.length);
               this.cdr.detectChanges();
@@ -662,7 +696,13 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
         }
 
         // Update Centro Asistencial options based on the data remaining after dependency filter
-        this.desCenSesOptions = Array.from(new Set(filteredData.map(item => item.desCenSes))).sort().map(option => ({ label: option, value: option }));
+        // If no dependency selected, keep Centro Asistencial filter inactive
+        if (!this.idDependency) {
+          this.desCenSesOptions = [];
+          this.selectedDesCenSes = '';
+        } else {
+          this.desCenSesOptions = Array.from(new Set(filteredData.map(item => item.desCenSes))).sort().map(option => ({ label: option, value: option }));
+        }
 
         // Then apply Centro Asistencial filter (should filter the already dependency-filtered data)
         if (this.selectedDesCenSes) {
@@ -944,6 +984,19 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
   // Expose a modal flag and simple open/close API so parent components can open this as a modal
   displayModal: boolean = false;
 
+  // Support file management for the formulation with the smallest id
+  supportFileUploading = false;
+  supportFileMetadata: any = null;
+  showSupportFileViewer = false;
+  supportDocumentUrl: any = '';
+  selectedSupportFormulationId: number | null = null;
+  // Metadata for the minimum (smallest-id) formulation
+  minFormulationStateLabel: string | null = null;
+  minFormulationYear: number | null = null;
+  minFormulationModification: number | null = null;
+  // When true, UI actions that modify data should be blocked (only 'Ver sustento' allowed)
+  isMinFormulationBlocked: boolean = false;
+
   openModal(): void {
     this.displayModal = true;
     // Ensure data reflects current selection/year and then load health summaries from dependency formulations
@@ -963,6 +1016,8 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
         this.loadData().then(() => {
           // loadData finished loading dependencies and related data
           this.loadHealthDataFromDependencies();
+          // ensure state options are loaded for the change-state dialog
+          this.loadFormulationStates();
         }).catch((err: any) => {
           console.error('Error loading initial data for modal:', err);
           this.loading = false;
@@ -981,6 +1036,8 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
 
   // ViewChild references for tables
   @ViewChildren('activitiesTable') activitiesTables!: QueryList<Table>;
+  @ViewChild('supportUpload') supportUploadRef: any;
+  @ViewChild('supportUpdate') supportUpdateRef: any;
 
   // Data arrays
   activityDetails: ActivityDetail[] = [];
@@ -1079,8 +1136,19 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
     private messageService: MessageService,
     private confirmationService: ConfirmationService,
     private healthOperationalActivityService: HealthOperationalActivityService,
-    private cdr: ChangeDetectorRef
+    private supportFileService: FormulationSupportFileService,
+  private authService: AuthService,
+  private formulationStateService: FormulationStateService,
+  private cdr: ChangeDetectorRef
   ) { }
+
+  // Permission flag (mirrors other selector components)
+  canChangeState: boolean = false;
+
+  // Change-state modal and related fields (used by template)
+  showChangeStateModal: boolean = false;
+  formulationStateOptions: any[] = [];
+  selectedFormulationState: number | null = null;
 
 
   loadYearsAndData() {
@@ -1195,7 +1263,8 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
           this.dependencies = data.filter(dep =>
             dep.active &&
             dep.dependencyType?.idDependencyType === 2 &&
-            dep.ospe === false
+            dep.ospe === false &&
+            dep.idDependency !== 116
           ).sort((a, b) => a.name.localeCompare(b.name));
           // Populate select options for dependency filter
           this.dependencyOptions = this.dependencies.map(d => ({ label: d.name || '', value: d.idDependency }));
@@ -1207,8 +1276,11 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
   }
 
   clearDependencyFilter() {
-    this.idDependency = null;
-    this.applyFilter();
+  this.idDependency = null;
+  // When dependency filter is cleared, also clear Centro Asistencial selection and options
+  this.selectedDesCenSes = '';
+  this.desCenSesOptions = [];
+  this.applyFilter();
   }
 
   loadActivityDetails(): Promise<void> {
@@ -1388,10 +1460,14 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
     this.filterActivityDetailsByYear();
     this.loadModifications();
     this.loadActivitiesByDependency();
+  // Re-evaluate min formulation metadata when year changes
+  this.loadMinFormulationMetadata();
   }
 
   onModificationChange() {
     this.loadActivitiesByDependency();
+  // Re-evaluate min formulation metadata when modification changes
+  this.loadMinFormulationMetadata();
   }
 
   loadModifications() {
@@ -1432,6 +1508,49 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
         console.error('Error loading modifications:', error);
         this.modificationOptions = [{ label: 'Formulación inicial', value: 1 }];
         this.selectedModification = 1;
+      }
+    });
+  }
+
+  loadFormulationStates(): void {
+    this.formulationStateService.getAll().subscribe({
+      next: (states) => {
+        this.formulationStateOptions = states;
+      },
+      error: (err) => {
+        this.toastr.error('Error al cargar los estados de formulación.', 'Error de Carga');
+        console.error('Error fetching formulation states:', err);
+      }
+    });
+  }
+
+  changeFormulationState(): void {
+    if (!this.selectedSupportFormulationId || !this.selectedFormulationState) {
+      this.toastr.warning('Seleccione un estado válido.', 'Advertencia');
+      return;
+    }
+
+    const selectedState = this.formulationStateOptions.find(
+      (state: any) => state.idFormulationState === this.selectedFormulationState
+    );
+
+    if (!selectedState) {
+      this.toastr.error('Estado de formulación no válido.', 'Error');
+      return;
+    }
+
+    this.formulationService.changeFormulationState(this.selectedSupportFormulationId, this.selectedFormulationState).subscribe({
+      next: (updated) => {
+        this.toastr.success('Estado de formulación actualizado correctamente.', 'Éxito');
+        this.showChangeStateModal = false;
+        // Update min formulation metadata
+        this.loadMinFormulationMetadata();
+        // If support file metadata depended on formulation, reload it
+        if (this.selectedSupportFormulationId) this.loadSupportFileMetadata(this.selectedSupportFormulationId);
+      },
+      error: (err) => {
+        this.toastr.error('Error al cambiar el estado de formulación.', 'Error');
+        console.error('Error updating formulation state:', err);
       }
     });
   }
@@ -1488,6 +1607,34 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
           resolve();
         }
       });
+    });
+  }
+
+  // Load metadata for the minimum (smallest id) formulation and set UI-block flag
+  loadMinFormulationMetadata(): void {
+    if (!this.selectedSupportFormulationId) {
+      this.minFormulationStateLabel = null;
+      this.minFormulationYear = null;
+      this.minFormulationModification = null;
+      this.isMinFormulationBlocked = false;
+      return;
+    }
+
+    this.formulationService.getById(this.selectedSupportFormulationId).subscribe({
+      next: (formulation: any) => {
+        this.minFormulationStateLabel = formulation?.formulationState?.name || null;
+        this.minFormulationYear = formulation?.year || this.selectedYear || null;
+        this.minFormulationModification = formulation?.modification || this.selectedModification || null;
+        // Block UI if formulation state indicates locked (assume ids 2 and 4 are locked states like in other selectors)
+        const lockedStates = [2, 4];
+        this.isMinFormulationBlocked = lockedStates.includes(formulation?.formulationState?.idFormulationState);
+  // Preselect the current formulation state in the dialog (so the select shows current state)
+  this.selectedFormulationState = formulation?.formulationState?.idFormulationState ?? null;
+      },
+      error: (err: any) => {
+        console.warn('[GCOP TABLE] loadMinFormulationMetadata failed for', this.selectedSupportFormulationId, err);
+        this.isMinFormulationBlocked = false;
+      }
     });
   }
 
@@ -2117,6 +2264,194 @@ export class AdmMaestroGcpsTablaComponent implements OnInit, OnChanges {
     return this.dependencies.find(dep =>
       dep.description?.trim().toLowerCase() === codRed.trim().toLowerCase()
     );
+  }
+
+  // --- Support file helpers (upload/update/view) for the smallest formulation id ---
+  private loadSupportFileMetadata(idFormulation: number): void {
+    this.supportFileMetadata = null;
+    console.log('[GCOP TABLE] loadSupportFileMetadata called with idFormulation=', idFormulation);
+    // Prefer to read the formulation entity which may include embedded formulationSupportFile
+    this.formulationService.getById(idFormulation).subscribe({
+      next: (formulation) => {
+        try {
+          const embed = (formulation as any)?.formulationSupportFile;
+          if (embed && embed.idFormulationSupportFile) {
+            console.log('[GCOP TABLE] Found embedded formulationSupportFile on formulation', idFormulation, embed);
+            this.supportFileMetadata = embed;
+            return;
+          }
+        } catch (e) {
+          // ignore and fallback
+        }
+
+        // Fallback: call supportFileService by formulation id
+        this.supportFileService.getById(idFormulation).subscribe({
+          next: (meta) => {
+            console.log('[GCOP TABLE] loadSupportFileMetadata fallback response for', idFormulation, meta);
+            this.supportFileMetadata = meta;
+          },
+          error: (err) => {
+            console.warn('[GCOP TABLE] loadSupportFileMetadata fallback error for', idFormulation, err);
+            this.supportFileMetadata = null;
+          }
+        });
+      },
+      error: (err) => {
+        console.warn('[GCOP TABLE] formulationService.getById error for', idFormulation, err, '- falling back to supportFileService');
+        // If fetching formulation fails, try supportFileService as before
+        this.supportFileService.getById(idFormulation).subscribe({
+          next: (meta) => {
+            console.log('[GCOP TABLE] loadSupportFileMetadata fallback response for', idFormulation, meta);
+            this.supportFileMetadata = meta;
+          },
+          error: (err2) => {
+            console.warn('[GCOP TABLE] loadSupportFileMetadata fallback error for', idFormulation, err2);
+            this.supportFileMetadata = null;
+          }
+        });
+      }
+    });
+  }
+
+  uploadSupportFile(file: File): void {
+    if (!this.selectedSupportFormulationId) {
+      this.toastr.warning('No hay formulación seleccionada para asociar el archivo.', 'Advertencia');
+      return;
+    }
+    // If metadata already exists, call update to avoid duplicate insert constraint
+    if (this.supportFileMetadata && this.supportFileMetadata.idFormulationSupportFile) {
+      console.log('[GCOP TABLE] uploadSupportFile: metadata exists, delegating to updateSupportFile for', this.selectedSupportFormulationId);
+      this.updateSupportFile(file);
+      return;
+    }
+
+    this.supportFileUploading = true;
+    console.log('[GCOP TABLE] uploadSupportFile: calling uploadFile for', this.selectedSupportFormulationId);
+    this.supportFileService.uploadFile(file, this.selectedSupportFormulationId).subscribe({
+      next: () => {
+        this.toastr.success('Archivo subido correctamente.', 'Éxito');
+        this.supportFileUploading = false;
+        this.loadSupportFileMetadata(this.selectedSupportFormulationId!);
+        // Clear file input UI if available
+        try { if (this.supportUploadRef && typeof this.supportUploadRef.clear === 'function') this.supportUploadRef.clear(); } catch (e) {}
+      },
+      error: (err) => {
+        console.error('Error uploading support file:', err);
+        // If server complains about duplicate key, try update instead
+        const dupMsg = (err && err.error && err.error.message) || err.message || '';
+        if (dupMsg && dupMsg.toString().toLowerCase().includes('duplicate key')) {
+          console.warn('[GCOP TABLE] uploadSupportFile detected duplicate key error, calling updateSupportFile instead');
+          this.updateSupportFile(file);
+          return;
+        }
+        this.toastr.error('Error al subir el archivo.', 'Error');
+        this.supportFileUploading = false;
+        try { if (this.supportUploadRef && typeof this.supportUploadRef.clear === 'function') this.supportUploadRef.clear(); } catch (e) {}
+      }
+    });
+  }
+
+  updateSupportFile(file: File): void {
+    if (!this.selectedSupportFormulationId) {
+      this.toastr.warning('No hay formulación seleccionada para actualizar el archivo.', 'Advertencia');
+      return;
+    }
+    this.supportFileUploading = true;
+    this.supportFileService.updateFile(this.selectedSupportFormulationId, file).subscribe({
+      next: () => {
+        this.toastr.success('Archivo actualizado correctamente.', 'Éxito');
+        this.supportFileUploading = false;
+        this.loadSupportFileMetadata(this.selectedSupportFormulationId!);
+        try { if (this.supportUpdateRef && typeof this.supportUpdateRef.clear === 'function') this.supportUpdateRef.clear(); } catch (e) {}
+      },
+      error: (err) => {
+        console.error('Error updating support file:', err);
+        this.toastr.error('Error al actualizar el archivo.', 'Error');
+        this.supportFileUploading = false;
+        try { if (this.supportUpdateRef && typeof this.supportUpdateRef.clear === 'function') this.supportUpdateRef.clear(); } catch (e) {}
+      }
+    });
+  }
+
+  viewSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      this.toastr.warning('No hay un archivo para ver.', 'Advertencia');
+      return;
+    }
+    const fileId = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.getById(fileId).subscribe({
+      next: (fileDto: any) => {
+        if (fileDto && fileDto.file && fileDto.fileExtension) {
+          try {
+            const binary = window.atob(fileDto.file);
+            const len = binary.length;
+            const buffer = new Uint8Array(len);
+            for (let i = 0; i < len; i++) buffer[i] = binary.charCodeAt(i);
+            const blob = new Blob([buffer.buffer], { type: fileDto.fileExtension });
+            if (['application/pdf'].includes(fileDto.fileExtension)) {
+              this.supportDocumentUrl = window.URL.createObjectURL(blob);
+              this.showSupportFileViewer = true;
+              this.toastr.info('Cargando documento...', 'Información');
+            } else {
+              const a = document.createElement('a');
+              a.href = window.URL.createObjectURL(blob);
+              a.download = fileDto.name || 'archivo';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }
+          } catch (err) {
+            console.error('Error procesando archivo:', err);
+            this.toastr.error('Error al procesar el archivo para visualización.', 'Error');
+          }
+        } else {
+          // Fallback: server may not return base64 payload in getById, try binary download endpoint
+          console.log('[GCOP TABLE] viewSupportFile: no base64 in getById response, attempting downloadFile fallback for id', fileId);
+          this.supportFileService.downloadFile(fileId).subscribe({
+            next: (blob: Blob) => {
+              try {
+                const mime = (blob && (blob as any).type) ? (blob as any).type : this.supportFileMetadata.fileExtension || 'application/octet-stream';
+                if (mime === 'application/pdf') {
+                  this.supportDocumentUrl = window.URL.createObjectURL(blob);
+                  this.showSupportFileViewer = true;
+                  this.toastr.info('Cargando documento...', 'Información');
+                } else {
+                  const a = document.createElement('a');
+                  a.href = window.URL.createObjectURL(blob);
+                  a.download = this.supportFileMetadata?.name || 'archivo';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
+              } catch (e) {
+                console.error('Error procesando blob descargado:', e);
+                this.toastr.error('Error al procesar el archivo descargado.', 'Error');
+              }
+            },
+            error: (err) => {
+              console.error('Error descargando archivo (fallback):', err);
+              this.toastr.warning('El archivo no contiene datos para visualizar y la descarga falló.', 'Advertencia');
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching support file:', err);
+        this.toastr.error('Error al obtener el archivo.', 'Error');
+      }
+    });
+  }
+
+  closeSupportFileViewer(): void {
+    // Revoke object URL if any and close viewer
+    try {
+      if (this.supportDocumentUrl) {
+        try { window.URL.revokeObjectURL(this.supportDocumentUrl); } catch (e) {}
+      }
+    } finally {
+      this.supportDocumentUrl = '';
+      this.showSupportFileViewer = false;
+    }
   }
 
   confirmImport(): void {

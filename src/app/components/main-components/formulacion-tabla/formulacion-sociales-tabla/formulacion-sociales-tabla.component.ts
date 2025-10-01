@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -11,7 +11,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { FileUploadModule } from 'primeng/fileupload';
+import { SafeUrlPipe } from '../../../../safe-url.pipe';
 import { ToastrService } from 'ngx-toastr';
+import { FileUpload } from 'primeng/fileupload';
+import { FormulationSupportFileService } from '../../../../core/services/logic/formulation-support-file.service';
+import { FormulationSupportFile } from '../../../../models/logic/formulationSupportFile.model';
 
 import { FormulationService } from '../../../../core/services/logic/formulation.service';
 import { DependencyService } from '../../../../core/services/logic/dependency.service';
@@ -55,7 +59,8 @@ import { map } from 'rxjs/operators';
     InputTextModule,
     SelectModule,
     RadioButtonModule,
-    FileUploadModule
+    FileUploadModule,
+    SafeUrlPipe
   ]
 })
 export class FormulacionSocialesTablaComponent implements OnDestroy {
@@ -106,6 +111,14 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   @Output() activitiesCreated = new EventEmitter<OperationalActivity[]>();
 
   displayModal: boolean = false;
+  // Sustento vinculado a la formulación de la dependencia con menor id
+  @ViewChild('supportFileUpload') supportFileUploadRef!: FileUpload;
+  hasSupportFile: boolean = false;
+  supportFileMetadata: FormulationSupportFile | null = null;
+  fileUploadingSupport: boolean = false;
+  selectedSupportFormulationId: number | null = null;
+  showDocumentViewer: boolean = false;
+  documentUrl: any = '';
   prestacionesEconomicasFormulations: Formulation[] = [];
   prestacionesEconomicasActivities: OperationalActivity[] = [];
   // Mantener una copia sin filtrar para export (incluye actividades con monthly zeros)
@@ -170,6 +183,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   private formulationService = inject(FormulationService);
   private dependencyService = inject(DependencyService);
   private operationalActivityService = inject(OperationalActivityService);
+  private supportFileService = inject(FormulationSupportFileService);
   private excelExportService = inject(ExcelExportService);
   private excelImportService = inject(ExcelImportService);
   private authService = inject(AuthService);
@@ -186,16 +200,175 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
   }
 
   openModal(): void {
-      if (!this.currentFormulation?.year || !this.currentFormulation?.modification) {
-        this.toastr.error('No se ha seleccionado una formulación válida.', 'Error');
-        return;
-      }
-
-      this.displayModal = true;
-      this.loadFormulationStates(); // Cargar estados disponibles
+    if (!this.currentFormulation?.year || !this.currentFormulation?.modification) {
+      this.toastr.error('No se ha seleccionado una formulación válida.', 'Error');
+      return;
+    }
+    this.displayModal = true;
+    this.loadFormulationStates(); // Cargar estados disponibles
     this.loadPrestacionesEconomicasData();
     this.loadOrderedActivityDetailNames(); // Cargar orden de ActivityDetail
     this.startAutoObservation(); // Iniciar observación automática
+  }
+
+  // Buscar la formulación asociada a la dependencia de menor id y cargar su archivo de sustento (si existe)
+  private loadSupportForMinDependencyFormulation(): void {
+    if (!this.prestacionesEconomicasFormulations?.length) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+    // Encontrar la formulación cuya dependencia tenga el menor idDependency (numérico)
+    let minFormulation: any = null;
+    this.prestacionesEconomicasFormulations.forEach(f => {
+      if (f.dependency && f.dependency.idDependency !== undefined && f.dependency.idDependency !== null) {
+        if (!minFormulation || (f.dependency!.idDependency! < (minFormulation.dependency?.idDependency || Infinity))) {
+          minFormulation = f;
+        }
+      }
+    });
+    if (!minFormulation || !minFormulation.idFormulation) {
+      this.hasSupportFile = false;
+      this.supportFileMetadata = null;
+      this.selectedSupportFormulationId = null;
+      return;
+    }
+    this.selectedSupportFormulationId = minFormulation.idFormulation;
+    if (minFormulation.formulationSupportFile && minFormulation.formulationSupportFile.idFormulationSupportFile) {
+      this.hasSupportFile = true;
+      this.supportFileMetadata = minFormulation.formulationSupportFile as FormulationSupportFile;
+      return;
+    }
+    this.hasSupportFile = false;
+    this.supportFileMetadata = null;
+  }
+
+  // Manejo de selección de archivo de sustento (subida inicial)
+  onSupportFileSelect(event: any): void {
+    const file = event.files?.[0] || event.currentFiles?.[0];
+    if (!file || !this.selectedSupportFormulationId) {
+      this.toastr.warning('No se encontró formulación destino para subir el sustento.', 'Advertencia');
+      if (event.clear) event.clear();
+      return;
+    }
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      this.toastr.error('El archivo supera el límite de 5MB.', 'Error de tamaño');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      this.toastr.error('Solo se permite subir archivos PDF.', 'Tipo de archivo incorrecto');
+      if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+      return;
+    }
+    this.fileUploadingSupport = true;
+    if (this.supportFileMetadata && this.supportFileMetadata.idFormulationSupportFile) {
+      this.supportFileService.updateFile(this.selectedSupportFormulationId, file).subscribe({
+        next: () => {
+          this.toastr.success('Archivo de sustento actualizado correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error updating support file:', err);
+          this.toastr.error('Error al actualizar el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    } else {
+      this.supportFileService.uploadFile(file, this.selectedSupportFormulationId).subscribe({
+        next: (id) => {
+          this.toastr.success('Archivo de sustento subido correctamente.', 'Éxito');
+          this.fileUploadingSupport = false;
+          this.loadPrestacionesEconomicasData();
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        },
+        error: (err) => {
+          console.error('Error uploading support file:', err);
+          this.toastr.error('Error al subir el archivo de sustento.', 'Error');
+          this.fileUploadingSupport = false;
+          if (this.supportFileUploadRef) this.supportFileUploadRef.clear();
+        }
+      });
+    }
+  }
+
+  // Ver el archivo de sustento en un visor (si es PDF) o forzar descarga
+  viewSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      this.toastr.warning('No hay archivo de sustento disponible.', 'Advertencia');
+      return;
+    }
+    const fileId = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.getById(fileId).subscribe({
+      next: (fileDto) => {
+        if (fileDto && fileDto.file && fileDto.fileExtension) {
+          try {
+            const binaryString = window.atob(fileDto.file);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            const blob = new Blob([bytes.buffer], { type: fileDto.fileExtension });
+            const isPdf = fileDto.fileExtension === 'application/pdf' || fileDto.fileExtension === 'application/pdf; charset=utf-8';
+            if (isPdf) {
+              this.documentUrl = window.URL.createObjectURL(blob);
+              this.showDocumentViewer = true;
+              this.toastr.info('Cargando documento...', 'Información');
+            } else {
+              const fileName = fileDto.name || 'archivo';
+              const link = document.createElement('a');
+              link.href = window.URL.createObjectURL(blob);
+              link.download = fileName;
+              link.click();
+              window.URL.revokeObjectURL(link.href);
+              this.toastr.success('Archivo descargado correctamente.', 'Éxito');
+            }
+          } catch (e) {
+            console.error('Error decoding or creating blob:', e);
+            this.toastr.error('Error al procesar el archivo de sustento.', 'Error');
+          }
+        } else {
+          this.toastr.warning('Los datos del archivo están incompletos.', 'Advertencia');
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching support file DTO:', err);
+        this.toastr.error('Error al cargar el archivo de sustento.', 'Error');
+      }
+    });
+  }
+
+  // Borrar metadatos/archivo (si se requiere)
+  deleteSupportFile(): void {
+    if (!this.supportFileMetadata || !this.supportFileMetadata.idFormulationSupportFile) {
+      this.toastr.warning('No hay archivo para eliminar.', 'Advertencia');
+      return;
+    }
+    if (!confirm('¿Está seguro de eliminar el archivo de sustento?')) return;
+    const id = this.supportFileMetadata.idFormulationSupportFile;
+    this.supportFileService.deleteById(id).subscribe({
+      next: () => {
+        this.toastr.success('Archivo de sustento eliminado.', 'Éxito');
+        this.loadPrestacionesEconomicasData();
+      },
+      error: (err) => {
+        console.error('Error deleting support file:', err);
+        this.toastr.error('Error al eliminar el archivo de sustento.', 'Error');
+      }
+    });
+  }
+
+  // Limpiar URL al cerrar visor
+  onDocumentViewerHide(): void {
+    if (this.documentUrl) {
+      window.URL.revokeObjectURL(this.documentUrl);
+      this.documentUrl = '';
+    }
+    this.showDocumentViewer = false;
   }
 
   // Obtiene y ordena los nombres de ActivityDetail según la lógica solicitada
@@ -400,6 +573,7 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
             if (this.prestacionesEconomicasFormulations.length === 0) {
               this.isLoading = false;
               this.prestacionesEconomicasActivities = [];
+              this.loadSupportForMinDependencyFormulation();
               this.toastr.info('No se encontraron formulaciones de prestaciones sociales para el año y modificación seleccionados.', 'Información');
               return;
             }
@@ -494,17 +668,16 @@ export class FormulacionSocialesTablaComponent implements OnDestroy {
 
                 this.groupActivitiesByDependency();
                 this.generateConsolidatedActivities(); // Generar vista consolidada
-                
+                // Cargar sustento solo después de tener las formulaciones y actividades
+                this.loadSupportForMinDependencyFormulation();
                 // Establecer hash inicial después de cargar los datos
                 this.lastActivitiesHash = this.createOriginalActivitiesHash();
-                
                 // Limpiar duplicados si es necesario (solo en la primera carga)
                 if (this.consolidatedActivities.length > 0) {
                   setTimeout(() => {
                     this.cleanDuplicateAutoGeneratedActivities();
                   }, 1000);
                 }
-                
                 this.isLoading = false;
               },
               error: (err) => {
