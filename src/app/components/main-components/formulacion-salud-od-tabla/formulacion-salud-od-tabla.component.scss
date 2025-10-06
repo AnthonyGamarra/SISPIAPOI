@@ -65,6 +65,43 @@ tbody td {
   font-size: 0.8em;
 }
 
+.p-button {
+  padding: 8px 12px;
+  font-size: 0.85em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.p-button.p-button-sm {
+  padding: 6px 10px;
+  font-size: 0.8em;
+}
+
+.p-button[icon="pi pi-pencil"] {
+  color: #007bff;
+  border-color: #007bff;
+}
+.p-button[icon="pi pi-pencil"]:hover {
+  background-color: #e6f2ff;
+}
+
+.p-button[icon="pi pi-check"] {
+  color: #28a745;
+  border-color: #28a745;
+}
+.p-button[icon="pi pi-check"]:hover {
+  background-color: #e6ffe6;
+}
+
+.p-button[icon="pi pi-times"] {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.p-button[icon="pi pi-times"]:hover {
+  background-color: #ffe6e6;
+}
+
 ::ng-deep .cabecera th{
   color: #ffffff !important;
   background-color: var(--primary) !important;
@@ -220,4 +257,61 @@ textarea[disabled] {
   white-space: normal; /* allow wrapping */
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+/* Estilos para la tabla de presupuesto */
+.budget-table {
+  margin: 20px 18px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  
+  h4 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+  
+  .p-datatable {
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .cabecera th {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    font-weight: 600;
+    padding: 12px 8px;
+    text-align: center;
+    border: none;
+  }
+  
+  .montos {
+    font-weight: 500;
+    text-align: right;
+    
+    input {
+      text-align: right;
+      font-weight: 600;
+      color: #059669;
+    }
+  }
+  
+  .budget-total {
+    background: #e8f5e8;
+    font-weight: 700;
+    color: #2e7d32;
+  }
+}
+
+/* Estilos para la información de validación */
+.validation-info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  
+  .pi-info-circle {
+    font-size: 1.1rem;
+  }
 }

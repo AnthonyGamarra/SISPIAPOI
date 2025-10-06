@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
@@ -12,10 +13,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { HealthOperationalActivityService } from '../../../core/services/logic/health-operational-activity.service';
+import { FormulationService } from '../../../core/services/logic/formulation.service';
+import { AuthService } from '../../../core/services/authentication/auth.service';
 import { HealthOperationalActivitySummaryDTO } from '../../../models/logic/health-operational-activity-summary.dto';
 import { Formulation } from '../../../models/logic/formulation.model';
 import { exportTrimestralConsolidadoExcel, exportTrimestralDetalladoExcel } from './reportes-trimestral';
 import { exportMensualConsolidadoExcel, exportMensualDetalladoExcel } from './reportes-mensuales';
+import { ToastrService } from 'ngx-toastr';
 
 // Definir interface para la tabla original
 interface HealthTableRow {
@@ -80,6 +84,7 @@ interface ConsolidatedHealthRow {
     SelectModule,
     TableModule,
     InputTextModule,
+    InputNumberModule,
     TextareaModule,
     ButtonModule,
     RippleModule,
@@ -112,11 +117,14 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
   groupedHealthDataNivelIIIMensual: any[] = [];
 
   // Calcula el total de presupuesto para un grupo de datos
-  // Totales por nivel y general
+  // Totales por nivel y general (filtrados)
   totalPresupuestoNivelI = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
   totalPresupuestoNivelII = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
   totalPresupuestoNivelIII = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
   totalPresupuestoGeneral = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
+  
+  // Total general de toda la dependencia (sin filtros) para validación de presupuesto
+  totalPresupuestoGeneralDependencia = { t1: 0, t2: 0, t3: 0, t4: 0, total: 0 };
 
   @Output() activitiesCountChanged = new EventEmitter<number>();
   @Input() mostrar = false;
@@ -145,6 +153,15 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
   loading = false;
   totalRecords = 0;
 
+  // Budget editing properties
+  budgetEditingRowKeys: { [key: string]: boolean } = {};
+  clonedBudget: Formulation | null = null;
+
+  // Role-based permissions for budget editing
+  get canEditBudget(): boolean {
+    return this.authService.hasRole(['ADMIN', 'GPLANEAMIENTO', 'UPLANEAMIENTO']);
+  }
+
   // Variables para el filtro
   selectedDesCenSes: string = '';
   desCenSesOptions: { label: string; value: string }[] = [];
@@ -152,6 +169,9 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
 
   constructor(
     private healthOperationalActivityService: HealthOperationalActivityService,
+    private formulationService: FormulationService,
+    private authService: AuthService,
+    private toastr: ToastrService,
     private cdr: ChangeDetectorRef
   ) {
   }
@@ -510,6 +530,9 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     setTimeout(() => {
       let filteredData = [...this.originalHealthData];
 
+      // Calcular total general de toda la dependencia ANTES del filtro (para validación)
+      this.calculateTotalGeneralDependencia();
+
       // Filtrar por desCenSes si hay selección
       if (this.selectedDesCenSes) {
         filteredData = filteredData.filter(item =>
@@ -580,6 +603,42 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
       t3: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre3, 0),
       t4: grupo.reduce((sum, row) => sum + row.presupuesto.trimestre4, 0),
       total: grupo.reduce((sum, row) => sum + row.presupuesto.total, 0)
+    };
+  }
+
+  // Calcula el total general de toda la dependencia (sin filtros) para validación
+  private calculateTotalGeneralDependencia() {
+    // Procesar todos los datos originales sin filtros
+    const todosNivelIData = this.originalHealthData.filter(item => {
+      const nivel = item.nivelAtencion.toLowerCase();
+      return (nivel.includes('nivel i') || nivel === 'i');
+    });
+    const todosNivelIIData = this.originalHealthData.filter(item => {
+      const nivel = item.nivelAtencion.toLowerCase();
+      return (nivel.includes('nivel ii') || nivel === 'ii');
+    });
+    const todosNivelIIIData = this.originalHealthData.filter(item => {
+      const nivel = item.nivelAtencion.toLowerCase();
+      return (nivel.includes('nivel iii') || nivel === 'iii');
+    });
+
+    // Agrupar por familia sin filtros
+    const todosGroupedNivelI = this.groupByFamily(todosNivelIData);
+    const todosGroupedNivelII = this.groupByFamily(todosNivelIIData);
+    const todosGroupedNivelIII = this.groupByFamily(todosNivelIIIData);
+
+    // Calcular totales por nivel
+    const totalNivelI = this.calcularTotalPresupuesto(todosGroupedNivelI);
+    const totalNivelII = this.calcularTotalPresupuesto(todosGroupedNivelII);
+    const totalNivelIII = this.calcularTotalPresupuesto(todosGroupedNivelIII);
+
+    // Calcular total general de toda la dependencia
+    this.totalPresupuestoGeneralDependencia = {
+      t1: totalNivelI.t1 + totalNivelII.t1 + totalNivelIII.t1,
+      t2: totalNivelI.t2 + totalNivelII.t2 + totalNivelIII.t2,
+      t3: totalNivelI.t3 + totalNivelII.t3 + totalNivelIII.t3,
+      t4: totalNivelI.t4 + totalNivelII.t4 + totalNivelIII.t4,
+      total: totalNivelI.total + totalNivelII.total + totalNivelIII.total
     };
   }
 
@@ -781,5 +840,114 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
 
     const details = rows.flatMap(r => r.detalles || []);
     exportMensualDetalladoExcel(details, this.buildDependencyMeta(), this.buildFormulationMeta(), `mensual_detallado_${nivel}.xlsx`);
+  }
+
+  // Budget editing methods
+  onBudgetRowEditInit(formulation: Formulation) {
+    this.clonedBudget = { ...formulation };
+    this.budgetEditingRowKeys[formulation.idFormulation as any] = true;
+  }
+
+  onBudgetRowEditSave(formulation: Formulation, event?: Event) {
+    // Prevenir el comportamiento por defecto si hay evento
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (!this.canEditBudget) {
+      this.toastr.warning('No tienes permisos para editar el presupuesto.', 'Advertencia');
+      return;
+    }
+
+    if (!formulation.idFormulation) {
+      this.toastr.error('ID de formulación no válido.', 'Error');
+      return;
+    }
+
+    // Validar que los valores sean números válidos
+    if (typeof formulation.remuneration !== 'number' || isNaN(formulation.remuneration)) {
+      formulation.remuneration = 0;
+    }
+    if (typeof formulation.goods !== 'number' || isNaN(formulation.goods)) {
+      formulation.goods = 0;
+    }
+    if (typeof formulation.services !== 'number' || isNaN(formulation.services)) {
+      formulation.services = 0;
+    }
+
+    // Calcular el presupuesto total
+    const calculatedTotal = this.calculateBudgetTotal(formulation);
+    formulation.budget = calculatedTotal;
+
+    // Validar que el total del presupuesto detallado no exceda el total de la formulación
+    if (!this.validateBudgetLimit(calculatedTotal)) {
+      // No hacer nada más - mantener en modo edición
+      return;
+    }
+
+    // Usar el nuevo endpoint específico para actualizar componentes del presupuesto
+    this.formulationService.updateBudgetComponents(
+      formulation.idFormulation,
+      formulation.goods || 0,
+      formulation.remuneration || 0,
+      formulation.services || 0
+    ).subscribe({
+      next: (updatedFormulation) => {
+        // Actualizar la formulación actual
+        this.currentFormulation = updatedFormulation;
+        this.toastr.success('Presupuesto actualizado exitosamente.', 'Éxito');
+        // Solo salir del modo edición si la actualización fue exitosa
+        delete this.budgetEditingRowKeys[formulation.idFormulation as any];
+        this.clonedBudget = null;
+      },
+      error: (err) => {
+        console.error('Error updating formulation budget:', err);
+        this.toastr.error('Error al actualizar el presupuesto.', 'Error');
+        // NO salir del modo edición si hay error - mantener budgetEditingRowKeys y clonedBudget
+      }
+    });
+  }
+
+  onBudgetRowEditCancel(formulation: Formulation) {
+    if (this.clonedBudget) {
+      // Restaurar los valores originales
+      formulation.remuneration = this.clonedBudget.remuneration;
+      formulation.goods = this.clonedBudget.goods;
+      formulation.services = this.clonedBudget.services;
+      formulation.budget = this.clonedBudget.budget;
+    }
+    delete this.budgetEditingRowKeys[formulation.idFormulation as any];
+    this.clonedBudget = null;
+    this.toastr.info('Edición de presupuesto cancelada.', 'Información');
+  }
+
+  // Helper method to calculate budget total
+  calculateBudgetTotal(formulation: Formulation): number {
+    const remuneration = formulation.remuneration || 0;
+    const goods = formulation.goods || 0;
+    const services = formulation.services || 0;
+    return remuneration + goods + services;
+  }
+
+  // Validation method to ensure budget components don't exceed health activities total
+  validateBudgetLimit(calculatedTotal: number): boolean {
+    const healthActivitiesTotalBudget = this.totalPresupuestoGeneralDependencia.total || 0;
+    
+    // Si no hay presupuesto de actividades de salud calculado, permitir cualquier valor
+    if (healthActivitiesTotalBudget === 0) {
+      return true;
+    }
+    
+    // Validar que el total de componentes no exceda el total de actividades de salud de toda la dependencia
+    if (calculatedTotal > healthActivitiesTotalBudget) {
+      this.toastr.error(
+        `El total del presupuesto detallado (S/. ${this.formatNumber(calculatedTotal)}) no puede exceder el total del presupuesto de actividades de salud de toda la dependencia (S/. ${this.formatNumber(healthActivitiesTotalBudget)}).`,
+        'Error de Validación'
+      );
+      return false;
+    }
+    
+    return true;
   }
 }

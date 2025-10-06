@@ -66,4 +66,15 @@ export class FormulationService {
       return this.http.put<Formulation>(`${this.BASE_URL}/change-state/${id}/${stateId}`, {});
     }
 
+    // Actualizar componentes del presupuesto (Remuneraciones, Bienes y Servicios)
+    updateBudgetComponents(idFormulation: number, goods: number, remuneration: number, services: number): Observable<Formulation> {
+      const budgetUpdateData = {
+        idFormulation: idFormulation,
+        goods: goods,
+        remuneration: remuneration,
+        services: services
+      };
+      return this.http.put<Formulation>(`${this.BASE_URL}/update-budget`, budgetUpdateData);
+    }
+
 }

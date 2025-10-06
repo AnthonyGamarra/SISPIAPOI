@@ -8,7 +8,7 @@ import { MenubarComponent } from '../../components/utilities/menubar/menubar.com
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 
 import { FormulacionDesconcentradoGestionModuloComponent } from '../../components/modules/formulacion-desconcentrado-gestion-modulo/formulacion-desconcentrado-gestion-modulo.component';
-// import { FormulacionDesconcentradoSocialesModuloComponent } from '../../components/modules/formulacion-desconcentrado-sociales-modulo/formulacion-desconcentrado-sociales-modulo.component';
+import { FormulacionDesconcentradoSocialesModuloComponent } from '../../components/modules/formulacion-desconcentrado-sociales-modulo/formulacion-desconcentrado-sociales-modulo.component';
 import { FormulacionDesconcentradoSaludModuloComponent } from "../../components/modules/formulacion-desconcentrado-salud-modulo/formulacion-desconcentrado-salud-modulo.component";
 
 @Component({
@@ -19,7 +19,7 @@ import { FormulacionDesconcentradoSaludModuloComponent } from "../../components/
     FooterComponent,
     MenubarComponent,
     FormulacionDesconcentradoGestionModuloComponent,
-    // FormulacionDesconcentradoSocialesModuloComponent,
+    FormulacionDesconcentradoSocialesModuloComponent,
     FormulacionDesconcentradoSaludModuloComponent
 ],
   templateUrl: './menu-formulacion-desconcentrado.component.html',

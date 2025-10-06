@@ -2,50 +2,6 @@
   margin: 30px 18px;
 }
 
-/* Estilos para la tabla de presupuesto */
-.budget-table {
-  margin: 20px 18px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  
-  h4 {
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 15px;
-  }
-  
-  .p-datatable {
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .cabecera th {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-    color: white;
-    font-weight: 600;
-    padding: 12px 8px;
-    text-align: center;
-    border: none;
-  }
-  
-  .montos {
-    font-weight: 500;
-    text-align: right;
-    
-    input {
-      text-align: right;
-    }
-  }
-  
-  .budget-total {
-    background: #e8f5e8;
-    font-weight: 700;
-    color: #2e7d32;
-  }
-}
-
 tbody td {
   padding: 12px 20px;
   color: #333;

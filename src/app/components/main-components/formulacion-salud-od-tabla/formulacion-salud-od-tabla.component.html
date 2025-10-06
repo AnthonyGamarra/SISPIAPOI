@@ -1,4 +1,5 @@
 <div class="formulacion-salud-od-tabla">
+  
   <!-- Filtro por Centro Asistencial -->
   <div class="filter-section mb-1 p-4 bg-gray-50 rounded-lg">
     <h4 class="text-md font-semibold text-gray-700 mb-2">Filtrar por Centro Asistencial</h4>
@@ -685,7 +686,7 @@
   </div>
 
   <div *ngIf="!loading && totalPresupuestoGeneral.total" class="table-container mb-4">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Total Presupuesto</h3>
+    <h3 class="text-lg font-semibold text-gray-800 mb-3">Total Presupuesto - Mediante Valorización (Tarifa)</h3>
     <p-table class="fixed-table" [value]="[totalPresupuestoGeneral]" dataKey="total" [size]="'small'" stripedRows
       showGridlines [resizableColumns]="true" [scrollable]="true" scrollHeight="100px" columnResizeMode="expand"
       responsiveLayout="scroll">
@@ -772,6 +773,112 @@
             <td class="montos font-bold">{{ formatCurrency(monthlyTotalForMonth(11)) }}</td>
             <td class="montos font-bold">{{ formatCurrency(monthlyTotalAll()) }}</td>
           </ng-container>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+    <!-- Tabla de Presupuesto de la Formulación -->
+  <div *ngIf="currentFormulation && canEditBudget" class="budget-table mb-4">
+    <h4 class="text-lg font-semibold mb-3">Detalle de Presupuesto</h4>
+    
+    <!-- Información de validación -->
+    <div *ngIf="totalPresupuestoGeneralDependencia.total > 0" class="validation-info mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
+      <div class="flex items-center gap-2">
+        <i class="pi pi-info-circle text-blue-600"></i>
+        <span class="text-sm text-blue-800">
+          <strong>Límite de presupuesto:</strong> El total no puede exceder 
+          <strong>{{ formatCurrency(totalPresupuestoGeneralDependencia.total) }}</strong> 
+          (total de actividades de salud de toda la dependencia)
+        </span>
+      </div>
+    </div>
+    
+    <p-table [value]="[currentFormulation]" [size]="'small'" stripedRows showGridlines [resizableColumns]="true"
+      columnResizeMode="expand" editMode="row" [editingRowKeys]="budgetEditingRowKeys">
+
+      <ng-template pTemplate="header">
+        <tr class="cabecera">
+          <th style="min-width: 150px">Acciones</th>
+          <th style="min-width: 200px">Remuneraciones S/.</th>
+          <th style="min-width: 200px">Bienes S/.</th>
+          <th style="min-width: 200px">Servicios S/.</th>
+          <th style="min-width: 200px">Total Presupuesto S/.</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-formulation let-editing="editing">
+        <tr [pEditableRow]="formulation">
+          <td>
+            <div class="flex align-items-center justify-content-center gap-2">
+              <button *ngIf="!editing" pButton type="button" pInitEditableRow
+                icon="pi pi-pencil" (click)="onBudgetRowEditInit(formulation)"
+                class="p-button-rounded p-button-text p-button-sm">
+              </button>
+              <button *ngIf="editing" pButton type="button" 
+                icon="pi pi-check" (click)="onBudgetRowEditSave(formulation, $event)"
+                class="p-button-rounded p-button-text p-button-sm">
+              </button>
+              <button *ngIf="editing" pButton type="button" pCancelEditableRow
+                icon="pi pi-times" (click)="onBudgetRowEditCancel(formulation)"
+                class="p-button-rounded p-button-text p-button-sm">
+              </button>
+            </div>
+          </td>
+          <td class="montos">
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-inputNumber 
+                  [(ngModel)]="formulation.remuneration" 
+                  mode="decimal" 
+                  locale="es-PE"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  styleClass="w-full">
+                </p-inputNumber>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ formatCurrency(formulation.remuneration || 0) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td class="montos">
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-inputNumber 
+                  [(ngModel)]="formulation.goods" 
+                  mode="decimal" 
+                  locale="es-PE"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  styleClass="w-full">
+                </p-inputNumber>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ formatCurrency(formulation.goods || 0) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td class="montos">
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <p-inputNumber 
+                  [(ngModel)]="formulation.services" 
+                  mode="decimal" 
+                  locale="es-PE"
+                  [minFractionDigits]="2"
+                  [maxFractionDigits]="2"
+                  styleClass="w-full">
+                </p-inputNumber>
+              </ng-template>
+              <ng-template pTemplate="output">
+                {{ formatCurrency(formulation.services || 0) }}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td class="montos budget-total">
+            {{ formatCurrency(calculateBudgetTotal(formulation)) }}
+          </td>
         </tr>
       </ng-template>
     </p-table>

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 
-import { OperationalActivity } from '../../../../models/logic/operationalActivity.model';
+import { OperationalActivity } from '../../../models/logic/operationalActivity.model';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +31,19 @@ export class ActivityValidatorMiddleware {
     }
     if (!product.priority?.idPriority) {
       this.toastr.error('Debe seleccionar una Prioridad.', 'Error de validación');
+      return false;
+    }
+    // Validate numeric fields for goods, remuneration, services
+    if (typeof product.goods !== 'number' || isNaN(product.goods)) {
+      this.toastr.error('El campo "Bienes" debe ser un número válido.', 'Error de validación');
+      return false;
+    }
+    if (typeof product.remuneration !== 'number' || isNaN(product.remuneration)) {
+      this.toastr.error('El campo "Remuneraciones" debe ser un número válido.', 'Error de validación');
+      return false;
+    }
+    if (typeof product.services !== 'number' || isNaN(product.services)) {
+      this.toastr.error('El campo "Servicios" debe ser un número válido.', 'Error de validación');
       return false;
     }
 

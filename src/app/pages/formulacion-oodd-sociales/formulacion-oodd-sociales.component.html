@@ -9,14 +9,18 @@
   [hasActivities]="activitiesCount > 0"
 ></app-selector-sociales>
 
-<app-formulacion-sociales-od-tabla
+<app-formulacion-sociales-tabla
   [currentFormulation]="currentFormulation"
-  [mostrar]="true"
-  [ano]="selectedYear"
-  [idDependency]="selectedDependency"
-  [idFormulation]="currentFormulation?.idFormulation || null"
-  (seleccionCambio)="onSeleccionAccion($event)"
-  (activitiesCountChanged)="onActivitiesCountChanged($event)">
-</app-formulacion-sociales-od-tabla>
+  [selectedSize]="'small'"
+  [strategicObjectives]="strategicObjectives"
+  [strategicActions]="strategicActions"
+  [financialFunds]="financialFunds"
+  [managementCenters]="managementCenters"
+  [costCenters]="costCenters"
+  [measurementTypes]="measurementTypes"
+  [priorities]="priorities"
+  (seleccionCambio)="onSeleccionAccion($event)">
+</app-formulacion-sociales-tabla>
+
 
 <app-footer></app-footer>

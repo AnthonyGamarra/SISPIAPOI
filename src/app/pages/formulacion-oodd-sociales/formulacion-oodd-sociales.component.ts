@@ -1,4 +1,4 @@
-import { Component, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, ViewChild, ChangeDetectorRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FooterComponent } from '../../components/utilities/footer/footer.component';
 import { MenubarComponent } from '../../components/utilities/menubar/menubar.component';
@@ -7,6 +7,14 @@ import { FormulacionTablaComponent } from '../../components/main-components/form
 import { Formulation } from '../../models/logic/formulation.model';
 import { FormulationService } from '../../core/services/logic/formulation.service';
 import { FormulacionSocialesOdTablaComponent } from '../../components/main-components/formulacion-sociales-od-tabla/formulacion-sociales-od-tabla.component';
+import { FormulacionSocialesTablaComponent } from "../../components/main-components/formulacion-sociales-tabla/formulacion-sociales-tabla.component";
+import { StrategicObjectiveService } from '../../core/services/logic/strategic-objective.service';
+import { StrategicActionService } from '../../core/services/logic/strategic-action.service';
+import { FinancialFundService } from '../../core/services/logic/financial-fund.service';
+import { ManagementCenterService } from '../../core/services/logic/management-center.service';
+import { CostCenterService } from '../../core/services/logic/cost-center.service';
+import { MeasurementTypeService } from '../../core/services/logic/measurement-type.service';
+import { PriorityService } from '../../core/services/logic/priority.service';
 
 @Component({
   selector: 'app-formulacion-oodd-sociales',
@@ -17,11 +25,38 @@ import { FormulacionSocialesOdTablaComponent } from '../../components/main-compo
     MenubarComponent,
     SelectorSocialesComponent,
     FormulacionSocialesOdTablaComponent,
-  ],
+    FormulacionSocialesTablaComponent
+],
   templateUrl: './formulacion-oodd-sociales.component.html',
   styleUrl: './formulacion-oodd-sociales.component.scss',
 })
-export class FormulacionOoddSocialesComponent {
+export class FormulacionOoddSocialesComponent implements OnInit {
+  private strategicObjectiveService = inject(StrategicObjectiveService);
+  private strategicActionService = inject(StrategicActionService);
+  private financialFundService = inject(FinancialFundService);
+  private managementCenterService = inject(ManagementCenterService);
+  private costCenterService = inject(CostCenterService);
+  private measurementTypeService = inject(MeasurementTypeService);
+  private priorityService = inject(PriorityService);
+  ngOnInit(): void {
+    // Cargar catálogos para la tabla de sociales
+    this.strategicObjectiveService.getAll().subscribe(data => this.strategicObjectives = data);
+    this.strategicActionService.getAll().subscribe(data => this.strategicActions = data);
+    this.financialFundService.getAll().subscribe(data => this.financialFunds = data);
+    this.managementCenterService.getAll().subscribe(data => this.managementCenters = data);
+    this.costCenterService.getAll().subscribe(data => this.costCenters = data);
+    this.measurementTypeService.getAll().subscribe(data => this.measurementTypes = data);
+    this.priorityService.getAll().subscribe(data => this.priorities = data);
+  }
+  // Inputs para pasar a la tabla de sociales
+  strategicObjectives: any[] = [];
+  strategicActions: any[] = [];
+  financialFunds: any[] = [];
+  managementCenters: any[] = [];
+  costCenters: any[] = [];
+  measurementTypes: any[] = [];
+  priorities: any[] = [];
+
   // We still keep ViewChild, but its direct manipulation will be minimized
   @ViewChild(FormulacionSocialesOdTablaComponent) formulacionSocialesOdTablaComponent!: FormulacionSocialesOdTablaComponent;
 
@@ -129,6 +164,7 @@ export class FormulacionOoddSocialesComponent {
     }
     console.log('Estableciendo formulación seleccionada:', selectedFormulation);
     this.currentFormulation = selectedFormulation;
+    console.log('currentFormulation después de asignar:', this.currentFormulation);
   }
 
   /**
@@ -221,6 +257,7 @@ export class FormulacionOoddSocialesComponent {
           );
           console.log('Formulación seleccionada:', sortedFormulations[0]);
           this.currentFormulation = sortedFormulations[0];
+          console.log('currentFormulation establecida automáticamente:', this.currentFormulation);
         } else {
           // No se encontró formulación
           console.log('No se encontraron formulaciones sociales');

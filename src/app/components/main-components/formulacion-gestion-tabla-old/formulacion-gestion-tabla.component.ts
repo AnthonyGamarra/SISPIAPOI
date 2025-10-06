@@ -106,6 +106,7 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
   strategicObjectives: StrategicObjective[] = [];
   strategicActions: StrategicAction[] = [];
   filteredStrategicActions: StrategicAction[] = [];
+  expenseConcepts: ExpenseConcept[] = [];
   measurementTypes: MeasurementType[] = [];
   priorities: Priority[] = [];
   costCenters: CostCenter[] = [];
@@ -113,8 +114,6 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
   financialFunds: FinancialFund[] = [];
   managementCenters: ManagementCenter[] = [];
   editingRowKeys: { [s: string]: boolean } = {};
-  budgetEditingRowKeys: { [s: string]: boolean } = {};
-  clonedBudget: Formulation | null = null;
   showDeleteConfirmation: boolean = false;
   activityToDelete: OperationalActivity | null = null;
   activityToDeleteIndex: number | null = null;
@@ -142,6 +141,7 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
   hasSearchedFormulation: boolean = false; // Nueva variable para saber si ya se buscó
 
   private strategicActionService = inject(StrategicActionService);
+  private expenseConceptService = inject(ExpenseConceptService);
   private costCenterService = inject(CostCenterService);
   private managementCenterService = inject(ManagementCenterService);
   private measurementTypeService = inject(MeasurementTypeService);
@@ -197,20 +197,6 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
         this.state = newFormulation.formulationState?.idFormulationState || null;
         this.stateName = newFormulation.formulationState?.name || null;
         this.active = newFormulation.active;
-
-        // Inicializar valores de presupuesto si no existen
-        if (newFormulation.remuneration === undefined || newFormulation.remuneration === null) {
-          newFormulation.remuneration = 0;
-        }
-        if (newFormulation.goods === undefined || newFormulation.goods === null) {
-          newFormulation.goods = 0;
-        }
-        if (newFormulation.services === undefined || newFormulation.services === null) {
-          newFormulation.services = 0;
-        }
-        if (newFormulation.budget === undefined || newFormulation.budget === null) {
-          newFormulation.budget = this.calculateBudgetTotal(newFormulation);
-        }
 
         this.updatePermissions();
 
@@ -338,9 +324,6 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     this.stateName = null;
     this.active = null;
     this.products = [];
-    this.editingRowKeys = {};
-    this.budgetEditingRowKeys = {};
-    this.clonedBudget = null;
     this.isLoadingActivities = false;
     this.isLoadingFormulation = false;
     this.isSearchingFormulation = false;
@@ -368,6 +351,10 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
 
   get displayDependency(): string | null {
     return this.idDependency || this.lastSelectedDependency;
+  }
+
+  get isGrouping(): boolean {
+    return Object.keys(this.editingRowKeys).length === 0;
   }
 
   // --- Data Loading Methods ---
@@ -398,12 +385,13 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     forkJoin({
       strategicObjectives: this.strategicObjectiveService.getAll(),
       strategicActions: this.strategicActionService.getAll(),
+      expenseConcepts: this.expenseConceptService.getAll(),
       measurementTypes: this.measurementTypeService.getAll(),
       priorities: this.priorityService.getAll(),
       managementCenters: this.managementCenterService.getAll(),
       costCenters: this.costCenterService.getAll(),
     }).subscribe({
-      next: ({ strategicObjectives, strategicActions, measurementTypes, priorities, managementCenters, costCenters }) => {
+      next: ({ strategicObjectives, strategicActions, expenseConcepts, measurementTypes, priorities, managementCenters, costCenters }) => {
         // 1. Filtrar, ordenar y formatear los Objetivos Estratégicos SOLO por startYear === año de la formulación
         const year = this.year || (this.ano ? parseInt(this.ano, 10) : null);
         this.strategicObjectives = strategicObjectives
@@ -421,6 +409,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
             ...action,
             name: `A.E.${action.code}: ${action.name}`
           }));
+
+  // 3. Cargar Conceptos de Gasto
+  this.expenseConcepts = (expenseConcepts || []).filter(ec => ec.active !== false);
 
         this.measurementTypes = measurementTypes;
         this.priorities = priorities;
@@ -486,9 +477,14 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
 
           return activity;
         });
-        this.isLoadingActivities = false;
-        this.sortProductsByCorrelative();
-        this.activitiesCountChanged.emit(this.products.length);
+  // Compute stable group keys for row grouping
+  this.refreshProductsGroupKeys();
+  // Assign mapped activities and ensure consistent ordering by correlativeCode
+  this.isLoadingActivities = false;
+  this.sortProductsByCorrelative();
+  // Refresh group-first mapping used to detect header rows
+  this.refreshGroupFirstMap();
+  this.activitiesCountChanged.emit(this.products.length);
       },
       error: () => {
         this.toastr.error('Error al cargar actividades operativas.', 'Error');
@@ -498,6 +494,44 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
       }
     });
   }
+
+  // Ensure each product has a stable grouping key used by the table: prefer expenseConcept.id, fallback to normalized name
+  private refreshProductsGroupKeys(): void {
+    if (!this.products || !Array.isArray(this.products)) return;
+    for (const p of this.products) {
+      if (p.expenseConcept && p.expenseConcept.idExpenseConcept !== undefined && p.expenseConcept.idExpenseConcept !== null) {
+        (p as any).__groupKey = `id:${p.expenseConcept.idExpenseConcept}`;
+      } else {
+        (p as any).__groupKey = `name:${(p.expenseConcept?.name || '').toString().trim().toLowerCase()}`;
+      }
+    }
+  }
+
+  // Map to keep the first product id for each group key (used to determine header row)
+  private groupFirst: Map<string, number | undefined> = new Map();
+
+  // Compute the first product id per group (based on current products ordering)
+  private refreshGroupFirstMap(): void {
+    this.groupFirst.clear();
+    if (!this.products || !Array.isArray(this.products)) return;
+    for (const p of this.products) {
+      const key = (p as any).__groupKey || `name:${(p.expenseConcept?.name||'').toString().trim().toLowerCase()}`;
+      if (!this.groupFirst.has(key)) {
+        this.groupFirst.set(key, p.idOperationalActivity as any);
+      }
+    }
+  }
+
+  // Returns true when the product is the group's header (first occurrence)
+  isGroupHeader(product: OperationalActivity): boolean {
+    if (!product) return true;
+    const key = (product as any).__groupKey || `name:${(product.expenseConcept?.name||'').toString().trim().toLowerCase()}`;
+    const first = this.groupFirst.get(key);
+    // If no first defined, treat as header
+    if (first === undefined || first === null) return true;
+    return first === product.idOperationalActivity;
+  }
+
 
   cargarDatos() {
     const year = parseInt(this.ano!, 10);
@@ -540,6 +574,7 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
       description: '',
       measurementUnit: '',
       strategicAction: { strategicObjective: {} as StrategicObjective } as StrategicAction,
+      expenseConcept: {} as ExpenseConcept,
       measurementType: {} as MeasurementType,
       priority: {} as Priority,
       goods: 0,
@@ -561,6 +596,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     };
 
     this.products = [...this.products, nuevaActividad];
+  // ensure stable key and header mapping
+  (nuevaActividad as any).__groupKey = nuevaActividad.expenseConcept && nuevaActividad.expenseConcept.idExpenseConcept ? `id:${nuevaActividad.expenseConcept.idExpenseConcept}` : `name:${(nuevaActividad.expenseConcept?.name||'').toString().trim().toLowerCase()}`;
+  this.refreshGroupFirstMap();
     this.editingRowKeys[nuevaActividad.idOperationalActivity as any] = true;
 
     // Navegar a la página donde está la nueva actividad
@@ -669,6 +707,10 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     };
 
     // Para creación/actualización: solo enviar objetos con IDs válidos, omitir campos vacíos
+    // Reemplazar fondos/centros por el concepto de gasto (si existe)
+    if (product.expenseConcept?.idExpenseConcept) {
+      baseActividad.expenseConcept = { idExpenseConcept: product.expenseConcept.idExpenseConcept } as ExpenseConcept;
+    }
     
     if (product.measurementType?.idMeasurementType) {
       baseActividad.measurementType = { idMeasurementType: product.measurementType.idMeasurementType } as MeasurementType;
@@ -705,6 +747,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
                   // Update in-place properties to avoid changing array identity and moving the row
                   const existing = this.products[index];
                   Object.assign(existing, { ...finalActivity, goals: goals || [], executedGoals: executedGoals || [] });
+                  // Ensure group keys and header map remain consistent after update
+                  this.refreshProductsGroupKeys();
+                  this.refreshGroupFirstMap();
                   // Debug: log ordering after update
                   try { console.log('onRowEditSave - after update index, products ids:', index, this.products.map(x => x.idOperationalActivity)); } catch(e){}
                 }
@@ -741,6 +786,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
                       existing.goals = goals || [];
                       try { console.log('onRowEditSave - after goals updated, products ids:', this.products.map(x => x.idOperationalActivity)); } catch(e){}
                     }
+                    // refresh grouping metadata
+                    this.refreshProductsGroupKeys();
+                    this.refreshGroupFirstMap();
                     this.toastr.success('Actividad operativa y metas actualizadas.', 'Éxito');
                     this.notifyActivityChangesToModal(); // Notificar cambios al modal
                     this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
@@ -773,7 +821,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
                 if (index !== -1) {
                   const existing = this.products[index];
                   Object.assign(existing, { ...actividadCreada, goals: goals || [], executedGoals: executedGoals || [] });
-                  // No need for grouping keys anymore
+                  // Ensure new created item has stable group key
+                  (existing as any).__groupKey = existing.expenseConcept && existing.expenseConcept.idExpenseConcept ? `id:${existing.expenseConcept.idExpenseConcept}` : `name:${(existing.expenseConcept?.name||'').toString().trim().toLowerCase()}`;
+                  this.refreshGroupFirstMap();
                 }
 
                 const goalObservables: Observable<any>[] = [];
@@ -801,6 +851,8 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
                           existing.goals = goals || [];
                         try { console.log('onRowEditSave (create) - after goals created, products ids:', this.products.map(x => x.idOperationalActivity)); } catch(e){}
                       }
+                      this.refreshProductsGroupKeys();
+                      this.refreshGroupFirstMap();
                       this.toastr.success('Actividad operativa creada, metas guardadas.', 'Éxito');
                       this.notifyActivityChangesToModal(); // Notificar cambios al modal
                       this.activitiesCountChanged.emit(this.products.length); // Notificar al selector
@@ -852,7 +904,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
         Object.assign(this.products[productIndex], clonedProduct);
         try { console.log('onRowEditCancel - after restore index, products ids:', productIndex, this.products.map(x => x.idOperationalActivity)); } catch(e){}
       }
-      // No longer need to refresh grouping metadata
+  // refresh grouping metadata after cancel restore
+  this.refreshProductsGroupKeys();
+  this.refreshGroupFirstMap();
     } else {
       // Remove newly added (unsaved) products
       this.products.splice(index, 1);
@@ -885,89 +939,16 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     return '';
   }
 
+  getExpenseConceptName(id?: number): string {
+    return this.expenseConcepts.find(ec => ec.idExpenseConcept === id)?.name || '';
+  }
+
   getMeasurementTypeName(id?: number): string {
     return this.measurementTypes.find(m => m.idMeasurementType === id)?.name || '';
   }
 
   getPriorityName(id?: number): string {
     return this.priorities.find(p => p.idPriority === id)?.name || '';
-  }
-
-  // --- Budget Editing Methods ---
-  calculateBudgetTotal(formulation: Formulation): number {
-    const remuneration = formulation?.remuneration || 0;
-    const goods = formulation?.goods || 0;
-    const services = formulation?.services || 0;
-    return remuneration + goods + services;
-  }
-
-  onBudgetRowEditInit(formulation: Formulation) {
-    if (!this.canEdit) {
-      this.toastr.warning('No tienes permisos para editar el presupuesto.', 'Advertencia');
-      return;
-    }
-    // Store a clone of the formulation for cancellation purposes
-    this.clonedBudget = { ...formulation };
-    this.budgetEditingRowKeys[formulation.idFormulation as any] = true;
-  }
-
-  onBudgetRowEditSave(formulation: Formulation) {
-    if (!this.canEdit) {
-      this.toastr.warning('No tienes permisos para editar el presupuesto.', 'Advertencia');
-      return;
-    }
-
-    if (!formulation.idFormulation) {
-      this.toastr.error('ID de formulación no válido.', 'Error');
-      return;
-    }
-
-    // Validar que los valores sean números válidos
-    if (typeof formulation.remuneration !== 'number' || isNaN(formulation.remuneration)) {
-      formulation.remuneration = 0;
-    }
-    if (typeof formulation.goods !== 'number' || isNaN(formulation.goods)) {
-      formulation.goods = 0;
-    }
-    if (typeof formulation.services !== 'number' || isNaN(formulation.services)) {
-      formulation.services = 0;
-    }
-
-    // Calcular el presupuesto total
-    formulation.budget = this.calculateBudgetTotal(formulation);
-
-    // Usar el nuevo endpoint específico para actualizar componentes del presupuesto
-    this.formulationService.updateBudgetComponents(
-      formulation.idFormulation,
-      formulation.goods || 0,
-      formulation.remuneration || 0,
-      formulation.services || 0
-    ).subscribe({
-      next: (updatedFormulation) => {
-        // Actualizar la formulación actual
-        this.currentFormulation = updatedFormulation;
-        this.toastr.success('Presupuesto actualizado exitosamente.', 'Éxito');
-        delete this.budgetEditingRowKeys[formulation.idFormulation as any];
-        this.clonedBudget = null;
-      },
-      error: (err) => {
-        console.error('Error updating formulation budget:', err);
-        this.toastr.error('Error al actualizar el presupuesto.', 'Error');
-      }
-    });
-  }
-
-  onBudgetRowEditCancel(formulation: Formulation) {
-    if (this.clonedBudget) {
-      // Restaurar los valores originales
-      formulation.remuneration = this.clonedBudget.remuneration;
-      formulation.goods = this.clonedBudget.goods;
-      formulation.services = this.clonedBudget.services;
-      formulation.budget = this.clonedBudget.budget;
-    }
-    delete this.budgetEditingRowKeys[formulation.idFormulation as any];
-    this.clonedBudget = null;
-    this.toastr.info('Edición de presupuesto cancelada.', 'Información');
   }
 
   // --- Modal Logic for OE/AE Selection ---
@@ -1180,7 +1161,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
 
     // Reordenar productos por correlativeCode después de cualquier actualización o creación
     this.sortProductsByCorrelative();
-    // No longer need to refresh grouping metadata
+  // ensure grouping keys and header mapping are up to date after consolidation
+  this.refreshProductsGroupKeys();
+  this.refreshGroupFirstMap();
 
     // Actualizar el contador de actividades
     this.activitiesCountChanged.emit(this.products.length);
@@ -1233,6 +1216,9 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
       const activityToCreate = { ...activity };
       
       // Para creación: eliminar fields vacíos; migrando a expenseConcept
+      if (!activityToCreate.expenseConcept?.idExpenseConcept) {
+        delete activityToCreate.expenseConcept;
+      }
       if (!activityToCreate.measurementType?.idMeasurementType) {
         delete activityToCreate.measurementType;
       }
@@ -1253,11 +1239,17 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
             this.products[tempIndex] = createdActivity;
             this.products = [...this.products]; // Forzar detección de cambios
             this.sortProductsByCorrelative();
+            // ensure group metadata updated
+            this.refreshProductsGroupKeys();
+            this.refreshGroupFirstMap();
           } else {
             // Si no se encuentra, agregar la actividad creada
             this.products.push(createdActivity);
             this.products = [...this.products];
             this.sortProductsByCorrelative();
+            // ensure group metadata updated
+            this.refreshProductsGroupKeys();
+            this.refreshGroupFirstMap();
           }
         },
         error: (err) => {
@@ -1278,6 +1270,12 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
     const activityToUpdate = { ...activity };
     
     // Para actualización: solo enviar expenseConcept si existe
+    if (activityToUpdate.expenseConcept?.idExpenseConcept) {
+      activityToUpdate.expenseConcept = { idExpenseConcept: activityToUpdate.expenseConcept.idExpenseConcept } as ExpenseConcept;
+    } else {
+      delete activityToUpdate.expenseConcept;
+    }
+    
     if (activityToUpdate.measurementType?.idMeasurementType) {
       activityToUpdate.measurementType = { idMeasurementType: activityToUpdate.measurementType.idMeasurementType } as MeasurementType;
     } else {
@@ -1302,7 +1300,24 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
   }
 
   // --- Safe Getters y Setters para evitar errores de null/undefined ---
-  // Management Center getters/setters
+  // ExpenseConcept safe getters/setters
+  getExpenseConceptId(product: OperationalActivity): number | null {
+    return product.expenseConcept?.idExpenseConcept ?? null;
+  }
+
+  setExpenseConceptId(product: OperationalActivity, value: number | null): void {
+    if (!product.expenseConcept) {
+      product.expenseConcept = {} as ExpenseConcept;
+    }
+    product.expenseConcept.idExpenseConcept = value ?? undefined;
+    // Update stable grouping key for this product immediately so rowspan grouping doesn't break while editing
+    if (product.expenseConcept && product.expenseConcept.idExpenseConcept !== undefined && product.expenseConcept.idExpenseConcept !== null) {
+      (product as any).__groupKey = `id:${product.expenseConcept.idExpenseConcept}`;
+    } else {
+      (product as any).__groupKey = `name:${(product.expenseConcept?.name || '').toString().trim().toLowerCase()}`;
+    }
+  }
+
   getManagementCenterId(product: OperationalActivity): number | null {
     return product.managementCenter?.idManagementCenter ?? null;
   }
@@ -1361,52 +1376,68 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
   // Ordenar products por correlativeCode asc (si existe), dejando nulos al final
   private sortProductsByCorrelative(): void {
     if (!this.products || !Array.isArray(this.products)) return;
-    
     // Helper: extrae el sufijo numérico más a la derecha del correlativeCode
     const extractNumericSuffix = (code: any): number => {
       if (code === undefined || code === null) return Infinity;
       const s = String(code).trim();
-      if (s === '') return Infinity;
-      
       // Buscar dígitos al final (ej: '...0015')
       const m = s.match(/(\d+)\s*$/);
       if (m && m[1]) return parseInt(m[1], 10);
-      
       // Fallback: tomar la última secuencia de dígitos en la cadena
       const all = s.match(/\d+/g);
       if (all && all.length) return parseInt(all[all.length - 1], 10);
-      
       return Infinity;
     };
+    // Calcular valor numérico por producto y mínimo por grupo
+    const groupMin = new Map<string, number>();
+    const groupName = new Map<string, string>(); // guardar nombre legible por key
+    const numericVals = new Map<OperationalActivity, number>();
 
-    // Ordenar simplemente por correlativeCode
-    this.products.sort((a, b) => {
-      const numA = extractNumericSuffix(a.correlativeCode);
-      const numB = extractNumericSuffix(b.correlativeCode);
-      
-      // Si ambos tienen valores numéricos válidos, ordenar por número
-      if (numA !== Infinity && numB !== Infinity) {
-        return numA - numB;
+    // Definir clave de grupo: preferir idExpenseConcept cuando exista, fallback a nombre normalizado
+    const groupKeyFor = (p: OperationalActivity): string => {
+      if (p.expenseConcept && p.expenseConcept.idExpenseConcept !== undefined && p.expenseConcept.idExpenseConcept !== null) {
+        return `id:${p.expenseConcept.idExpenseConcept}`;
       }
-      
-      // Si uno tiene valor numérico y el otro no, el numérico va primero
-      if (numA !== Infinity && numB === Infinity) return -1;
-      if (numA === Infinity && numB !== Infinity) return 1;
-      
-      // Si ninguno tiene valor numérico válido, ordenar alfabéticamente
-      const codeA = (a.correlativeCode || '').toString();
-      const codeB = (b.correlativeCode || '').toString();
-      return codeA.localeCompare(codeB, undefined, { numeric: true });
+      return `name:${(p.expenseConcept?.name || '').toString().trim().toLowerCase()}`;
+    };
+
+    for (const p of this.products) {
+      const key = groupKeyFor(p);
+      const name = p.expenseConcept?.name || '';
+      groupName.set(key, name);
+      const n = extractNumericSuffix(p.correlativeCode);
+      numericVals.set(p, n);
+      const prev = groupMin.get(key);
+      if (prev === undefined || n < prev) groupMin.set(key, n);
+    }
+
+    // Ordenar todo el arreglo: por grupo (min numeric asc) y luego por correlative del producto
+    this.products.sort((a, b) => {
+      const keyA = groupKeyFor(a);
+      const keyB = groupKeyFor(b);
+      const minA = groupMin.get(keyA) ?? Infinity;
+      const minB = groupMin.get(keyB) ?? Infinity;
+      if (minA !== minB) return minA - minB;
+
+      // Si pertenecen al mismo grupo o tienen mismo min, ordenar por el valor numérico del producto
+      const na = numericVals.get(a) ?? Infinity;
+      const nb = numericVals.get(b) ?? Infinity;
+      if (na !== nb) return na - nb;
+
+      // Fallback a comparación de string para estabilidad
+      const ca = (a.correlativeCode || '').toString();
+      const cb = (b.correlativeCode || '').toString();
+      return ca.localeCompare(cb, undefined, { numeric: true });
     });
 
-    // Debug: mostrar orden de correlativeCode (remover en producción si no necesario)
+    // Debug: mostrar orden de grupos y sus mins (remover en producción si no necesario)
     try {
-      const sample = this.products.slice(0, 10).map(p => ({ 
-        id: p.idOperationalActivity, 
-        correlativeCode: p.correlativeCode, 
-        name: p.name 
-      }));
-      console.log('Products sample after sort by correlativeCode:', sample);
+      const groupsOrder = Array.from(groupMin.entries()).map(([k, min]) => ({ key: k, name: groupName.get(k) || '', min }));
+      console.log('Group order (key,name,min):', groupsOrder);
+
+      // Mostrar muestra de los primeros productos para diagnosticar formatos
+      const sample = this.products.slice(0, 20).map(p => ({ id: p.idOperationalActivity, key: groupKeyFor(p), name: p.expenseConcept?.name, correlativeCode: p.correlativeCode, numeric: numericVals.get(p) }));
+      console.log('Products sample after sort:', sample);
     } catch (e) { /* ignore */ }
 
     // trigger change detection without changing identities of existing objects
@@ -1450,6 +1481,29 @@ export class FormulacionGestionTablaComponent implements OnInit, OnChanges {
 
     const goal = operationalActivity.goals.find((goal: Goal) => goal.goalOrder === quarter);
     return goal?.value || 0;
+  }
+
+  // --- Métodos para calcular totales de la fila de resumen ---
+  getTotalRemuneraciones(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.remuneration || 0);
+    }, 0);
+  }
+
+  getTotalBienes(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.goods || 0);
+    }, 0);
+  }
+
+  getTotalServicios(): number {
+    return this.products.reduce((total, product) => {
+      return total + (product.services || 0);
+    }, 0);
+  }
+
+  getTotalGeneral(): number {
+    return this.getTotalRemuneraciones() + this.getTotalBienes() + this.getTotalServicios();
   }
 
   // --- Métodos para el modal de descripción ---

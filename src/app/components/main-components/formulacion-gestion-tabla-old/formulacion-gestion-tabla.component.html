@@ -20,7 +20,6 @@
 
   <!-- 3.1 Contenido principal cuando SÍ hay formulación -->
   <div *ngIf="currentFormulation">
-
     <div class="grid mx-auto my-3">
       <div class="col-12 md:col-8 flex justify-center mr-auto">
         <p-selectbutton class="size-buttons" [options]="sizes" [(ngModel)]="selectedSize" [multiple]="false"
@@ -48,9 +47,10 @@
 
     <!-- Tabla de actividades -->
     <div *ngIf="!isLoadingActivities && products.length > 0" class="table-container">
-      <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
-        columnResizeMode="expand" [scrollable]="true" columnResizeMode="expand" dataKey="idOperationalActivity"
-        editMode="row" [paginator]="false" [rowHover]="true" [editingRowKeys]="editingRowKeys">
+      <p-table #dataTable [value]="products" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true" columnResizeMode="expand"
+        [scrollable]="true" columnResizeMode="expand" dataKey="idOperationalActivity"
+        editMode="row" [paginator]="false" [rowHover]="true" [editingRowKeys]="editingRowKeys"
+  [rowGroupMode]="isGrouping ? 'rowspan' : undefined" [groupRowsBy]="isGrouping ? '__groupKey' : undefined">
 
         <ng-template pTemplate="header" class="table-header" #header>
           <tr class="cabecera">
@@ -58,6 +58,8 @@
 
             <th style="min-width: 120px; max-width: 120px;" rowspan="2">Objetivo estratégico</th>
             <th style="min-width: 100px; max-width: 100px;" rowspan="2">Acción estratégica</th>
+
+            <th style="min-width: 220px; max-width: 220px;" rowspan="2">Concepto de Gasto</th>
 
             <th style="min-width: 170px; max-width: 170px;" rowspan="2">Código de actividad</th>
             <th style="min-width: 320px; max-width: 320px;" rowspan="2">Nombre de actividad</th>
@@ -68,6 +70,7 @@
             <th style="min-width: 122px; max-width: 122px;" rowspan="2">Prioridad</th>
 
             <th colspan="5">Trimestre</th>
+            <th colspan="4">Presupuesto S/.</th>
 
             <th style="min-width: 480px; max-width: 480px;" rowspan="2">Detalle de actividad</th>
           </tr>
@@ -77,11 +80,14 @@
             <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">III</th>
             <th class="montos-cabecera" style="min-width: 110px; max-width: 110px;">IV</th>
             <th class="montos-cabecera" style="min-width: 120px; max-width: 120px;">Total</th>
+            <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Remuneraciones</th>
+            <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Bienes</th>
+            <th class="montos-cabecera" style="min-width: 160px; max-width: 160px;">Servicios</th>
+            <th class="montos-cabecera" style="min-width: 170px; max-width: 170px;">Total</th>
           </tr>
         </ng-template>
 
-        <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" let-rowgroup="rowgroup"
-          let-rowspan="rowspan">
+                <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex" let-rowgroup="rowgroup" let-rowspan="rowspan">
           <tr [pEditableRow]="product">
 
             <td>
@@ -140,6 +146,23 @@
                   <span [pTooltip]="getStrategicActionName(product.strategicAction?.idStrategicAction)">
                     {{ getStrategicActionCodeDisplay(product.strategicAction?.idStrategicAction) }}
                   </span>
+                </ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word;">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <p-select [options]="expenseConcepts" optionLabel="name" optionValue="idExpenseConcept"
+                    [ngModel]="getExpenseConceptId(product)" (ngModelChange)="setExpenseConceptId(product, $event)"
+                    [style]="{ width: '100%', 'white-space': 'normal', 'word-wrap': 'break-word', 'overflow-wrap': 'break-word', 'height': 'auto', 'min-height': '2.5rem' }" 
+                    [disabled]="state === 2 || state === 4 || !active" appendTo="body"
+                    [filter]="true" filterBy="name"
+                    styleClass="multiline-select">
+                  </p-select>
+                </ng-template>
+                <ng-template pTemplate="output" style="white-space: normal; word-wrap: break-word; overflow-wrap: break-word; display: block;">
+                  {{ getExpenseConceptName(product.expenseConcept?.idExpenseConcept) }}
                 </ng-template>
               </p-cellEditor>
             </td>
@@ -257,6 +280,48 @@
               </p-cellEditor>
             </td>
 
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.remuneration" type="number" step="any"
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.remuneration | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.goods" type="number" step="any"
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.goods | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input">
+                  <input pInputText [(ngModel)]="product.services" type="number" step="any"
+                    [disabled]="state === 2 || state === 4 || !active || !product.active || !isGroupHeader(product)"
+                    [pTooltip]="!isGroupHeader(product) ? 'Debe agregarse a la cabecera del concepto' : ''" tooltipPosition="top" />
+                </ng-template>
+                <ng-template pTemplate="output">{{ product.services | number:'1.2-2' }}</ng-template>
+              </p-cellEditor>
+            </td>
+
+            <td *ngIf="isGrouping ? rowgroup : true" [attr.rowspan]="isGrouping ? rowspan : null" class="montos">
+              <p-cellEditor>
+                <ng-template pTemplate="input"><strong>{{ (product.goods + product.remuneration + product.services) |
+                  number:'1.2-2' }}</strong></ng-template>
+                <ng-template pTemplate="output"><strong>{{ (product.goods + product.remuneration + product.services) |
+                  number:'1.2-2' }}</strong></ng-template>
+              </p-cellEditor>
+            </td>
+
             <td class="montos">
               <p-cellEditor>
                 <ng-template pTemplate="input">
@@ -265,11 +330,17 @@
                 </ng-template>
                 <ng-template pTemplate="output" class="text-output">
                   <div class="description-container">
-                    <textarea rows="2" cols="54" [autoResize]="false" pTextarea class="description-text"
-                      style="resize: none; overflow: hidden; text-align: justify; padding-left: 8px;"
+                    <textarea rows="2" cols="54" [autoResize]="false" pTextarea class="description-text" 
+                      style="resize: none; overflow: hidden; text-align: justify; padding-left: 8px;" 
                       disabled>{{ getTruncatedDescription(product.description, 155) }}</textarea>
-                    <button *ngIf="shouldShowViewMore(product.description, 155)" pButton type="button" icon="pi pi-eye"
-                      label="Ver más" (click)="openDescriptionModal(product)" class="add-button"
+                    <button 
+                      *ngIf="shouldShowViewMore(product.description, 155)" 
+                      pButton 
+                      type="button" 
+                      icon="pi pi-eye"
+                      label="Ver más" 
+                      (click)="openDescriptionModal(product)" 
+                      class="add-button"
                       style="padding: 0.25rem 3rem; font-size: 0.75rem;">
                     </button>
                   </div>
@@ -279,82 +350,28 @@
 
           </tr>
         </ng-template>
-
-      </p-table>
-    </div>
-
-    <!-- Tabla de Presupuesto de la Formulación -->
-    <div class="budget-table mb-4">
-      <h4 class="text-lg font-semibold mb-3">Presupuesto de la Formulación</h4>
-      <p-table [value]="[currentFormulation]" [size]="selectedSize" stripedRows showGridlines [resizableColumns]="true"
-        columnResizeMode="expand" editMode="row" [editingRowKeys]="budgetEditingRowKeys">
-
-        <ng-template pTemplate="header">
-          <tr class="cabecera">
-            <th style="min-width: 100px;">Acciones</th>
-            <th style="min-width: 160px;">Remuneraciones (S/.)</th>
-            <th style="min-width: 160px;">Bienes (S/.)</th>
-            <th style="min-width: 160px;">Servicios (S/.)</th>
-            <th style="min-width: 170px;">Total (S/.)</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-formulation let-editing="editing">
-          <tr [pEditableRow]="formulation">
-            <td>
-              <div class="flex justify-content-center gap-2">
-                <button *ngIf="!editing && (state === 1 || state === 3) && active" pButton pRipple type="button"
-                  pInitEditableRow icon="pi pi-pencil" (click)="onBudgetRowEditInit(formulation)" text rounded
-                  severity="secondary">
-                </button>
-                <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check"
-                  (click)="onBudgetRowEditSave(formulation)" text rounded severity="success">
-                </button>
-                <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times"
-                  (click)="onBudgetRowEditCancel(formulation)" text rounded severity="danger">
-                </button>
-              </div>
-            </td>
-
-            <td class="montos">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input pInputText [(ngModel)]="formulation.remuneration" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ formulation.remuneration | number:'1.2-2' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-
-            <td class="montos">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input pInputText [(ngModel)]="formulation.goods" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ formulation.goods | number:'1.2-2' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-
-            <td class="montos">
-              <p-cellEditor>
-                <ng-template pTemplate="input">
-                  <input pInputText [(ngModel)]="formulation.services" type="number" step="any"
-                    [disabled]="state === 2 || state === 4 || !active" />
-                </ng-template>
-                <ng-template pTemplate="output">
-                  {{ formulation.services | number:'1.2-2' }}
-                </ng-template>
-              </p-cellEditor>
-            </td>
-
-            <td class="montos budget-total">
-              <strong>{{ calculateBudgetTotal(formulation) | number:'1.2-2' }}</strong>
-            </td>
+        
+        <ng-template pTemplate="footer">
+          <tr class="totals-row">
+            <td></td> <!-- Acciones -->
+            <td></td> <!-- Objetivo estratégico -->
+            <td></td> <!-- Acción estratégica -->
+            <td></td> <!-- Concepto de Gasto -->
+            <td></td> <!-- Código de actividad -->
+            <td></td> <!-- Nombre de actividad -->
+            <td></td> <!-- Unidad de medida -->
+            <td></td> <!-- Tipo de medida -->
+            <td></td> <!-- Prioridad -->
+            <td></td> <!-- Trimestre I -->
+            <td></td> <!-- Trimestre II -->
+            <td></td> <!-- Trimestre III -->
+            <td></td> <!-- Trimestre IV -->
+            <td></td> <!-- Total Trimestres -->
+            <td class="montos total-cell"><strong>{{ getTotalRemuneraciones() | number:'1.2-2' }}</strong></td> <!-- Remuneraciones -->
+            <td class="montos total-cell"><strong>{{ getTotalBienes() | number:'1.2-2' }}</strong></td> <!-- Bienes -->
+            <td class="montos total-cell"><strong>{{ getTotalServicios() | number:'1.2-2' }}</strong></td> <!-- Servicios -->
+            <td class="montos total-cell"><strong>{{ getTotalGeneral() | number:'1.2-2' }}</strong></td> <!-- Total -->
+            <td></td> <!-- Detalle de actividad -->
           </tr>
         </ng-template>
       </p-table>
@@ -404,9 +421,10 @@
   </p-dialog>
 
   <!-- Modal de Descripción Completa -->
-  <p-dialog [header]="'Detalle de actividad'" [(visible)]="displayDescriptionModal" [modal]="true"
-    [style]="{ width: '50vw', 'max-width': '800px' }" [breakpoints]="{ '960px': '75vw', '640px': '90vw' }"
-    [draggable]="true" [resizable]="true" [baseZIndex]="10000">
+  <p-dialog [header]="'Detalle de actividad'" [(visible)]="displayDescriptionModal" 
+    [modal]="true" [style]="{ width: '50vw', 'max-width': '800px' }" 
+    [breakpoints]="{ '960px': '75vw', '640px': '90vw' }" [draggable]="true" [resizable]="true" 
+    [baseZIndex]="10000">
     <div class="description-modal-content mt-3">
       <div class="description-full-text" style="white-space: pre-wrap; line-height: 1.5; padding: 1rem 1rem;">
         {{ selectedDescription }}
@@ -421,7 +439,7 @@
 
   <!-- Subcomponente para Prestaciones Sociales -->
   <app-formulacion-sociales-tabla #socialesTabla [currentFormulation]="currentFormulation" [selectedSize]="selectedSize"
-    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions" [costCenters]="costCenters"
-    [measurementTypes]="measurementTypes" [priorities]="priorities"
-    (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
+    [strategicObjectives]="strategicObjectives" [strategicActions]="strategicActions"
+    [costCenters]="costCenters" [measurementTypes]="measurementTypes"
+    [priorities]="priorities" (activitiesCreated)="onActivitiesCreatedFromConsolidated($event)">
   </app-formulacion-sociales-tabla>
