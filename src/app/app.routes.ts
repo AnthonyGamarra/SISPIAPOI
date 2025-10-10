@@ -22,6 +22,7 @@ import { AdminMaestroGcpsComponent } from './pages/admin-maestro-gcps/admin-maes
 import { AdminUsuariosComponent } from './pages/admin-usuarios/admin-usuarios.component';
 import { FormulacionOoddSaludComponent } from './pages/formulacion-oodd-salud/formulacion-oodd-salud.component';
 import { FormulacionGestionComponent } from './pages/formulacion-gestion/formulacion-gestion.component';
+import { AdminMaestroIpressComponent } from './pages/admin-maestro-ipress/admin-maestro-ipress.component';
 
 export const routes: Routes = [
   {
@@ -119,6 +120,14 @@ export const routes: Routes = [
   {
     path: 'gestion/adm-maestro-gcps',
     component: AdminMaestroGcpsComponent,
+    canActivate: [authGuard],
+    data: {
+      roles: ["ADMIN", "GPLANEAMIENTO"],
+    },
+  },
+  {
+    path: 'gestion/adm-maestro-ipress',
+    component: AdminMaestroIpressComponent,
     canActivate: [authGuard],
     data: {
       roles: ["ADMIN", "GPLANEAMIENTO"],

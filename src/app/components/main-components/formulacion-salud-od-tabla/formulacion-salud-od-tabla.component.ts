@@ -950,4 +950,5 @@ export class FormulacionSaludOdTablaComponent implements OnInit, OnChanges {
     
     return true;
   }
+  
 }

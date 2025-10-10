@@ -13,6 +13,7 @@ import { ActivityFamily } from "./activityFamily.model";
 import { MonthlyBudget } from "./monthlyBudget.model";
 import { ExecutedMonthlyBudget } from "./executedMonthlyBudget.model";
 import { ExpenseConcept } from "./expenseConcept.model";
+import { Ipress } from "./ipress.model";
 
 export interface OperationalActivity {
   idOperationalActivity?: number;
@@ -50,6 +51,7 @@ export interface OperationalActivity {
   desCenSes?: string;
   nivelCompl?: string;
   nivelAtencion?: string;
+  ipress?: Ipress;
   codPre?: string;
   codTarif?: string;
   fonafe?: boolean;

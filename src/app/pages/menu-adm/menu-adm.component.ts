@@ -13,6 +13,7 @@ import { AdmMaestrosPEModuloComponent } from '../../components/modules/adm-maest
 import { AdmMaestrosPSOModuloComponent } from '../../components/modules/adm-maestros-pso-modulo/adm-maestros-pso-modulo.component';
 import { AdmMaestrosPSAModuloComponent } from '../../components/modules/adm-maestros-psa-modulo/adm-maestros-psa-modulo.component';
 import { AdmUsuariosModuloComponent } from '../../components/modules/adm-usuarios-modulo/adm-usuarios-modulo.component';
+import { AdmMaestrosIPRESSModuloComponent } from "../../components/modules/adm-maestros-ipress-modulo/adm-maestros-ipress-modulo.component";
 
 @Component({
   selector: 'app-menu-adm',
@@ -27,7 +28,8 @@ import { AdmUsuariosModuloComponent } from '../../components/modules/adm-usuario
     AdmOEAEModuloComponent,
     AdmMaestrosPEModuloComponent,
     AdmMaestrosPSOModuloComponent,
-    AdmMaestrosPSAModuloComponent
+    AdmMaestrosPSAModuloComponent,
+    AdmMaestrosIPRESSModuloComponent
 ],
   templateUrl: './menu-adm.component.html',
   styleUrl: './menu-adm.component.scss'
